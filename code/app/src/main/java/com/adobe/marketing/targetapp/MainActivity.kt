@@ -1,5 +1,5 @@
 /*
- Copyright 2021 Adobe. All rights reserved.
+ Copyright 2022 Adobe. All rights reserved.
  This file is licensed to you under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License. You may obtain a copy
  of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -18,14 +18,14 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.adobe.marketing.mobile.MobileCore
-import com.adobe.marketing.optimizeapp.ui.theme.TargetTheme
+import com.adobe.marketing.targetapp.ui.theme.TargetTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             TargetTheme {
-                MainScreen()
+                // MainScreen()
             }  
         }
     }
@@ -48,6 +48,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun DefaultPreview() {
     TargetTheme {
-        MainScreen()
+        // MainScreen()
     }  
 }

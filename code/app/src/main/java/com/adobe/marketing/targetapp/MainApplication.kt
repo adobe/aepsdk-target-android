@@ -17,7 +17,7 @@ import com.adobe.marketing.mobile.Lifecycle
 import com.adobe.marketing.mobile.Identity
 import com.adobe.marketing.mobile.LoggingMode
 import com.adobe.marketing.mobile.MobileCore
-import com.adobe.marketing.mobile.target.Target
+import com.adobe.marketing.mobile.Target
 
 class MainApplication : Application() {
 
