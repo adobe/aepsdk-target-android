@@ -69,8 +69,9 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha07"
 
     // Adobe mobile SDKs
-    implementation "com.adobe.marketing.mobile:target:1.+"
-    implementation "com.adobe.marketing.mobile:core:1.+"
+    implementation project(":${rootProject.moduleProjectName}")
+    // implementation "com.adobe.marketing.mobile:core:1.+"
+    implementation 'com.github.adobe.aepsdk-core-android:core:dev-v2.0.0-SNAPSHOT'
     implementation "com.adobe.marketing.mobile:lifecycle:1.+"
     implementation "com.adobe.marketing.mobile:identity:1.+"
     implementation "com.adobe.marketing.mobile:assurance:1.+"

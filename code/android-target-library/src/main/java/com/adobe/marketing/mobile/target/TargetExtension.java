@@ -12,15 +12,19 @@
 
 package com.adobe.marketing.mobile.target;
 
+import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.Extension;
 import com.adobe.marketing.mobile.ExtensionApi;
+import com.adobe.marketing.mobile.services.Log;
 
 import static com.adobe.marketing.mobile.target.TargetConstants.EXTENSION_NAME;
 import static com.adobe.marketing.mobile.target.TargetConstants.FRIENDLY_NAME;
 import static com.adobe.marketing.mobile.target.TargetConstants.EXTENSION_VERSION;
-import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
+
+import java.util.Map;
 
 public class TargetExtension extends Extension {
+    private static final String CLASS_NAME = TargetExtension.class.getSimpleName();
     /**
      * Constructor for {@code TargetExtension}.
      * <p>
@@ -62,8 +66,11 @@ public class TargetExtension extends Extension {
 
     @Override
     protected void onRegistered() {
-        // getApi().registerEventListener(TargetConstants.EventType.TARGET, TargetConstants.EventSource.REQUEST_CONTENT,
-        //         this::handleTargetRequestEvent
-        // );
+         getApi().registerEventListener(TargetConstants.EventType.TARGET, TargetConstants.EventSource.REQUEST_CONTENT,
+                 this::handleTargetRequestEvent
+         );
+    }
+
+    void handleTargetRequestEvent(final Event event) {
     }
 }

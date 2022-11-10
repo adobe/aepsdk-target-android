@@ -1,0 +1,43 @@
+{
+  "responsedata" : {
+    "telemetryServerToken" : "kesO/La1NMAiMIUqdN5o4cBMIxORn0jM33BmKddILQbn8HKfsLWaXHqVvE/QIFH5",
+    "requestId" : "dbb1424e-e336-4a07-a062-487bbc5bfa76",
+    "client" : "adobeobumobile5targe",
+    "id" : {
+      "marketingCloudVisitorId" : "83887760074284252145571543563296118540",
+      "tntId" : "93524952-3447-4142-82db-a1eb0b3a5416.35_0"
+    },
+    "execute" : {
+      "mboxes" : [
+        {
+          "name" : "mbox1",
+          "options" : [
+            {
+              "responseTokens" : {
+                "activity.name" : "Test 1"
+              },
+              "type" : "html",
+              "sourceType" : "target",
+              "content" : "Good Morning!"
+            }
+          ],
+          "index" : 0,
+          "metrics" : [
+            {
+              "analytics" : {
+                "payload" : {
+                  "tnta" : "475220:0:0|32767",
+                  "pe" : "tnt"
+                }
+              },
+              "eventToken" : "kYuJVwlS8TWhiuA5DJa/XA==",
+              "type" : "click"
+            }
+          ]
+        }
+      ]
+    },
+    "status" : 200,
+    "edgeHost" : "mboxedge35.tt.omtrdc.net"
+  }
+}
