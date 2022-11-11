@@ -27,10 +27,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -38,6 +37,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 import android.net.Uri;
 
@@ -47,8 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({MobileCore.class, Log.class, Uri.class})
+@RunWith(MockitoJUnitRunner.Silent.class)
 @SuppressWarnings("unchecked")
 public class TargetTests {
     private String response;
@@ -60,10 +59,6 @@ public class TargetTests {
 
     @Before
     public void setup() throws Exception {
-        PowerMockito.mockStatic(MobileCore.class);
-        PowerMockito.mockStatic(Log.class);
-        PowerMockito.mockStatic(Uri.class);
-        PowerMockito.when(Uri.parse(anyString())).thenReturn(uri);
     }
 
     @After
@@ -83,1009 +78,1048 @@ public class TargetTests {
 
     @Test
     public void testPrefetchContent_validprefetchList() {
-        // test
-        final List<TargetPrefetch> prefetchList = new ArrayList<>();
-        prefetchList.add(new TargetPrefetch("mbox1", null));
-        prefetchList.add(new TargetPrefetch("mbox2", null));
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            final List<TargetPrefetch> prefetchList = new ArrayList<>();
+            prefetchList.add(new TargetPrefetch("mbox1", null));
+            prefetchList.add(new TargetPrefetch("mbox2", null));
 
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.prefetchContent(prefetchList, targetParameters, new AdobeCallback<String>() {
-            @Override
-            public void call(String value) {
-                response = value;
-            }
-        });
+            Target.prefetchContent(prefetchList, targetParameters, new AdobeCallback<String>() {
+                @Override
+                public void call(String value) {
+                    response = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        final ArgumentCaptor<AdobeCallbackWithError<Event>> callbackCaptor = ArgumentCaptor.forClass(AdobeCallbackWithError.class);
-        MobileCore.dispatchEventWithResponseCallback(eventCaptor.capture(), anyLong(), callbackCaptor.capture());
-        final Event event = eventCaptor.getValue();
-        final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            final ArgumentCaptor<AdobeCallbackWithError<Event>> callbackCaptor = ArgumentCaptor.forClass(AdobeCallbackWithError.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEventWithResponseCallback(eventCaptor.capture(), anyLong(), callbackCaptor.capture()));
+            final Event event = eventCaptor.getValue();
+            final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetPrefetchContent", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestContent", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetPrefetchContent", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestContent", event.getSource());
 
-        final Map<String, Object> eventData = event.getEventData();
-        List<Map<String, Object>> prefetchData = (List<Map<String, Object>>)eventData.get("prefetch");
-        assertNotNull(prefetchData);
-        final Map<String, Object> prefetchMbox1 =  prefetchData.get(0);
-        assertNotNull(prefetchMbox1);
-        assertEquals("mbox1", prefetchMbox1.get("mboxname"));
-        final Map<String, Object> prefetchMbox2 =  prefetchData.get(1);
-        assertNotNull(prefetchMbox2);
-        assertEquals("mbox2", prefetchMbox2.get("mboxname"));
-        final Map<String, Object> targetParams = (Map<String, Object>)eventData.get("targetparams");
-        assertNotNull(targetParams);
-        final Map<String, String> mboxParameters = (Map<String, String>)targetParams.get("mboxparameters");
-        assertNotNull(mboxParameters);
-        assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
+            final Map<String, Object> eventData = event.getEventData();
+            List<Map<String, Object>> prefetchData = (List<Map<String, Object>>) eventData.get("prefetch");
+            assertNotNull(prefetchData);
+            final Map<String, Object> prefetchMbox1 = prefetchData.get(0);
+            assertNotNull(prefetchMbox1);
+            assertEquals("mbox1", prefetchMbox1.get("mboxname"));
+            final Map<String, Object> prefetchMbox2 = prefetchData.get(1);
+            assertNotNull(prefetchMbox2);
+            assertEquals("mbox2", prefetchMbox2.get("mboxname"));
+            final Map<String, Object> targetParams = (Map<String, Object>) eventData.get("targetparams");
+            assertNotNull(targetParams);
+            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("mboxparameters");
+            assertNotNull(mboxParameters);
+            assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
 
-        final Map<String, Object> responseEventData = new HashMap<>();
-        responseEventData.put("prefetcherror", null);
-        final Event responseEvent = new Event.Builder("TargetRequestResponse", "com.adobe.eventType.target", "com.adobe.eventSource.responseContent")
-                .setEventData(responseEventData).build();
-        callbackWithError.call(responseEvent);
+            final Map<String, Object> responseEventData = new HashMap<>();
+            responseEventData.put("prefetcherror", null);
+            final Event responseEvent = new Event.Builder("TargetRequestResponse", "com.adobe.eventType.target", "com.adobe.eventSource.responseContent")
+                    .setEventData(responseEventData).build();
+            callbackWithError.call(responseEvent);
 
-        assertNull(response);
+            assertNull(response);
+        }
     }
 
     @Test
     public void testPrefetchContent_invalidPrefetchList() {
-        // test
-        final List<TargetPrefetch> prefetchList = new ArrayList<>();
-        prefetchList.add(null);
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<TargetPrefetch> prefetchList = new ArrayList<>();
+            prefetchList.add(null);
 
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.prefetchContent(prefetchList, targetParameters, new AdobeCallback<String>() {
-            @Override
-            public void call(String value) {
-                response = value;
-            }
-        });
+            Target.prefetchContent(prefetchList, targetParameters, new AdobeCallback<String>() {
+                @Override
+                public void call(String value) {
+                    response = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
-        assertNotNull(response);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+            assertNotNull(response);
+        }
     }
 
     @Test
     public void testPrefetchContent_invalidPrefetchListWithErrorCallback() {
-        // test
-        final List<TargetPrefetch> prefetchList = new ArrayList<>();
-        prefetchList.add(null);
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<TargetPrefetch> prefetchList = new ArrayList<>();
+            prefetchList.add(null);
 
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.prefetchContent(prefetchList, targetParameters, new AdobeCallbackWithError<String>() {
-            @Override
-            public void fail(AdobeError error) {
-                responseError = error;
-            }
+            Target.prefetchContent(prefetchList, targetParameters, new AdobeCallbackWithError<String>() {
+                @Override
+                public void fail(AdobeError error) {
+                    responseError = error;
+                }
 
-            @Override
-            public void call(String value) {
-                response = value;
-            }
-        });
+                @Override
+                public void call(String value) {
+                    response = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
-        assertNotNull(responseError);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+            assertNotNull(responseError);
+        }
     }
 
     @Test
     public void testPrefetchContent_emptyPrefetchList() {
-        // test
-        final List<TargetPrefetch> prefetchList = new ArrayList<>();
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<TargetPrefetch> prefetchList = new ArrayList<>();
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.prefetchContent(prefetchList, targetParameters, new AdobeCallback<String>() {
-            @Override
-            public void call(String value) {
-                response = value;
-            }
-        });
+            Target.prefetchContent(prefetchList, targetParameters, new AdobeCallback<String>() {
+                @Override
+                public void call(String value) {
+                    response = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
-        assertNotNull(response);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+            assertNotNull(response);
+        }
     }
 
     @Test
     public void testPrefetchContent_emptyPrefetchListWithErrorCallback() {
-        // test
-        final List<TargetPrefetch> prefetchList = new ArrayList<>();
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<TargetPrefetch> prefetchList = new ArrayList<>();
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.prefetchContent(prefetchList, targetParameters, new AdobeCallbackWithError<String>() {
-            @Override
-            public void fail(AdobeError error) {
-                responseError = error;
-            }
+            Target.prefetchContent(prefetchList, targetParameters, new AdobeCallbackWithError<String>() {
+                @Override
+                public void fail(AdobeError error) {
+                    responseError = error;
+                }
 
-            @Override
-            public void call(String value) {
-                response = value;
-            }
-        });
+                @Override
+                public void call(String value) {
+                    response = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
-        assertNotNull(responseError);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+            assertNotNull(responseError);
+        }
     }
 
     @Test
     public void testRetrieveLocationContent_validRequestList() {
-        // test
-        final List<TargetRequest> requestList = new ArrayList<>();
-        requestList.add(new TargetRequest("mbox1", null, "defaultContent1", new AdobeCallback<String>() {
-            @Override
-            public void call(String value) {
-            }
-        }));
-        requestList.add(new TargetRequest("mbox2", null, "defaultContent2", new AdobeCallback<String>() {
-            @Override
-            public void call(String value) {
-            }
-        }));
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            final List<TargetRequest> requestList = new ArrayList<>();
+            requestList.add(new TargetRequest("mbox1", null, "defaultContent1", new AdobeCallback<String>() {
+                @Override
+                public void call(String value) {
+                }
+            }));
+            requestList.add(new TargetRequest("mbox2", null, "defaultContent2", new AdobeCallback<String>() {
+                @Override
+                public void call(String value) {
+                }
+            }));
 
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.retrieveLocationContent(requestList, targetParameters);
+            Target.retrieveLocationContent(requestList, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        MobileCore.dispatchEvent(eventCaptor.capture());
-        final Event event = eventCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()));
+            final Event event = eventCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetLoadRequest", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestContent", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetLoadRequest", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestContent", event.getSource());
 
-        final Map<String, Object> eventData = event.getEventData();
-        List<Map<String, Object>> requestData = (List<Map<String, Object>>)eventData.get("request");
-        assertNotNull(requestData);
-        final Map<String, Object> requestMbox1 =  requestData.get(0);
-        assertNotNull(requestMbox1);
-        assertEquals("mbox1", requestMbox1.get("mboxname"));
-        assertEquals("defaultContent1", requestMbox1.get("defaultcontent"));
-        assertNotNull(requestMbox1.get("responsepairid"));
-        assertNull(requestMbox1.get("targetparams"));
-        final Map<String, Object> requestMbox2 =  requestData.get(1);
-        assertNotNull(requestMbox2);
-        assertEquals("mbox2", requestMbox2.get("mboxname"));
-        assertEquals("defaultContent2", requestMbox2.get("defaultcontent"));
-        assertNotNull(requestMbox2.get("responsepairid"));
-        assertNull(requestMbox2.get("targetparams"));
-        final Map<String, Object> targetParams = (Map<String, Object>)eventData.get("targetparams");
-        assertNotNull(targetParams);
-        final Map<String, String> mboxParameters = (Map<String, String>)targetParams.get("mboxparameters");
-        assertNotNull(mboxParameters);
-        assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
+            final Map<String, Object> eventData = event.getEventData();
+            List<Map<String, Object>> requestData = (List<Map<String, Object>>) eventData.get("request");
+            assertNotNull(requestData);
+            final Map<String, Object> requestMbox1 = requestData.get(0);
+            assertNotNull(requestMbox1);
+            assertEquals("mbox1", requestMbox1.get("mboxname"));
+            assertEquals("defaultContent1", requestMbox1.get("defaultcontent"));
+            assertNotNull(requestMbox1.get("responsepairid"));
+            assertNull(requestMbox1.get("targetparams"));
+            final Map<String, Object> requestMbox2 = requestData.get(1);
+            assertNotNull(requestMbox2);
+            assertEquals("mbox2", requestMbox2.get("mboxname"));
+            assertEquals("defaultContent2", requestMbox2.get("defaultcontent"));
+            assertNotNull(requestMbox2.get("responsepairid"));
+            assertNull(requestMbox2.get("targetparams"));
+            final Map<String, Object> targetParams = (Map<String, Object>) eventData.get("targetparams");
+            assertNotNull(targetParams);
+            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("mboxparameters");
+            assertNotNull(mboxParameters);
+            assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
+        }
     }
 
     @Test
     public void testRetrieveLocationContent_invalidRequestList() {
-        // test
-        final List<TargetRequest> requestList = new ArrayList<>();
-        requestList.add(null);
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<TargetRequest> requestList = new ArrayList<>();
+            requestList.add(null);
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.retrieveLocationContent(requestList, targetParameters);
+            Target.retrieveLocationContent(requestList, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+        }
     }
 
     @Test
     public void testRetrieveLocationContent_emptyRequestList() {
-        // test
-        final List<TargetRequest> requestList = new ArrayList<>();
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<TargetRequest> requestList = new ArrayList<>();
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.retrieveLocationContent(requestList, targetParameters);
+            Target.retrieveLocationContent(requestList, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+        }
     }
 
     @Test
     public void testRetrieveLocationContent_emptyMboxNameInRequestList() {
-        // test
-        final List<TargetRequest> requestList = new ArrayList<>();
-        requestList.add(new TargetRequest("", null, "defaultContent", new AdobeCallback<String>() {
-            @Override
-            public void call(String value) {
-                response = value;
-            }
-        }));
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<TargetRequest> requestList = new ArrayList<>();
+            requestList.add(new TargetRequest("", null, "defaultContent", new AdobeCallback<String>() {
+                @Override
+                public void call(String value) {
+                    response = value;
+                }
+            }));
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.retrieveLocationContent(requestList, targetParameters);
+            Target.retrieveLocationContent(requestList, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(2));
-        Log.warning(anyString(), anyString(), anyString(), any());
-        assertEquals("defaultContent", response);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()),
+                    Mockito.times(2));
+            assertEquals("defaultContent", response);
+        }
     }
 
     @Test
     public void testRetrieveLocationContent_emptyMboxNameInRequestListWithErrorCallback() {
-        // test
-        final List<TargetRequest> requestList = new ArrayList<>();
-        requestList.add(new TargetRequest("", null, "defaultContent", new AdobeCallbackWithError<String>() {
-            @Override
-            public void fail(AdobeError adobeError) {
-                responseError = adobeError;
-            }
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<TargetRequest> requestList = new ArrayList<>();
+            requestList.add(new TargetRequest("", null, "defaultContent", new AdobeCallbackWithError<String>() {
+                @Override
+                public void fail(AdobeError adobeError) {
+                    responseError = adobeError;
+                }
 
-            @Override
-            public void call(String value) {
-                response = value;
-            }
-        }));
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+                @Override
+                public void call(String value) {
+                    response = value;
+                }
+            }));
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.retrieveLocationContent(requestList, targetParameters);
+            Target.retrieveLocationContent(requestList, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(2));
-        Log.warning(anyString(), anyString(), anyString(), any());
-        assertNull(responseError);
-        assertEquals("defaultContent", response);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()),
+                    Mockito.times(2));
+            assertNull(responseError);
+            assertEquals("defaultContent", response);
+        }
     }
 
     @Test
     public void testRetrieveLocationContent_emptyMboxNameInRequestListWithDataCallback() {
-        // test
-        final List<TargetRequest> requestList = new ArrayList<>();
-        requestList.add(new TargetRequest("", null, "defaultContent", new AdobeTargetDetailedCallback() {
-            @Override
-            public void call(String content, Map<String, Object> data) {
-                response = content;
-                responseMap = data;
-            }
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<TargetRequest> requestList = new ArrayList<>();
+            requestList.add(new TargetRequest("", null, "defaultContent", new AdobeTargetDetailedCallback() {
+                @Override
+                public void call(String content, Map<String, Object> data) {
+                    response = content;
+                    responseMap = data;
+                }
 
-            @Override
-            public void fail(AdobeError error) {
-                responseError = error;
-            }
-        }));
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
+                @Override
+                public void fail(AdobeError error) {
+                    responseError = error;
+                }
+            }));
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
 
-        Target.retrieveLocationContent(requestList, targetParameters);
+            Target.retrieveLocationContent(requestList, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(2));
-        Log.warning(anyString(), anyString(), anyString(), any());
-        assertNull(responseError);
-        assertNull(responseMap);
-        assertEquals("defaultContent", response);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()),
+                    Mockito.times(2));
+            assertNull(responseError);
+            assertNull(responseMap);
+            assertEquals("defaultContent", response);
+        }
     }
 
     @Test
     public void testLocationsDisplayed_validMboxesList() {
-        // test
-        final List<String> mboxes = new ArrayList<String>();
-        mboxes.add("mbox1");
-        mboxes.add("mbox2");
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            final List<String> mboxes = new ArrayList<String>();
+            mboxes.add("mbox1");
+            mboxes.add("mbox2");
 
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                        .parameters(new HashMap<String, String>(){
-                            {
-                                put("mbox_parameter_key", "mbox_parameter_value");
-                            }
-                        }).build();
-        Target.locationsDisplayed(mboxes, targetParameters);
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
+            Target.locationsDisplayed(mboxes, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        MobileCore.dispatchEvent(eventCaptor.capture());
-        final Event event = eventCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()));
+            final Event event = eventCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetLocationsDisplayed", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestContent", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetLocationsDisplayed", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestContent", event.getSource());
 
-        final Map<String, Object> eventData = event.getEventData();
-        assertEquals(true, eventData.get("islocationdisplayed"));
-        final List<String> mboxesList = (List<String>)eventData.get("mboxnames");
-        assertEquals(2, mboxesList.size());
-        assertEquals("mbox1", mboxesList.get(0));
-        assertEquals("mbox2", mboxesList.get(1));
-        final Map<String, Object> targetParams = (Map<String, Object>)eventData.get("targetparams");
-        assertNotNull(targetParams);
-        final Map<String, String> mboxParameters = (Map<String, String>)targetParams.get("mboxparameters");
-        assertNotNull(mboxParameters);
-        assertEquals(1, mboxParameters.size());
-        assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
+            final Map<String, Object> eventData = event.getEventData();
+            assertEquals(true, eventData.get("islocationdisplayed"));
+            final List<String> mboxesList = (List<String>) eventData.get("mboxnames");
+            assertEquals(2, mboxesList.size());
+            assertEquals("mbox1", mboxesList.get(0));
+            assertEquals("mbox2", mboxesList.get(1));
+            final Map<String, Object> targetParams = (Map<String, Object>) eventData.get("targetparams");
+            assertNotNull(targetParams);
+            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("mboxparameters");
+            assertNotNull(mboxParameters);
+            assertEquals(1, mboxParameters.size());
+            assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
+        }
     }
 
     @Test
     public void testLocationsDisplayed_nullMboxesList() {
-        // test
-        final List<String> mboxes = null;
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
-        Target.locationsDisplayed(mboxes, targetParameters);
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<String> mboxes = null;
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
+            Target.locationsDisplayed(mboxes, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+        }
     }
 
     @Test
     public void testLocationsDisplayed_emptyMboxesList() {
-        // test
-        final List<String> mboxes = new ArrayList<>();
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
-        Target.locationsDisplayed(mboxes, targetParameters);
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final List<String> mboxes = new ArrayList<>();
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
+            Target.locationsDisplayed(mboxes, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+        }
     }
 
     @Test
     public void testLocationClicked_validMbox() {
-        // test
-        final String mbox = "mbox1";
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
-        Target.locationClicked(mbox, targetParameters);
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            final String mbox = "mbox1";
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
+            Target.locationClicked(mbox, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        MobileCore.dispatchEvent(eventCaptor.capture());
-        final Event event = eventCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()));
+            final Event event = eventCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetLocationClicked", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestContent", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetLocationClicked", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestContent", event.getSource());
 
-        final Map<String, Object> eventData = event.getEventData();
-        assertEquals(true, eventData.get("islocationclicked"));
-        final String mboxName = (String)eventData.get("mboxname");
-        assertNotNull(mboxName);
-        assertEquals("mbox1", mboxName);
-        final Map<String, Object> targetParams = (Map<String, Object>)eventData.get("targetparams");
-        assertNotNull(targetParams);
-        final Map<String, String> mboxParameters = (Map<String, String>)targetParams.get("mboxparameters");
-        assertNotNull(mboxParameters);
-        assertEquals(1, mboxParameters.size());
-        assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
+            final Map<String, Object> eventData = event.getEventData();
+            assertEquals(true, eventData.get("islocationclicked"));
+            final String mboxName = (String) eventData.get("mboxname");
+            assertNotNull(mboxName);
+            assertEquals("mbox1", mboxName);
+            final Map<String, Object> targetParams = (Map<String, Object>) eventData.get("targetparams");
+            assertNotNull(targetParams);
+            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("mboxparameters");
+            assertNotNull(mboxParameters);
+            assertEquals(1, mboxParameters.size());
+            assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
+        }
     }
 
     @Test
     public void testLocationClicked_nullMbox() {
-        // test
-        final String mbox = null;
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
-        Target.locationClicked(mbox, targetParameters);
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final String mbox = null;
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
+            Target.locationClicked(mbox, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+        }
     }
 
     @Test
     public void testLocationClicked_emptyMbox() {
-        // test
-        final String mbox = "";
-        final TargetParameters targetParameters = new TargetParameters.Builder()
-                .parameters(new HashMap<String, String>(){
-                    {
-                        put("mbox_parameter_key", "mbox_parameter_value");
-                    }
-                }).build();
-        Target.locationClicked(mbox, targetParameters);
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final String mbox = "";
+            final TargetParameters targetParameters = new TargetParameters.Builder()
+                    .parameters(new HashMap<String, String>() {
+                        {
+                            put("mbox_parameter_key", "mbox_parameter_value");
+                        }
+                    }).build();
+            Target.locationClicked(mbox, targetParameters);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+        }
     }
 
     @Test
     public void testGetThirdPartyId() {
-        // test
-        Target.getThirdPartyId(new AdobeCallbackWithError<String>() {
-            @Override
-            public void fail(AdobeError adobeError) {
-                responseError = adobeError;
-            }
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            Target.getThirdPartyId(new AdobeCallbackWithError<String>() {
+                @Override
+                public void fail(AdobeError adobeError) {
+                    responseError = adobeError;
+                }
 
-            @Override
-            public void call(String value) {
-                response = value;
-            }
-        });
+                @Override
+                public void call(String value) {
+                    response = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        final ArgumentCaptor<AdobeCallbackWithError<Event>> callbackCaptor = ArgumentCaptor.forClass(AdobeCallbackWithError.class);
-        MobileCore.dispatchEventWithResponseCallback(eventCaptor.capture(), anyLong(), callbackCaptor.capture());
-        final Event event = eventCaptor.getValue();
-        final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            final ArgumentCaptor<AdobeCallbackWithError<Event>> callbackCaptor = ArgumentCaptor.forClass(AdobeCallbackWithError.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEventWithResponseCallback(eventCaptor.capture(), anyLong(), callbackCaptor.capture()));
+            final Event event = eventCaptor.getValue();
+            final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetGetThirdPartyIdentifier", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetGetThirdPartyIdentifier", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
 
-        final Map<String, Object> responseEventData = new HashMap<>();
-        responseEventData.put("thirdpartyid", "someThirdPartryId");
-        final Event responseEvent = new Event.Builder("TargetIdentity", "com.adobe.eventType.target", "com.adobe.eventSource.responseIdentity")
-                .setEventData(responseEventData).build();
-        callbackWithError.call(responseEvent);
+            final Map<String, Object> responseEventData = new HashMap<>();
+            responseEventData.put("thirdpartyid", "someThirdPartryId");
+            final Event responseEvent = new Event.Builder("TargetIdentity", "com.adobe.eventType.target", "com.adobe.eventSource.responseIdentity")
+                    .setEventData(responseEventData).build();
+            callbackWithError.call(responseEvent);
 
-        assertNull(responseError);
-        assertEquals("someThirdPartryId", response);
+            assertNull(responseError);
+            assertEquals("someThirdPartryId", response);
+        }
     }
 
     @Test
     public void testSetThirdPartyId() {
-        // test
-        final String thirdPartyId = "myThirdPartyId";
-        Target.setThirdPartyId(thirdPartyId);
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            final String thirdPartyId = "myThirdPartyId";
+            Target.setThirdPartyId(thirdPartyId);
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        MobileCore.dispatchEvent(eventCaptor.capture());
-        final Event event = eventCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()));
+            final Event event = eventCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetSetThirdPartyIdentifier", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetSetThirdPartyIdentifier", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
 
-        final Map<String, Object> eventData = event.getEventData();
-        assertEquals("myThirdPartyId", eventData.get("thirdpartyid"));
+            final Map<String, Object> eventData = event.getEventData();
+            assertEquals("myThirdPartyId", eventData.get("thirdpartyid"));
+        }
     }
 
     @Test
     public void testGetTntId() {
-        // test
-        Target.getTntId(new AdobeCallbackWithError<String>() {
-            @Override
-            public void fail(AdobeError adobeError) {
-                responseError = adobeError;
-            }
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            Target.getTntId(new AdobeCallbackWithError<String>() {
+                @Override
+                public void fail(AdobeError adobeError) {
+                    responseError = adobeError;
+                }
 
-            @Override
-            public void call(String value) {
-                response = value;
-            }
-        });
+                @Override
+                public void call(String value) {
+                    response = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        final ArgumentCaptor<AdobeCallbackWithError<Event>> callbackCaptor = ArgumentCaptor.forClass(AdobeCallbackWithError.class);
-        MobileCore.dispatchEventWithResponseCallback(eventCaptor.capture(), anyLong(), callbackCaptor.capture());
-        final Event event = eventCaptor.getValue();
-        final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            final ArgumentCaptor<AdobeCallbackWithError<Event>> callbackCaptor = ArgumentCaptor.forClass(AdobeCallbackWithError.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEventWithResponseCallback(eventCaptor.capture(), anyLong(), callbackCaptor.capture()));
+            final Event event = eventCaptor.getValue();
+            final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetGetTnTIdentifier", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetGetTnTIdentifier", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
 
-        final Map<String, Object> responseEventData = new HashMap<>();
-        responseEventData.put("tntid", "someTntId");
-        final Event responseEvent = new Event.Builder("TargetIdentity", "com.adobe.eventType.target", "com.adobe.eventSource.responseIdentity")
-                .setEventData(responseEventData).build();
-        callbackWithError.call(responseEvent);
+            final Map<String, Object> responseEventData = new HashMap<>();
+            responseEventData.put("tntid", "someTntId");
+            final Event responseEvent = new Event.Builder("TargetIdentity", "com.adobe.eventType.target", "com.adobe.eventSource.responseIdentity")
+                    .setEventData(responseEventData).build();
+            callbackWithError.call(responseEvent);
 
-        assertNull(responseError);
-        assertEquals("someTntId", response);
+            assertNull(responseError);
+            assertEquals("someTntId", response);
+        }
     }
 
     @Test
     public void testSetTntId() {
-        // test
-        final String tntId = "myTntId";
-        Target.setTntId(tntId);
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            final String tntId = "myTntId";
+            Target.setTntId(tntId);
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        MobileCore.dispatchEvent(eventCaptor.capture());
-        final Event event = eventCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()));
+            final Event event = eventCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetSetTnTIdentifier", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetSetTnTIdentifier", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
 
-        final Map<String, Object> eventData = event.getEventData();
-        assertEquals("myTntId", eventData.get("tntid"));
+            final Map<String, Object> eventData = event.getEventData();
+            assertEquals("myTntId", eventData.get("tntid"));
+        }
     }
 
     @Test
     public void testGetSessionId() {
-        // test
-        Target.getSessionId(new AdobeCallbackWithError<String>() {
-            @Override
-            public void fail(AdobeError adobeError) {
-                responseError = adobeError;
-            }
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            Target.getSessionId(new AdobeCallbackWithError<String>() {
+                @Override
+                public void fail(AdobeError adobeError) {
+                    responseError = adobeError;
+                }
 
-            @Override
-            public void call(String value) {
-                response = value;
-            }
-        });
+                @Override
+                public void call(String value) {
+                    response = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        final ArgumentCaptor<AdobeCallbackWithError<Event>> callbackCaptor = ArgumentCaptor.forClass(AdobeCallbackWithError.class);
-        MobileCore.dispatchEventWithResponseCallback(eventCaptor.capture(), anyLong(), callbackCaptor.capture());
-        final Event event = eventCaptor.getValue();
-        final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            final ArgumentCaptor<AdobeCallbackWithError<Event>> callbackCaptor = ArgumentCaptor.forClass(AdobeCallbackWithError.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEventWithResponseCallback(eventCaptor.capture(), anyLong(), callbackCaptor.capture()));
+            final Event event = eventCaptor.getValue();
+            final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetGetSessionIdentifier", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetGetSessionIdentifier", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
 
-        final Map<String, Object> responseEventData = new HashMap<>();
-        responseEventData.put("sessionid", "someSessionId");
-        final Event responseEvent = new Event.Builder("TargetIdentity", "com.adobe.eventType.target", "com.adobe.eventSource.responseIdentity")
-                .setEventData(responseEventData).build();
-        callbackWithError.call(responseEvent);
+            final Map<String, Object> responseEventData = new HashMap<>();
+            responseEventData.put("sessionid", "someSessionId");
+            final Event responseEvent = new Event.Builder("TargetIdentity", "com.adobe.eventType.target", "com.adobe.eventSource.responseIdentity")
+                    .setEventData(responseEventData).build();
+            callbackWithError.call(responseEvent);
 
-        assertNull(responseError);
-        assertEquals("someSessionId", response);
+            assertNull(responseError);
+            assertEquals("someSessionId", response);
+        }
     }
 
     @Test
     public void testSetSessionId() {
-        // test
-        final String sessionId = "mySessionId";
-        Target.setSessionId(sessionId);
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            final String sessionId = "mySessionId";
+            Target.setSessionId(sessionId);
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        MobileCore.dispatchEvent(eventCaptor.capture());
-        final Event event = eventCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()));
+            final Event event = eventCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetSetSessionIdentifier", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetSetSessionIdentifier", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestIdentity", event.getSource());
 
-        final Map<String, Object> eventData = event.getEventData();
-        assertEquals("mySessionId", eventData.get("sessionid"));
+            final Map<String, Object> eventData = event.getEventData();
+            assertEquals("mySessionId", eventData.get("sessionid"));
+        }
     }
 
     @Test
     public void testResetExperience() {
-        // test
-        Target.resetExperience();
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            Target.resetExperience();
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        MobileCore.dispatchEvent(eventCaptor.capture());
-        final Event event = eventCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()));
+            final Event event = eventCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetRequestReset", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestReset", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetRequestReset", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestReset", event.getSource());
 
-        final Map<String, Object> eventData = event.getEventData();
-        assertEquals(true, eventData.get("resetexperience"));
+            final Map<String, Object> eventData = event.getEventData();
+            assertEquals(true, eventData.get("resetexperience"));
+        }
     }
 
     @Test
     public void testClearPrefetchCache() {
-        // test
-        Target.clearPrefetchCache();
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            Target.clearPrefetchCache();
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        MobileCore.dispatchEvent(eventCaptor.capture());
-        final Event event = eventCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()));
+            final Event event = eventCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetClearPrefetchCache", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestReset", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetClearPrefetchCache", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestReset", event.getSource());
 
-        final Map<String, Object> eventData = event.getEventData();
-        assertEquals(true, eventData.get("clearcache"));
+            final Map<String, Object> eventData = event.getEventData();
+            assertEquals(true, eventData.get("clearcache"));
+        }
     }
 
+    // TODO
     @Test
     public void testSetPreviewRestartDeepLink() {
-        // test
-        final Uri deeplink = Uri.parse("my://deeplink");
-        Target.setPreviewRestartDeepLink(deeplink);
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            // test
+            when(uri.toString()).thenReturn("my://deeplink");
+            Target.setPreviewRestartDeepLink(uri);
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        MobileCore.dispatchEvent(eventCaptor.capture());
-        final Event event = eventCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()));
+            final Event event = eventCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetSetPreviewRestartDeeplink", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestContent", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetSetPreviewRestartDeeplink", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestContent", event.getSource());
 
-        final Map<String, Object> eventData = event.getEventData();
-        assertNotNull(eventData.get("restartdeeplink"));
+            final Map<String, Object> eventData = event.getEventData();
+            assertEquals("my://deeplink", eventData.get("restartdeeplink"));
+        }
     }
 
     @Test
     public void testExecuteRawRequest_validRequest() throws IOException {
-        final Map<String, Object> executeMbox = new HashMap<>();
-        executeMbox.put("index", 0);
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            final Map<String, Object> executeMbox = new HashMap<>();
+            executeMbox.put("index", 0);
 
-        executeMbox.put("mbox", new HashMap<String, Object>() {
-            {
-                put("name", "mbox1");
-            }
-        });
+            executeMbox.put("mbox", new HashMap<String, Object>() {
+                {
+                    put("name", "mbox1");
+                }
+            });
 
-        final Map<String, String> mboxParameters = new HashMap<>();
-        mboxParameters.put("mbox_parameter_key", "mbox_parameter_value");
-        executeMbox.put("parameters", mboxParameters);
+            final Map<String, String> mboxParameters = new HashMap<>();
+            mboxParameters.put("mbox_parameter_key", "mbox_parameter_value");
+            executeMbox.put("parameters", mboxParameters);
 
-        final Map<String, String> profileParameters = new HashMap<>();
-        profileParameters.put("profile_parameter_key", "profile_parameter_value");
-        executeMbox.put("profileParameters", profileParameters);
+            final Map<String, String> profileParameters = new HashMap<>();
+            profileParameters.put("profile_parameter_key", "profile_parameter_value");
+            executeMbox.put("profileParameters", profileParameters);
 
-        final Map<String, String> productParameters = new HashMap<>();
-        productParameters.put("id", "pId");
-        productParameters.put("categoryId", "cId");
-        executeMbox.put("product", productParameters);
+            final Map<String, String> productParameters = new HashMap<>();
+            productParameters.put("id", "pId");
+            productParameters.put("categoryId", "cId");
+            executeMbox.put("product", productParameters);
 
-        final Map<String, Object> orderParameters = new HashMap<>();
-        orderParameters.put("id", "oId");
-        orderParameters.put("total", 100.34);
-        orderParameters.put("purchasedProductIds", new ArrayList<String>() {
-            {
-                add("pId");
-            }
-        });
-        executeMbox.put("order", orderParameters);
+            final Map<String, Object> orderParameters = new HashMap<>();
+            orderParameters.put("id", "oId");
+            orderParameters.put("total", 100.34);
+            orderParameters.put("purchasedProductIds", new ArrayList<String>() {
+                {
+                    add("pId");
+                }
+            });
+            executeMbox.put("order", orderParameters);
 
-        final List<Map<String, Object>> executeMboxes = new ArrayList<Map<String, Object>>();
-        executeMboxes.add(executeMbox);
+            final List<Map<String, Object>> executeMboxes = new ArrayList<Map<String, Object>>();
+            executeMboxes.add(executeMbox);
 
-        final Map<String, Object> request = new HashMap<String, Object>();
-        request.put("execute", new HashMap<String, Object>() {
-            {
-                put("mboxes", executeMboxes);
-            }
-        });
+            final Map<String, Object> request = new HashMap<String, Object>();
+            request.put("execute", new HashMap<String, Object>() {
+                {
+                    put("mboxes", executeMboxes);
+                }
+            });
 
-        // test
-        Target.executeRawRequest(request, new AdobeCallbackWithError<Map<String, Object>>() {
-            @Override
-            public void fail(AdobeError adobeError) {
-                responseError = adobeError;
-            }
+            // test
+            Target.executeRawRequest(request, new AdobeCallbackWithError<Map<String, Object>>() {
+                @Override
+                public void fail(AdobeError adobeError) {
+                    responseError = adobeError;
+                }
 
-            @Override
-            public void call(Map<String, Object> value) {
-                responseMap = value;
-            }
-        });
+                @Override
+                public void call(Map<String, Object> value) {
+                    responseMap = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        final ArgumentCaptor<AdobeCallbackWithError<Event>> callbackCaptor = ArgumentCaptor.forClass(AdobeCallbackWithError.class);
-        MobileCore.dispatchEventWithResponseCallback(eventCaptor.capture(), anyLong(), callbackCaptor.capture());
-        final Event event = eventCaptor.getValue();
-        final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            final ArgumentCaptor<AdobeCallbackWithError<Event>> callbackCaptor = ArgumentCaptor.forClass(AdobeCallbackWithError.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEventWithResponseCallback(eventCaptor.capture(), anyLong(), callbackCaptor.capture()));
+            final Event event = eventCaptor.getValue();
+            final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
 
-        assertNotNull(event);
-        assertEquals("TargetRawRequest", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestContent", event.getSource());
+            assertNotNull(event);
+            assertEquals("TargetRawRequest", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestContent", event.getSource());
 
-        final Map<String, Object> actualRequest = event.getEventData();
-        final Map<String, Object> expectedRequest = new HashMap<String, Object>(request);
-        expectedRequest.put("israwevent", true);
-        assertTrue(actualRequest.equals(expectedRequest));
+            final Map<String, Object> actualRequest = event.getEventData();
+            final Map<String, Object> expectedRequest = new HashMap<String, Object>(request);
+            expectedRequest.put("israwevent", true);
+            assertTrue(actualRequest.equals(expectedRequest));
 
-        final Map<String, Object> responseData = new ObjectMapper().readValue(getClass().getClassLoader().getResource("json/TARGET_RAW_RESPONSE_EXECUTE.json"), HashMap.class);
-        final Event responseEvent = new Event.Builder("TargetRawResponse", "com.adobe.eventType.target", "com.adobe.eventSource.responseContent")
-                .setEventData(responseData).build();
-        callbackWithError.call(responseEvent);
+            final Map<String, Object> responseData = new ObjectMapper().readValue(getClass().getClassLoader().getResource("json/TARGET_RAW_RESPONSE_EXECUTE.json"), HashMap.class);
+            final Event responseEvent = new Event.Builder("TargetRawResponse", "com.adobe.eventType.target", "com.adobe.eventSource.responseContent")
+                    .setEventData(responseData).build();
+            callbackWithError.call(responseEvent);
 
-        assertNull(responseError);
-        assertNotNull(responseMap);
-        final Map<String, Object> execute = (Map<String, Object>)responseMap.get("execute");
-        assertNotNull(execute);
-        final List<Map<String, Object>> mboxes = (List<Map<String, Object>>)execute.get("mboxes");
-        assertNotNull(mboxes);
-        assertEquals(1, mboxes.size());
-        final Map<String, Object> mbox1 = mboxes.get(0);
-        assertNotNull(mbox1);
-        assertEquals("mbox1", mbox1.get("name"));
-        final List<Map<String, Object>> options = (List<Map<String, Object>>)mbox1.get("options");
-        assertNotNull(options);
-        final Map<String, Object> mbox1Options = options.get(0);
-        assertEquals("html", mbox1Options.get("type"));
-        assertEquals("Good Morning!", mbox1Options.get("content"));
+            assertNull(responseError);
+            assertNotNull(responseMap);
+            final Map<String, Object> execute = (Map<String, Object>) responseMap.get("execute");
+            assertNotNull(execute);
+            final List<Map<String, Object>> mboxes = (List<Map<String, Object>>) execute.get("mboxes");
+            assertNotNull(mboxes);
+            assertEquals(1, mboxes.size());
+            final Map<String, Object> mbox1 = mboxes.get(0);
+            assertNotNull(mbox1);
+            assertEquals("mbox1", mbox1.get("name"));
+            final List<Map<String, Object>> options = (List<Map<String, Object>>) mbox1.get("options");
+            assertNotNull(options);
+            final Map<String, Object> mbox1Options = options.get(0);
+            assertEquals("html", mbox1Options.get("type"));
+            assertEquals("Good Morning!", mbox1Options.get("content"));
+        }
     }
 
     @Test
     public void testExecuteRawRequest_invalidRequest() {
-        final Map<String, Object> request = new HashMap<String, Object>();
-        request.put("someKey", "someValue");
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            final Map<String, Object> request = new HashMap<String, Object>();
+            request.put("someKey", "someValue");
 
-        // test
-        Target.executeRawRequest(request, new AdobeCallback<Map<String, Object>>() {
-            @Override
-            public void call(Map<String, Object> value) {
-                responseMap = value;
-            }
-        });
+            // test
+            Target.executeRawRequest(request, new AdobeCallback<Map<String, Object>>() {
+                @Override
+                public void call(Map<String, Object> value) {
+                    responseMap = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString());
-        assertNull(responseMap);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString()));
+            assertNull(responseMap);
+        }
     }
 
     @Test
     public void testExecuteRawRequest_invalidRequestWithErrorCallback() {
-        final Map<String, Object> request = new HashMap<String, Object>();
-        request.put("someKey", "someValue");
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            final Map<String, Object> request = new HashMap<String, Object>();
+            request.put("someKey", "someValue");
 
-        // test
-        Target.executeRawRequest(request, new AdobeCallbackWithError<Map<String, Object>>() {
-            @Override
-            public void fail(AdobeError adobeError) {
-                responseError = adobeError;
-            }
+            // test
+            Target.executeRawRequest(request, new AdobeCallbackWithError<Map<String, Object>>() {
+                @Override
+                public void fail(AdobeError adobeError) {
+                    responseError = adobeError;
+                }
 
-            @Override
-            public void call(Map<String, Object> value) {
-                responseMap = value;
-            }
-        });
+                @Override
+                public void call(Map<String, Object> value) {
+                    responseMap = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString());
-        assertEquals(AdobeError.UNEXPECTED_ERROR, responseError);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString()));
+            assertEquals(AdobeError.UNEXPECTED_ERROR, responseError);
+        }
     }
 
     @Test
     public void testExecuteRawRequest_emptyRequest() {
-        final Map<String, Object> request = new HashMap<String, Object>();
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            final Map<String, Object> request = new HashMap<String, Object>();
 
-        // test
-        Target.executeRawRequest(request, new AdobeCallback<Map<String, Object>>() {
-            @Override
-            public void call(Map<String, Object> value) {
-                responseMap = value;
-            }
-        });
+            // test
+            Target.executeRawRequest(request, new AdobeCallback<Map<String, Object>>() {
+                @Override
+                public void call(Map<String, Object> value) {
+                    responseMap = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
-        assertNull(responseMap);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+            assertNull(responseMap);
+        }
     }
 
     @Test
     public void testExecuteRawRequest_emptyRequestWithErrorCallback() {
-        final Map<String, Object> request = new HashMap<String, Object>();
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            final Map<String, Object> request = new HashMap<String, Object>();
 
-        // test
-        Target.executeRawRequest(request, new AdobeCallbackWithError<Map<String, Object>>() {
-            @Override
-            public void fail(AdobeError adobeError) {
-                responseError = adobeError;
-            }
+            // test
+            Target.executeRawRequest(request, new AdobeCallbackWithError<Map<String, Object>>() {
+                @Override
+                public void fail(AdobeError adobeError) {
+                    responseError = adobeError;
+                }
 
-            @Override
-            public void call(Map<String, Object> value) {
-                responseMap = value;
-            }
-        });
+                @Override
+                public void call(Map<String, Object> value) {
+                    responseMap = value;
+                }
+            });
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
-        assertEquals(AdobeError.UNEXPECTED_ERROR, responseError);
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+            assertEquals(AdobeError.UNEXPECTED_ERROR, responseError);
+        }
     }
 
     @Test
     public void testSendRawNotifications_validRequest() {
-        final Map<String, Object> notification = new HashMap<>();
-        notification.put("id", "0");
-        notification.put("timestamp", (long)(System.currentTimeMillis()));
-        notification.put("type", "click");
-        notification.put("mbox", new HashMap<String, Object>() {
-            {
-                put("name", "mbox1");
-            }
-        });
-        notification.put("tokens", new ArrayList<String>() {
-            {
-                add("LgG0+YDMHn4X5HqGJVoZ5g==");
-            }
-        });
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
+            final Map<String, Object> notification = new HashMap<>();
+            notification.put("id", "0");
+            notification.put("timestamp", (long) (System.currentTimeMillis()));
+            notification.put("type", "click");
+            notification.put("mbox", new HashMap<String, Object>() {
+                {
+                    put("name", "mbox1");
+                }
+            });
+            notification.put("tokens", new ArrayList<String>() {
+                {
+                    add("LgG0+YDMHn4X5HqGJVoZ5g==");
+                }
+            });
 
-        final Map<String, String> parameters = new HashMap<>();
-        parameters.put("mbox_parameter_key", "mbox_parameter_value");
-        notification.put("parameters", parameters);
+            final Map<String, String> parameters = new HashMap<>();
+            parameters.put("mbox_parameter_key", "mbox_parameter_value");
+            notification.put("parameters", parameters);
 
-        final Map<String, String> profileParameters = new HashMap<>();
-        profileParameters.put("profile_parameter_key", "profile_parameter_value");
-        notification.put("profileParameters", profileParameters);
+            final Map<String, String> profileParameters = new HashMap<>();
+            profileParameters.put("profile_parameter_key", "profile_parameter_value");
+            notification.put("profileParameters", profileParameters);
 
-        final Map<String, String> productParameters = new HashMap<>();
-        productParameters.put("id", "pId");
-        productParameters.put("categoryId", "cId");
-        notification.put("product", productParameters);
+            final Map<String, String> productParameters = new HashMap<>();
+            productParameters.put("id", "pId");
+            productParameters.put("categoryId", "cId");
+            notification.put("product", productParameters);
 
-        final Map<String, Object> orderParameters = new HashMap<>();
-        orderParameters.put("id", "oId");
-        orderParameters.put("total", 100.34);
-        orderParameters.put("purchasedProductIds", new ArrayList<String>() {
-            {
-                add("pId");
-            }
-        });
-        notification.put("order", orderParameters);
+            final Map<String, Object> orderParameters = new HashMap<>();
+            orderParameters.put("id", "oId");
+            orderParameters.put("total", 100.34);
+            orderParameters.put("purchasedProductIds", new ArrayList<String>() {
+                {
+                    add("pId");
+                }
+            });
+            notification.put("order", orderParameters);
 
-        final List<Map<String, Object>> notifications = new ArrayList<>();
-        notifications.add(notification);
+            final List<Map<String, Object>> notifications = new ArrayList<>();
+            notifications.add(notification);
 
-        final Map<String, Object> request = new HashMap<String, Object>() {
-            {
-                put("notifications", notifications);
-            }
-        };
-        // test
-        Target.sendRawNotifications(request);
+            final Map<String, Object> request = new HashMap<String, Object>() {
+                {
+                    put("notifications", notifications);
+                }
+            };
+            // test
+            Target.sendRawNotifications(request);
 
-        // verify
-        PowerMockito.verifyStatic(MobileCore.class, Mockito.times(1));
-        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-        MobileCore.dispatchEvent(eventCaptor.capture());
-        final Event event = eventCaptor.getValue();
+            // verify
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()));
 
-        assertNotNull(event);
-        assertEquals("TargetRawNotifications", event.getName());
-        assertEquals("com.adobe.eventType.target", event.getType());
-        assertEquals("com.adobe.eventSource.requestContent", event.getSource());
+            final Event event = eventCaptor.getValue();
 
-        final Map<String, Object> actualRequest = event.getEventData();
-        final Map<String, Object> expectedRequest = new HashMap<String, Object>(request);
-        expectedRequest.put("israwevent", true);
-        assertTrue(actualRequest.equals(expectedRequest));
+            assertNotNull(event);
+            assertEquals("TargetRawNotifications", event.getName());
+            assertEquals("com.adobe.eventType.target", event.getType());
+            assertEquals("com.adobe.eventSource.requestContent", event.getSource());
+
+            final Map<String, Object> actualRequest = event.getEventData();
+            final Map<String, Object> expectedRequest = new HashMap<String, Object>(request);
+            expectedRequest.put("israwevent", true);
+            assertTrue(actualRequest.equals(expectedRequest));
+        }
     }
 
     @Test
     public void testSendRawNotifications_invalidRequest() {
-        // test
-        final Map<String, Object> request = new HashMap<String, Object>() {
-            {
-                put("someKey", "someValue");
-            }
-        };
-        Target.sendRawNotifications(request);
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final Map<String, Object> request = new HashMap<String, Object>() {
+                {
+                    put("someKey", "someValue");
+                }
+            };
+            Target.sendRawNotifications(request);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString());
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString()));
+        }
     }
 
     @Test
     public void testSendRawNotifications_emptyRequest() {
-        // test
-        final Map<String, Object> request = new HashMap<String, Object>();
-        Target.sendRawNotifications(request);
+        try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+            // test
+            final Map<String, Object> request = new HashMap<String, Object>();
+            Target.sendRawNotifications(request);
 
-        // verify
-        PowerMockito.verifyStatic(Log.class, Mockito.times(1));
-        Log.warning(anyString(), anyString(), anyString(), any());
+            // verify
+            logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
+        }
     }
 }

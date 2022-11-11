@@ -15,9 +15,7 @@ package com.adobe.marketing.mobile.target;
 import android.app.Application;
 import android.content.Context;
 
-import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.ExtensionApi;
-import com.adobe.marketing.mobile.ExtensionErrorCallback;
 import com.adobe.marketing.mobile.MobileCore;
 
 import org.junit.After;
@@ -26,20 +24,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.util.Map;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.powermock.api.mockito.PowerMockito.spy;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Event.class, ExtensionApi.class, MobileCore.class})
+@RunWith(MockitoJUnitRunner.Silent.class)
 @SuppressWarnings("unchecked")
 public class TargetExtensionTests {
     private TargetExtension extension;
@@ -56,11 +47,7 @@ public class TargetExtensionTests {
 
     @Before
     public void setup() {
-        PowerMockito.mockStatic(MobileCore.class);
-        Mockito.when(MobileCore.getApplication()).thenReturn(mockApplication);
-        Mockito.when(mockApplication.getApplicationContext()).thenReturn(mockContext);
-
-        extension = spy(new TargetExtension(mockExtensionApi));
+        extension = new TargetExtension(mockExtensionApi);
     }
 
     @After
@@ -86,12 +73,6 @@ public class TargetExtensionTests {
         // test
         final String extensionVersion = extension.getVersion();
         assertEquals("getVersion should return the correct extension version.", "2.0.0", extensionVersion);
-    }
-
-    // Helper methods
-    private void setConfigurationSharedState(final Map<String, Object> data) {
-        when(mockExtensionApi.getSharedEventState(eq("com.adobe.module.configuration"), any(Event.class), any(ExtensionErrorCallback.class)))
-                .thenReturn(data);
     }
 }
 
