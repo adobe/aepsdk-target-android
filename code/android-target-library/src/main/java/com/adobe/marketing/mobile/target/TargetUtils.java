@@ -32,7 +32,7 @@ public class TargetUtils {
      * @param map input {@code Map<?, ?>} to be tested.
      * @return {@code boolean} result indicating whether the provided {@code map} is null or empty.
      */
-    static boolean isNullOrEmpty(final Map<?, ?> map) {
+    public static boolean isNullOrEmpty(final Map<?, ?> map) {
         return map == null || map.isEmpty();
     }
 
@@ -42,7 +42,7 @@ public class TargetUtils {
      * @param str input {@link String} to be tested.
      * @return {@code boolean} result indicating whether the provided {@code str} is null or empty.
      */
-    static boolean isNullOrEmpty(final String str) {
+    public static boolean isNullOrEmpty(final String str) {
         return str == null || str.isEmpty();
     }
 

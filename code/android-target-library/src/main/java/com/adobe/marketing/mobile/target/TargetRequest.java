@@ -16,6 +16,8 @@ import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
 
 import com.adobe.marketing.mobile.AdobeCallback;
 import com.adobe.marketing.mobile.services.Log;
+import com.adobe.marketing.mobile.util.DataReader;
+import com.adobe.marketing.mobile.util.DataReaderException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,9 +29,9 @@ import java.util.Objects;
 public class TargetRequest {
     private static final String CLASS_NAME = TargetProduct.class.getSimpleName();
 
-    private String mboxName;
-    private TargetParameters targetParameters;
-    private String defaultContent;
+    final private String mboxName;
+    final private TargetParameters targetParameters;
+    final private String defaultContent;
     private String responsePairId;
     private AdobeCallback<String> contentCallback;
     private AdobeTargetDetailedCallback contentWithDataCallback;
@@ -162,16 +164,16 @@ public class TargetRequest {
         }
 
         try {
-            final String mboxName = (String) data.get(TargetConstants.EventDataKeys.MBOX_NAME);
-            final Map<String, Object> targetParameters = (Map<String, Object>) data.get(TargetConstants.EventDataKeys.TARGET_PARAMETERS);
-            final String defaultContent = (String) data.get(TargetConstants.EventDataKeys.DEFAULT_CONTENT);
-            final String responsePairId = (String) data.get(TargetConstants.EventDataKeys.RESPONSE_PAIR_ID);
+            final String mboxName = DataReader.getString(data, TargetConstants.EventDataKeys.MBOX_NAME);
+            final Map<String, Object> targetParameters = DataReader.getTypedMap(Object.class, data, TargetConstants.EventDataKeys.TARGET_PARAMETERS);
+            final String defaultContent = DataReader.getString(data, TargetConstants.EventDataKeys.DEFAULT_CONTENT);
+            final String responsePairId = DataReader.getString(data, TargetConstants.EventDataKeys.RESPONSE_PAIR_ID);
 
             TargetRequest targetRequest = new TargetRequest(mboxName, TargetParameters.fromEventData(targetParameters), defaultContent, (AdobeCallback) null);
             targetRequest.setResponsePairId(responsePairId);
 
             return targetRequest;
-        } catch (final ClassCastException e) {
+        } catch (final DataReaderException e) {
             Log.warning(LOG_TAG, CLASS_NAME,"Cannot create TargetRequest object, provided data contains invalid fields.");
             return null;
         }

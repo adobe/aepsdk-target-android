@@ -14,6 +14,9 @@ package com.adobe.marketing.mobile.target;
 
 import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
 import com.adobe.marketing.mobile.services.Log;
+import com.adobe.marketing.mobile.util.DataReader;
+import com.adobe.marketing.mobile.util.DataReaderException;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -24,8 +27,8 @@ import java.util.Objects;
 public class TargetProduct {
     private static final String CLASS_NAME = TargetProduct.class.getSimpleName();
 
-    private String id;
-    private String categoryId;
+    final private String id;
+    final private String categoryId;
 
     /**
      * Initialize a {@link TargetProduct} with a product {@link #id} and a productCategoryId {@link #categoryId}
@@ -41,7 +44,7 @@ public class TargetProduct {
     /**
      * Get the product {@link #id}
      *
-     * @return product id
+     * @return {@link String} containing the product id.
      */
     public String getId() {
         return id;
@@ -50,7 +53,7 @@ public class TargetProduct {
     /**
      * Get the product {@link #categoryId}
      *
-     * @return product category id
+     * @return {@link String} containing the product category id.
      */
     public String getCategoryId() {
         return categoryId;
@@ -84,15 +87,15 @@ public class TargetProduct {
         }
 
         try {
-            final String id = (String) data.get(TargetConstants.EventDataKeys.Product.ID);
+            final String id = DataReader.getString(data, TargetConstants.EventDataKeys.Product.ID);
             if (TargetUtils.isNullOrEmpty(id)) {
                 Log.debug(LOG_TAG, CLASS_NAME, "Cannot create TargetProduct object, provided data Map doesn't contain valid product ID.");
                 return null;
             }
-            final String categoryId = (String) data.get(TargetConstants.EventDataKeys.Product.CATEGORY_ID);
+            final String categoryId = DataReader.getString(data, TargetConstants.EventDataKeys.Product.CATEGORY_ID);
 
             return new TargetProduct(id, categoryId);
-        } catch (final ClassCastException e) {
+        } catch (final DataReaderException e) {
             Log.warning(LOG_TAG, CLASS_NAME,"Cannot create TargetProduct object, provided data contains invalid fields.");
             return null;
         }

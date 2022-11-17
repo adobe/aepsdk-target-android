@@ -24,7 +24,7 @@ public interface AdobeTargetDetailedCallback {
 	/**
 	 * Callback function to pass the mbox content and other mbox payload values.
 	 *
-	 * @param content {@code String} mox content
+	 * @param content {@code String} mbox content
 	 * @param data A {@code Map<String, Object>} of mbox payload values.
 	 *                {@code data} will be null if neither response tokens nor analytics payload is available.
 	 */
@@ -33,7 +33,7 @@ public interface AdobeTargetDetailedCallback {
 	/**
 	 * Callback function for notifying about the internal error in getting mbox details.
 	 *
-	 * @param error {@link AdobeError} represents the internal error occurred.
+	 * @param error {@link AdobeError} represents the internal error which occurred.
 	 */
 	void fail(final AdobeError error);
 }

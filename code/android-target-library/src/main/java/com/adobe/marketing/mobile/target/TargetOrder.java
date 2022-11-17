@@ -15,6 +15,8 @@ package com.adobe.marketing.mobile.target;
 import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
 
 import com.adobe.marketing.mobile.services.Log;
+import com.adobe.marketing.mobile.util.DataReader;
+import com.adobe.marketing.mobile.util.DataReaderException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,9 +29,9 @@ import java.util.Objects;
 public class TargetOrder {
     private static final String CLASS_NAME = TargetOrder.class.getSimpleName();
 
-    private String id;
-    private double total;
-    private List<String> purchasedProductIds;
+    final private String id;
+    final private double total;
+    final private List<String> purchasedProductIds;
 
     /**
      * Initialize a {@link TargetOrder} with an order {@link #id}, order {@link #total} and a list
@@ -48,7 +50,7 @@ public class TargetOrder {
     /**
      * Get the order {@link #id}
      *
-     * @return order id
+     * @return {@link String} containing the order id.
      */
     public String getId() {
         return id;
@@ -57,7 +59,7 @@ public class TargetOrder {
     /**
      * Get the order {@link #total}
      *
-     * @return order total
+     * @return {@code double} order total.
      */
     public double getTotal() {
         return total;
@@ -66,7 +68,7 @@ public class TargetOrder {
     /**
      * Get the order {@link #purchasedProductIds}
      *
-     * @return a list of this order's purchased product ids
+     * @return a {@code List<String>} of this order's purchased product ids.
      */
     public List<String> getPurchasedProductIds() {
         return purchasedProductIds;
@@ -101,17 +103,17 @@ public class TargetOrder {
         }
 
         try {
-            final String id = (String) data.get(TargetConstants.EventDataKeys.Order.ID);
+            final String id = DataReader.getString(data, TargetConstants.EventDataKeys.Order.ID);
             if (TargetUtils.isNullOrEmpty(id)) {
                 Log.debug(LOG_TAG, CLASS_NAME, "Cannot create TargetOrder object, provided data Map doesn't contain valid order ID.");
                 return null;
             }
-            final double total = (double) data.get(TargetConstants.EventDataKeys.Order.TOTAL);
-            final List<String> purchasedProductIds = (List<String>) data.get(TargetConstants.EventDataKeys.Order.PURCHASED_PRODUCT_IDS);
+            final double total = DataReader.getDouble(data, TargetConstants.EventDataKeys.Order.TOTAL);
+            final List<String> purchasedProductIds = DataReader.getStringList(data, TargetConstants.EventDataKeys.Order.PURCHASED_PRODUCT_IDS);
 
             return new TargetOrder(id, total, purchasedProductIds);
-        } catch (final ClassCastException e) {
-            Log.warning(LOG_TAG, CLASS_NAME,"Cannot create TargetOrder object, provided data contains invalid fields.");
+        } catch (final DataReaderException e) {
+            Log.warning(LOG_TAG, CLASS_NAME,"Cannot create TargetOrder object, provided data contains invalid fields (%s).", e.getLocalizedMessage());
             return null;
         }
     }

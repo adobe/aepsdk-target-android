@@ -15,6 +15,8 @@ package com.adobe.marketing.mobile.target;
 import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
 
 import com.adobe.marketing.mobile.services.Log;
+import com.adobe.marketing.mobile.util.DataReader;
+import com.adobe.marketing.mobile.util.DataReaderException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,10 +33,10 @@ import java.util.Objects;
 public class TargetParameters {
     private static final String CLASS_NAME = TargetParameters.class.getSimpleName();
 
-    private Map<String, String> parameters;
-    private Map<String, String> profileParameters;
-    private TargetProduct product;
-    private TargetOrder order;
+    final private Map<String, String> parameters;
+    final private Map<String, String> profileParameters;
+    final private TargetProduct product;
+    final private TargetOrder order;
 
     private TargetParameters(final Builder builder) {
         this.parameters = builder.parameters == null ? new HashMap<String, String>() : builder.parameters;
@@ -82,7 +84,7 @@ public class TargetParameters {
     /**
      * Use this method to merge multiple {@link TargetParameters} objects
      *
-     * @param parametersList list of {@link TargetParameters} to merge
+     * @param parametersList list of {@code TargetParameters} to merge
      * @return merged {@link TargetParameters}
      */
     static TargetParameters merge(final List<TargetParameters> parametersList) {
@@ -97,7 +99,7 @@ public class TargetParameters {
             return builder.build();
         }
 
-        for (TargetParameters targetParams : parametersList) {
+        for (final TargetParameters targetParams : parametersList) {
             if (targetParams == null) {
                 continue;
             }
@@ -107,7 +109,7 @@ public class TargetParameters {
                     mergedParams.putAll(targetParams.parameters);
                     mergedParams.remove("");
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to merge parameters, (%s)", e);
             }
 
@@ -116,7 +118,7 @@ public class TargetParameters {
                     mergedProfileParams.putAll(targetParams.profileParameters);
                     mergedProfileParams.remove("");
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to merge profile parameters, (%s)", e);
             }
 
@@ -244,10 +246,10 @@ public class TargetParameters {
         }
 
         try {
-            final Map<String, String> parameters = (Map<String, String>) data.get(TargetConstants.EventDataKeys.MBOX_PARAMETERS);
-            final Map<String, String> profileParameters = (Map<String, String>) data.get(TargetConstants.EventDataKeys.PROFILE_PARAMETERS);
-            final Map<String, String> productParameters = (Map<String, String>) data.get(TargetConstants.EventDataKeys.PRODUCT_PARAMETERS);
-            final Map<String, Object> orderParameters = (Map<String, Object>) data.get(TargetConstants.EventDataKeys.ORDER_PARAMETERS);
+            final Map<String, String> parameters = DataReader.getStringMap(data, TargetConstants.EventDataKeys.MBOX_PARAMETERS);
+            final Map<String, String> profileParameters = DataReader.getStringMap(data, TargetConstants.EventDataKeys.PROFILE_PARAMETERS);
+            final Map<String, String> productParameters = DataReader.getStringMap(data, TargetConstants.EventDataKeys.PRODUCT_PARAMETERS);
+            final Map<String, Object> orderParameters = DataReader.getTypedMap(Object.class, data, TargetConstants.EventDataKeys.ORDER_PARAMETERS);
 
             return new TargetParameters.Builder()
                     .parameters(parameters)
@@ -255,7 +257,7 @@ public class TargetParameters {
                     .order(TargetOrder.fromEventData(orderParameters))
                     .product(TargetProduct.fromEventData(productParameters))
                     .build();
-        } catch (final ClassCastException e) {
+        } catch (final DataReaderException e) {
             Log.warning(LOG_TAG, CLASS_NAME,"Cannot create TargetProduct object, provided data contains invalid fields.");
             return null;
         }

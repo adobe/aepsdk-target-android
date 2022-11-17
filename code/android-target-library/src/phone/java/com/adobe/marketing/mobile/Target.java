@@ -19,7 +19,9 @@ import com.adobe.marketing.mobile.target.TargetExtension;
 import com.adobe.marketing.mobile.target.TargetParameters;
 import com.adobe.marketing.mobile.target.TargetPrefetch;
 import com.adobe.marketing.mobile.target.TargetRequest;
+import com.adobe.marketing.mobile.target.TargetUtils;
 import com.adobe.marketing.mobile.util.DataReader;
+import com.adobe.marketing.mobile.util.DataReaderException;
 
 import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
 
@@ -76,7 +78,7 @@ public class Target {
             }
 
             Log.warning(LOG_TAG, CLASS_NAME,
-                    "An error occurred while registering the Target extension: " + extensionError.getErrorName());
+                    "An error occurred while registering the Target extension: (%s) ", extensionError.getErrorName());
         });
     }
 
@@ -156,7 +158,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (TargetUtils.isNullOrEmpty(eventData)) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -207,7 +209,7 @@ public class Target {
 
             // Skip the target request objects with null/empty mbox names
             final String mboxName = request.getMboxName();
-            if (mboxName == null || mboxName.isEmpty()) {
+            if (TargetUtils.isNullOrEmpty(mboxName)) {
                 Log.warning(LOG_TAG, CLASS_NAME, "Failed to retrieve Target location content (%s), returning default content.",
                         NULL_MBOX_MESSAGE);
                 final String defaultContent = request.getDefaultContent();
@@ -247,7 +249,7 @@ public class Target {
                 .setEventData(eventData)
                 .build();
 
-        for (Map.Entry<String,TargetRequest> entry : tempIdToRequestMap.entrySet()) {
+        for (final Map.Entry<String,TargetRequest> entry : tempIdToRequestMap.entrySet()) {
             pendingTargetRequestsMap.put(event.getUniqueIdentifier()+ "-" +entry.getKey(), entry.getValue());
         }
 
@@ -298,7 +300,7 @@ public class Target {
      * @param parameters {@link TargetParameters} object for the location clicked
      */
     public static void locationClicked(@NonNull final String mboxName, @Nullable final TargetParameters parameters) {
-        if (mboxName == null || mboxName.isEmpty()) {
+        if (TargetUtils.isNullOrEmpty(mboxName)) {
             Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to send click notification (%s).",
                     NULL_MBOX_MESSAGE);
@@ -358,7 +360,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (TargetUtils.isNullOrEmpty(eventData)) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -430,7 +432,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (TargetUtils.isNullOrEmpty(eventData)) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -508,7 +510,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (TargetUtils.isNullOrEmpty(eventData)) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -627,7 +629,7 @@ public class Target {
         final AdobeCallbackWithError<?> callbackWithError = callback instanceof AdobeCallbackWithError ?
                 (AdobeCallbackWithError<?>) callback : null;
 
-        if (request == null || request.isEmpty()) {
+        if (TargetUtils.isNullOrEmpty(request)) {
             Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to execute raw Target request (%s).", NULL_RAW_REQUEST_MESSAGE);
 
@@ -673,7 +675,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (TargetUtils.isNullOrEmpty(eventData)) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -697,8 +699,7 @@ public class Target {
      * @see #executeRawRequest(Map, AdobeCallback)
      */
     public static void sendRawNotifications(@NonNull final Map<String, Object> request) {
-
-        if (request == null || request.isEmpty()) {
+        if (TargetUtils.isNullOrEmpty(request)) {
             Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to send raw Target notification(s) (%s).", NULL_RAW_REQUEST_MESSAGE);
             return;
@@ -741,18 +742,29 @@ public class Target {
                     }
 
                     final Map<String, Object> eventData = event.getEventData();
-                    if (eventData == null || eventData.isEmpty()) {
+                    if (TargetUtils.isNullOrEmpty(eventData)) {
                        fail(AdobeError.UNEXPECTED_ERROR);
                         return;
                     }
 
-                    final String id = (String)eventData.get(TargetConstants.EventDataKeys.TARGET_RESPONSE_EVENT_ID);
-                    if (id == null || id.isEmpty()) {
+                    String id = null;
+                    try {
+                        id = DataReader.getString(eventData, TargetConstants.EventDataKeys.TARGET_RESPONSE_EVENT_ID);
+                    } catch (final DataReaderException e) {
+                        Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is invalid (%s).", e.getLocalizedMessage());
+                    }
+                    if (TargetUtils.isNullOrEmpty(id)) {
                         Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is not available.");
                         return;
                     }
-                    final String responsePairId = (String)eventData.get(TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID);
-                    if (responsePairId == null || responsePairId.isEmpty()) {
+
+                    String responsePairId = null;
+                    try {
+                        responsePairId = DataReader.getString(eventData, TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID);
+                    } catch (final DataReaderException e) {
+                        Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is invalid (%s).", e.getLocalizedMessage());
+                    }
+                    if (TargetUtils.isNullOrEmpty(responsePairId)) {
                         Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is not available.");
                         return;
                     }
@@ -796,7 +808,7 @@ public class Target {
      * @return a {@code Map<String, Object>} containing mbox values received in {@code data} map.
      */
     private static Map<String, Object> createMboxPayloadMap(final Map<String, Object> data, final TargetRequest request) {
-        if (data == null || data.isEmpty()) {
+        if (TargetUtils.isNullOrEmpty(data)) {
             Log.debug(LOG_TAG, CLASS_NAME,
                     "The data payload map containing response tokens and analytics payload is not present for the mbox location (%s)", request.getMboxName());
             return null;

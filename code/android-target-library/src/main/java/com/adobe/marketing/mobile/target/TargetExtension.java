@@ -17,10 +17,6 @@ import com.adobe.marketing.mobile.Extension;
 import com.adobe.marketing.mobile.ExtensionApi;
 import com.adobe.marketing.mobile.services.Log;
 
-import static com.adobe.marketing.mobile.target.TargetConstants.EXTENSION_NAME;
-import static com.adobe.marketing.mobile.target.TargetConstants.FRIENDLY_NAME;
-import static com.adobe.marketing.mobile.target.TargetConstants.EXTENSION_VERSION;
-
 import java.util.Map;
 
 public class TargetExtension extends Extension {
@@ -43,7 +39,7 @@ public class TargetExtension extends Extension {
      */
     @Override
     protected String getName() {
-        return EXTENSION_NAME;
+        return TargetConstants.EXTENSION_NAME;
     }
 
     /**
@@ -52,7 +48,7 @@ public class TargetExtension extends Extension {
      * @return {@link String} containing the friendly name for this extension.
      */
     @Override
-    protected String getFriendlyName() { return FRIENDLY_NAME; }
+    protected String getFriendlyName() { return TargetConstants.FRIENDLY_NAME; }
 
     /**
      * Retrieve the extension version.
@@ -61,7 +57,7 @@ public class TargetExtension extends Extension {
      */
     @Override
     protected String getVersion() {
-        return EXTENSION_VERSION;
+        return TargetConstants.EXTENSION_VERSION;
     }
 
     @Override
