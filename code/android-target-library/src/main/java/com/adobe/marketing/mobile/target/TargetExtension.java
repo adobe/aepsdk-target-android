@@ -12,15 +12,15 @@
 
 package com.adobe.marketing.mobile.target;
 
+import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.Extension;
 import com.adobe.marketing.mobile.ExtensionApi;
+import com.adobe.marketing.mobile.services.Log;
 
-import static com.adobe.marketing.mobile.target.TargetConstants.EXTENSION_NAME;
-import static com.adobe.marketing.mobile.target.TargetConstants.FRIENDLY_NAME;
-import static com.adobe.marketing.mobile.target.TargetConstants.EXTENSION_VERSION;
-import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
+import java.util.Map;
 
 public class TargetExtension extends Extension {
+    private static final String CLASS_NAME = TargetExtension.class.getSimpleName();
     /**
      * Constructor for {@code TargetExtension}.
      * <p>
@@ -39,7 +39,7 @@ public class TargetExtension extends Extension {
      */
     @Override
     protected String getName() {
-        return EXTENSION_NAME;
+        return TargetConstants.EXTENSION_NAME;
     }
 
     /**
@@ -48,7 +48,7 @@ public class TargetExtension extends Extension {
      * @return {@link String} containing the friendly name for this extension.
      */
     @Override
-    protected String getFriendlyName() { return FRIENDLY_NAME; }
+    protected String getFriendlyName() { return TargetConstants.FRIENDLY_NAME; }
 
     /**
      * Retrieve the extension version.
@@ -57,13 +57,16 @@ public class TargetExtension extends Extension {
      */
     @Override
     protected String getVersion() {
-        return EXTENSION_VERSION;
+        return TargetConstants.EXTENSION_VERSION;
     }
 
     @Override
     protected void onRegistered() {
-        // getApi().registerEventListener(TargetConstants.EventType.TARGET, TargetConstants.EventSource.REQUEST_CONTENT,
-        //         this::handleTargetRequestEvent
-        // );
+         getApi().registerEventListener(TargetConstants.EventType.TARGET, TargetConstants.EventSource.REQUEST_CONTENT,
+                 this::handleTargetRequestEvent
+         );
+    }
+
+    void handleTargetRequestEvent(final Event event) {
     }
 }

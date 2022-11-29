@@ -44,7 +44,6 @@ ext {
 
     // dependencies
     junitVersion = "1.1.2"
-    mockitoCoreVersion = "2.28.2"
     buildToolsVersion = "30.0.2"
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     jacocoVersion = "0.8.5"

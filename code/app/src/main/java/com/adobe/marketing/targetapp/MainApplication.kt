@@ -30,6 +30,11 @@ class MainApplication : Application() {
         MobileCore.setApplication(this)
         MobileCore.setLogLevel(LoggingMode.VERBOSE)
 
+        MobileCore.registerExtensions(
+            listOf(
+                Target.Extension
+            )
+        ) {}
         Identity.registerExtension()
         Lifecycle.registerExtension()
         Target.registerExtension()
