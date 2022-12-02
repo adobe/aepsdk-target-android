@@ -208,16 +208,16 @@ public class TargetExtension extends Extension {
         }
     }
 
-    void handleTargetRequestResetEvent(Event event) {
+    void handleTargetRequestResetEvent(final Event event) {
     }
 
-    void handleTargetRequestIdentityEvent(Event event) {
+    void handleTargetRequestIdentityEvent(final Event event) {
     }
 
-    void handleGenericDataOSEvent(Event event) {
+    void handleGenericDataOSEvent(final Event event) {
     }
 
-    void handleConfigurationResponseContentEvent(Event event) {
+    void handleConfigurationResponseContentEvent(final Event event) {
     }
 
     /**
@@ -714,12 +714,12 @@ public class TargetExtension extends Extension {
         getApi().dispatch(responseEvent);
     }
 
-    private Map<String, Object> retrieveIdentitySharedState(Event event) {
+    private Map<String, Object> retrieveIdentitySharedState(final Event event) {
         SharedStateResult identitySharedState = getApi().getSharedState(TargetConstants.Identity.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
         return identitySharedState != null ? identitySharedState.getValue() : null;
     }
 
-    private Map<String, Object> retrieveConfigurationSharedState(Event event) {
+    private Map<String, Object> retrieveConfigurationSharedState(final Event event) {
         SharedStateResult configSharedState = getApi().getSharedState(TargetConstants.Configuration.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
         return configSharedState != null ? configSharedState.getValue() : null;
     }

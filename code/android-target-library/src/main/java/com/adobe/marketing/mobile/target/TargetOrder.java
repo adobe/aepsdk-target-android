@@ -12,8 +12,6 @@
 
 package com.adobe.marketing.mobile.target;
 
-import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
-
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
@@ -98,14 +96,14 @@ public class TargetOrder {
      */
     static TargetOrder fromEventData(final Map<String, Object> data) {
         if (TargetUtils.isNullOrEmpty(data)) {
-            Log.debug(LOG_TAG, CLASS_NAME,"Cannot create TargetOrder object, provided data Map is empty or null.");
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetOrder object, provided data Map is empty or null.");
             return null;
         }
 
         try {
             final String id = DataReader.getString(data, TargetConstants.EventDataKeys.Order.ID);
             if (TargetUtils.isNullOrEmpty(id)) {
-                Log.debug(LOG_TAG, CLASS_NAME, "Cannot create TargetOrder object, provided data Map doesn't contain valid order ID.");
+                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Cannot create TargetOrder object, provided data Map doesn't contain valid order ID.");
                 return null;
             }
             final double total = DataReader.getDouble(data, TargetConstants.EventDataKeys.Order.TOTAL);
@@ -113,7 +111,7 @@ public class TargetOrder {
 
             return new TargetOrder(id, total, purchasedProductIds);
         } catch (final DataReaderException e) {
-            Log.warning(LOG_TAG, CLASS_NAME,"Cannot create TargetOrder object, provided data contains invalid fields (%s).", e.getLocalizedMessage());
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetOrder object, provided data contains invalid fields (%s).", e.getLocalizedMessage());
             return null;
         }
     }

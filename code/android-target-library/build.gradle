@@ -200,6 +200,7 @@ task platformFunctionalTestJacocoReport(type: JacocoReport, dependsOn: "createPh
     }
 }
 
+apply from: '../checkstyle.gradle'
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'

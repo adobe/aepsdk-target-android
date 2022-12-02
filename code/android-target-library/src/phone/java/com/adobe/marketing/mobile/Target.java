@@ -23,8 +23,6 @@ import com.adobe.marketing.mobile.target.TargetUtils;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
 
-import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
-
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
@@ -77,7 +75,7 @@ public class Target {
                 return;
             }
 
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "An error occurred while registering the Target extension: (%s) ", extensionError.getErrorName());
         });
     }
@@ -109,7 +107,7 @@ public class Target {
         if (mboxPrefetchList == null || mboxPrefetchList.isEmpty()) {
             error = String.format("Failed to prefetch Target request (%s).",
                             NULL_REQUEST_MESSAGE);
-            Log.warning(LOG_TAG, CLASS_NAME, error);
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, error);
 
             if (callbackWithError != null) {
                 callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
@@ -130,7 +128,7 @@ public class Target {
         if (flattenedPrefetchRequests.isEmpty()) {
             error = String.format("Failed to prefetch Target request (%s).",
                             NO_VALID_REQUEST_MESSAGE);
-            Log.warning(LOG_TAG, CLASS_NAME, error);
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, error);
             if (callbackWithError != null) {
                 callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
             } else if (callback != null) {
@@ -191,7 +189,7 @@ public class Target {
     public static void retrieveLocationContent(@NonNull final List<TargetRequest> mboxRequestList,
                                                @Nullable final TargetParameters parameters) {
         if (mboxRequestList == null || mboxRequestList.isEmpty()) {
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to retrieve Target location content (%s).",
                     NULL_REQUEST_MESSAGE);
             return;
@@ -210,7 +208,7 @@ public class Target {
             // Skip the target request objects with null/empty mbox names
             final String mboxName = request.getMboxName();
             if (TargetUtils.isNullOrEmpty(mboxName)) {
-                Log.warning(LOG_TAG, CLASS_NAME, "Failed to retrieve Target location content (%s), returning default content.",
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to retrieve Target location content (%s), returning default content.",
                         NULL_MBOX_MESSAGE);
                 final String defaultContent = request.getDefaultContent();
                 if (contentWithDataCallback != null) {
@@ -229,7 +227,7 @@ public class Target {
         }
 
         if (flattenedLocationRequests.isEmpty()) {
-            Log.warning(LOG_TAG, CLASS_NAME, "Failed to retrieve Target location content (%s).",
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to retrieve Target location content (%s).",
                     NO_VALID_REQUEST_MESSAGE);
             return;
         }
@@ -268,7 +266,7 @@ public class Target {
     public static void locationsDisplayed(@NonNull final List<String> mboxNames, @Nullable final TargetParameters targetParameters) {
 
         if (mboxNames == null || mboxNames.size() == 0) {
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to send display notification (%s).",
                     NULL_MBOXES_MESSAGE);
             return;
@@ -301,7 +299,7 @@ public class Target {
      */
     public static void locationClicked(@NonNull final String mboxName, @Nullable final TargetParameters parameters) {
         if (TargetUtils.isNullOrEmpty(mboxName)) {
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to send click notification (%s).",
                     NULL_MBOX_MESSAGE);
             return;
@@ -336,7 +334,7 @@ public class Target {
      */
     public static void getThirdPartyId(@NonNull final AdobeCallback<String> callback) {
         if (callback == null) {
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to get Target session ID, provided AdobeCallback (callback) is null.");
             return;
         }
@@ -408,7 +406,7 @@ public class Target {
      */
     public static void getTntId(@NonNull final AdobeCallback<String> callback) {
         if (callback == null) {
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to get Target session ID, provided AdobeCallback (callback) is null.");
             return;
         }
@@ -486,7 +484,7 @@ public class Target {
      */
     public static void getSessionId(@NonNull final AdobeCallback<String> callback) {
         if (callback == null) {
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to get Target session ID, provided AdobeCallback (callback) is null.");
             return;
         }
@@ -597,7 +595,7 @@ public class Target {
      */
     public static void setPreviewRestartDeepLink(@NonNull final Uri deepLink) {
         if (deepLink == null) {
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to set preview restart deeplink as the provided value is null.");
             return;
         }
@@ -630,7 +628,7 @@ public class Target {
                 (AdobeCallbackWithError<?>) callback : null;
 
         if (TargetUtils.isNullOrEmpty(request)) {
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to execute raw Target request (%s).", NULL_RAW_REQUEST_MESSAGE);
 
             if (callbackWithError != null) {
@@ -643,7 +641,7 @@ public class Target {
 
         if (!request.containsKey(TargetConstants.EventDataKeys.EXECUTE)
                 && !request.containsKey(TargetConstants.EventDataKeys.PREFETCH)) {
-            Log.warning(LOG_TAG,CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG,CLASS_NAME,
                     "Failed to execute raw Target request, provided request doesn't contain prefetch or execute data.");
 
             if (callbackWithError != null) {
@@ -700,13 +698,13 @@ public class Target {
      */
     public static void sendRawNotifications(@NonNull final Map<String, Object> request) {
         if (TargetUtils.isNullOrEmpty(request)) {
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to send raw Target notification(s) (%s).", NULL_RAW_REQUEST_MESSAGE);
             return;
         }
 
         if (!request.containsKey(TargetConstants.EventDataKeys.NOTIFICATIONS)) {
-            Log.warning(LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to send raw Target notification(s), provided request doesn't contain notifications data.");
             return;
         }
@@ -751,10 +749,10 @@ public class Target {
                     try {
                         id = DataReader.getString(eventData, TargetConstants.EventDataKeys.TARGET_RESPONSE_EVENT_ID);
                     } catch (final DataReaderException e) {
-                        Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is invalid (%s).", e.getLocalizedMessage());
+                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is invalid (%s).", e.getLocalizedMessage());
                     }
                     if (TargetUtils.isNullOrEmpty(id)) {
-                        Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is not available.");
+                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is not available.");
                         return;
                     }
 
@@ -762,17 +760,17 @@ public class Target {
                     try {
                         responsePairId = DataReader.getString(eventData, TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID);
                     } catch (final DataReaderException e) {
-                        Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is invalid (%s).", e.getLocalizedMessage());
+                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is invalid (%s).", e.getLocalizedMessage());
                     }
                     if (TargetUtils.isNullOrEmpty(responsePairId)) {
-                        Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is not available.");
+                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is not available.");
                         return;
                     }
 
                     final String requestSearchId = id+"-"+responsePairId;
                     final TargetRequest request = pendingTargetRequestsMap.get(requestSearchId);
                     if (request == null) {
-                        Log.warning(LOG_TAG, CLASS_NAME,  "Missing target request for (%s)", requestSearchId);
+                        Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,  "Missing target request for (%s)", requestSearchId);
                         return;
                     }
 
@@ -809,7 +807,7 @@ public class Target {
      */
     private static Map<String, Object> createMboxPayloadMap(final Map<String, Object> data, final TargetRequest request) {
         if (TargetUtils.isNullOrEmpty(data)) {
-            Log.debug(LOG_TAG, CLASS_NAME,
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
                     "The data payload map containing response tokens and analytics payload is not present for the mbox location (%s)", request.getMboxName());
             return null;
         }
@@ -819,7 +817,7 @@ public class Target {
                 TargetConstants.EventDataKeys.ANALYTICS_PAYLOAD,
                 null);
         if (a4tParams != null) {
-            Log.trace(LOG_TAG, CLASS_NAME, "A4t params map is present for mbox location (%s)", request.getMboxName());
+            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "A4t params map is present for mbox location (%s)", request.getMboxName());
             mboxPayload.put(TargetConstants.EventDataKeys.ANALYTICS_PAYLOAD, a4tParams);
         }
 
@@ -827,7 +825,7 @@ public class Target {
                 TargetConstants.EventDataKeys.RESPONSE_TOKENS,
                 null);
         if (responseTokens != null) {
-            Log.trace(LOG_TAG, CLASS_NAME, "Response tokens map is present for mbox location (%s)", request.getMboxName());
+            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "Response tokens map is present for mbox location (%s)", request.getMboxName());
             mboxPayload.put(TargetConstants.EventDataKeys.RESPONSE_TOKENS, responseTokens);
         }
 
@@ -835,12 +833,12 @@ public class Target {
                 TargetConstants.EventDataKeys.CLICK_METRIC_ANALYTICS_PAYLOAD,
                 null);
         if (clickMetricA4TParams != null) {
-            Log.trace(LOG_TAG, CLASS_NAME, "Click metrics map is present for mbox location (%s)", request.getMboxName());
+            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "Click metrics map is present for mbox location (%s)", request.getMboxName());
             mboxPayload.put(TargetConstants.EventDataKeys.CLICK_METRIC_ANALYTICS_PAYLOAD, clickMetricA4TParams);
         }
 
         if (mboxPayload.isEmpty()) {
-            Log.debug(LOG_TAG, CLASS_NAME,
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Neither response tokens are activated on Target UI nor activity is A4T enabled, returning null data payload for mbox location (%s)",
                     request.getMboxName());
             return null;
