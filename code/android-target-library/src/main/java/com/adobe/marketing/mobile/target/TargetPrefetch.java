@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TargetPrefetch {
-    private static final String CLASS_NAME = TargetPrefetch.class.getSimpleName();
+    private static final String CLASS_NAME = "TargetPrefetch";
 
     final private String mboxName;
     final private TargetParameters targetParameters;

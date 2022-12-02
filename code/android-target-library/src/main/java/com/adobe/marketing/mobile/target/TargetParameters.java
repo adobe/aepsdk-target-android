@@ -31,7 +31,7 @@ import java.util.Objects;
  */
 
 public class TargetParameters {
-    private static final String CLASS_NAME = TargetParameters.class.getSimpleName();
+    private static final String CLASS_NAME = "TargetParameters";
 
     final private Map<String, String> parameters;
     final private Map<String, String> profileParameters;

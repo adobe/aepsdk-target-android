@@ -27,7 +27,7 @@ import java.util.Objects;
  * Target request object.
  */
 public class TargetRequest {
-    private static final String CLASS_NAME = TargetProduct.class.getSimpleName();
+    private static final String CLASS_NAME = "TargetProduct";
 
     final private String mboxName;
     final private TargetParameters targetParameters;

@@ -25,7 +25,7 @@ import java.util.Objects;
  * Class for specifying Target product parameters
  */
 public class TargetProduct {
-    private static final String CLASS_NAME = TargetProduct.class.getSimpleName();
+    private static final String CLASS_NAME = "TargetProduct";
 
     final private String id;
     final private String categoryId;

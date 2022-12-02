@@ -18,7 +18,29 @@ public final class TargetConstants {
     static final String EXTENSION_NAME = "com.adobe.target";
     static final String FRIENDLY_NAME = "Target";
 
+    static final String API_URL_HOST_BASE 		= "%s.tt.omtrdc.net";
+    static final String EDGE_HOST_BASE = "mboxedge%s";
+    static final String PREFETCH_API_URL_BASE 	= "https://%s/rest/v1/delivery/?client=%s&sessionId=%s";
+    static final String REQUEST_CONTENT_TYPE  	= "application/json";
+    static final String MBOX_AT_PROPERTY_KEY  		= "at_property";
+
+    static final int DEFAULT_NETWORK_TIMEOUT = 2;
+    static final int DEFAULT_TARGET_SESSION_TIMEOUT_SEC = 30 * 60; // 30 mins
+
     private TargetConstants() {}
+
+    // datastore keys
+    static final String DATA_STORE_KEY = "ADOBEMOBILE_TARGET";
+
+    static class DataStoreKeys {
+        static final String TNT_ID                        = "TNT_ID";
+        static final String THIRD_PARTY_ID                = "THIRD_PARTY_ID";
+        static final String SESSION_ID = "SESSION_ID";
+        static final String SESSION_TIMESTAMP = "SESSION_TIMESTAMP";
+        static final String EDGE_HOST = "EDGE_HOST";
+
+        private DataStoreKeys() {}
+    }
 
     public static final class EventName {
         public static final String PREFETCH_CONTENT = "TargetPrefetchContent";
@@ -37,6 +59,13 @@ public final class TargetConstants {
         public static final String SET_PREVIEW_DEEPLINK = "TargetSetPreviewRestartDeeplink";
         public static final String TARGET_RAW_REQUEST = "TargetRawRequest";
         public static final String TARGET_RAW_NOTIFICATIONS = "TargetRawNotifications";
+        public static final String IDENTITY_RESPONSE_EVENT_NAME = "TargetIdentity";
+        public static final String ANALYTICS_FOR_TARGET_REQUEST_EVENT_NAME = "AnalyticsForTargetRequest";
+        public static final String IDENTITY_RESET_COMPLETION_EVENT_NAME = "TargetReset";
+        public static final String TARGET_RESPONSE_EVENT_NAME = "TargetResponse";
+        public static final String TARGET_RAW_RESPONSE_EVENT_NAME = "TargetRawResponse";
+        public static final String TARGET_VIEW_PREFETCH_RESPONSE_EVENT_NAME = "TargetViewPrefetchResponse";
+        public static final String TARGET_PREVIEW_LIFECYCLE_EVENT_NAME = "TargetPreviewLifecycle";
 
         private EventName() {}
     }
@@ -69,7 +98,7 @@ public final class TargetConstants {
         static final String RESPONSE_PAIR_ID = "responsepairid";
         public static final String EXECUTE = "execute";
         public static final String PREFETCH = "prefetch";
-        public static final String REQUEST = "request";
+        public static final String LOAD_REQUEST = "request";
         public static final String PREFETCH_ERROR = "prefetcherror";
         public static final String IS_LOCATION_DISPLAYED = "islocationdisplayed";
         public static final String IS_LOCATION_CLICKED = "islocationclicked";
@@ -89,6 +118,12 @@ public final class TargetConstants {
         public static final String CLICK_METRIC_ANALYTICS_PAYLOAD = "clickmetric.analytics.payload";
         public static final String TARGET_CONTENT = "content";
         public static final String TARGET_DATA_PAYLOAD = "data";
+        static final String ID = "id";
+        static final String TOKEN = "token";
+        static final String CONTEXT = "context";
+        static final String EXPERIENCE_CLOUD = "experienceCloud";
+        static final String PROPERTY = "property";
+        static final String ENVIRONMENT_ID = "environmentId";
 
         static final class Order {
             static final String ID = "id";
@@ -109,8 +144,27 @@ public final class TargetConstants {
     }
 
     static final class Configuration {
-        static final String EXTENSION_NAME = "com.adobe.module.configuration";
+        static final String EXTENSION_NAME       = "com.adobe.module.configuration";
+        static final String GLOBAL_CONFIG_PRIVACY            = "global.privacy";
+        static final String TARGET_CLIENT_CODE = "target.clientCode";
+        static final String TARGET_PREVIEW_ENABLED = "target.previewEnabled";
+        static final String TARGET_NETWORK_TIMEOUT = "target.timeout";
+        static final String TARGET_ENVIRONMENT_ID = "target.environmentId";
+        static final String TARGET_PROPERTY_TOKEN = "target.propertyToken";
+        static final String TARGET_SESSION_TIMEOUT = "target.sessionTimeout";
+        static final String TARGET_SERVER = "target.server";
 
         private Configuration() {}
+    }
+
+    static final class Identity {
+        static final String EXTENSION_NAME = "com.adobe.module.identity";
+        static final String VISITOR_ID_MID = "mid";
+        static final String VISITOR_ID_BLOB = "blob";
+        static final String VISITOR_ID_LOCATION_HINT = "locationhint";
+        static final String VISITOR_IDS_LIST = "visitoridslist";
+        static final String ADVERTISING_IDENTIFIER = "advertisingidentifier";
+
+        private Identity() {}
     }
 }

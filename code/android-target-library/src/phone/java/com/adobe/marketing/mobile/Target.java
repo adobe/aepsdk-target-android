@@ -41,8 +41,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Public class containing APIs for the Target extension.
  */
 public class Target {
-    public static final Class<? extends Extension> Extension = TargetExtension.class;
-    private static final String CLASS_NAME = Target.class.getSimpleName();
+    public static final Class<? extends Extension> EXTENSION = TargetExtension.class;
+    private static final String CLASS_NAME = "Target";
     private static final String NULL_MBOX_MESSAGE = "Mbox name must not be empty or null";
     private static final String NULL_MBOXES_MESSAGE = "List of Mbox names must not be empty or null";
     private static final String NULL_REQUEST_MESSAGE = "The provided request list for mboxes is empty or null";
@@ -238,7 +238,7 @@ public class Target {
         registerResponseContentEventListener();
 
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.REQUEST, flattenedLocationRequests);
+        eventData.put(TargetConstants.EventDataKeys.LOAD_REQUEST, flattenedLocationRequests);
         if (parameters != null) {
             eventData.put(TargetConstants.EventDataKeys.TARGET_PARAMETERS, parameters.toEventData());
         }

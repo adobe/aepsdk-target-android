@@ -27,7 +27,7 @@ import java.util.Objects;
  * Class for specifying Target order parameters
  */
 public class TargetOrder {
-    private static final String CLASS_NAME = TargetOrder.class.getSimpleName();
+    private static final String CLASS_NAME = "TargetOrder";
 
     final private String id;
     final private double total;
