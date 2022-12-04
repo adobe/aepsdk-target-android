@@ -38,19 +38,15 @@ import com.adobe.marketing.mobile.util.DataReaderException;
 import com.adobe.marketing.mobile.util.JSONUtils;
 import com.adobe.marketing.mobile.util.StreamUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
-import com.adobe.marketing.mobile.util.TimeUtils;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Adobe Target is the Adobe Marketing Cloud solution that provides everything you need to tailor and personalize your customers
@@ -92,23 +88,9 @@ public class TargetExtension extends Extension {
     private Networking networkService;
     private final UIService uiService;
 
-    protected String tntId;
-    protected String thirdPartyId;
-    protected String edgeHost;
-    protected String clientCode;
-    protected Map<String, JSONObject> prefetchedMbox;
-    protected Map<String, JSONObject> loadedMbox;
-    protected List<JSONObject> notifications;
-    protected Map<String, Object> lastKnownConfigurationState;
-
+    private TargetState targetState;
     private TargetRequestBuilder targetRequestBuilder;
     private TargetPreviewManager targetPreviewManager;
-
-    // ================================================================================
-    // session variables
-    // ================================================================================
-    protected String sessionId = null;
-    protected long sessionTimestampInSeconds = 0L;
 
     /**
      * Constructor for {@code TargetExtension}.
@@ -125,9 +107,7 @@ public class TargetExtension extends Extension {
         networkService = ServiceProvider.getInstance().getNetworkService();
         uiService = ServiceProvider.getInstance().getUIService();
 
-        prefetchedMbox = new HashMap<>();
-        loadedMbox = new HashMap<>();
-        notifications = new ArrayList<>();
+        targetState = new TargetState(dataStore);
     }
 
     /**
@@ -157,6 +137,12 @@ public class TargetExtension extends Extension {
     @Override
     protected String getVersion() {
         return TargetConstants.EXTENSION_VERSION;
+    }
+
+    @Override
+    public boolean readyForEvent(@NonNull Event event) {
+        targetState.updateConfigurationSharedState(retrieveConfigurationSharedState(event));
+        return targetState.getLastKnownConfigurationState() != null;
     }
 
     @Override
@@ -254,12 +240,20 @@ public class TargetExtension extends Extension {
             final Map<String, Object> execute = DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.EXECUTE);
             final Map<String, Object> prefetch =  DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.PREFETCH);
             final List<Map<String, Object>> notifications =  DataReader.getTypedListOfMap(Object.class, eventData, TargetConstants.EventDataKeys.NOTIFICATIONS);
-            final long environmentId = DataReader.getLong(eventData, TargetConstants.EventDataKeys.ENVIRONMENT_ID);
-            final Map<String, Object> property = DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.PROPERTY);
-            String propertyToken = null;
-            if (!TargetUtils.isNullOrEmpty(property)) {
-                propertyToken = DataReader.getString(property, TargetConstants.EventDataKeys.TOKEN);
+
+            String propertyToken = targetState.getPropertyToken();
+            if (StringUtils.isNullOrEmpty(propertyToken)) {
+                final Map<String, Object> property = DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.PROPERTY);
+                if (!TargetUtils.isNullOrEmpty(property)) {
+                    propertyToken = DataReader.getString(property, TargetConstants.EventDataKeys.TOKEN);
+                }
             }
+
+            long environmentId = targetState.getEnvironmentId();
+            if (environmentId == 0) {
+                environmentId = DataReader.getLong(eventData, TargetConstants.EventDataKeys.ENVIRONMENT_ID);
+            }
+
             final boolean isContentRequest = (prefetch != null) || (execute != null);
 
             if (networkService == null) {
@@ -276,23 +270,12 @@ public class TargetExtension extends Extension {
             }
 
             targetRequestBuilder.clean();
-            targetRequestBuilder.setTargetInternalParameters(getTntId(), getThirdPartyId());
 
-            final Map<String, Object> configData = retrieveConfigurationSharedState(event);
-
-            final String sendRequestError = prepareForTargetRequest(configData);
+            final String sendRequestError = prepareForTargetRequest();
             if (sendRequestError != null) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "handleRawRequest - ", sendRequestError);
                 dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
                 return;
-            }
-
-            String configPropertyToken = "";
-            long configEnvironmentId = 0L;
-            if (TargetUtils.isNullOrEmpty(configData)) {
-                configEnvironmentId = DataReader.optLong(configData, TargetConstants.Configuration.TARGET_ENVIRONMENT_ID, 0L);
-                targetRequestBuilder.setConfigParameters(configEnvironmentId);
-                configPropertyToken = DataReader.optString(configData, TargetConstants.Configuration.TARGET_PROPERTY_TOKEN, "");
             }
 
             targetRequestBuilder.setIdentityData(retrieveIdentitySharedState(event));
@@ -301,14 +284,14 @@ public class TargetExtension extends Extension {
                     id,
                     context,
                     experienceCloud,
-                    (configEnvironmentId != 0L) ? configEnvironmentId : environmentId);
+                    environmentId);
 
             final JSONObject payloadJson = targetRequestBuilder.getRequestPayload(
                     defaultJsonObject,
                     prefetch,
                     execute,
                     notifications,
-                    StringUtils.isNullOrEmpty(configPropertyToken) ? propertyToken : configPropertyToken);
+                    propertyToken);
 
             if (payloadJson == null || payloadJson.length() == 0) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -317,14 +300,12 @@ public class TargetExtension extends Extension {
                 return;
             }
 
-            final String url = getTargetRequestUrl(DataReader.optString(configData, TargetConstants.Configuration.TARGET_SERVER, ""));
+            final String url = getTargetRequestUrl(targetState.getTargetServer(), targetState.getClientCode());
             final String payloadJsonString = payloadJson.toString();
             final byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);
             final Map<String, String> headers = new HashMap<>();
             headers.put(NetworkingConstants.Headers.CONTENT_TYPE, NetworkingConstants.HeaderValues.CONTENT_TYPE_JSON_APPLICATION);
-            final int timeout = (configData != null)
-                    ? DataReader.optInt(configData, TargetConstants.Configuration.TARGET_NETWORK_TIMEOUT, TargetConstants.DEFAULT_NETWORK_TIMEOUT)
-                    : TargetConstants.DEFAULT_NETWORK_TIMEOUT;
+            int timeout = targetState.getNetworkTimeout();
 
             Log.debug(TargetConstants.LOG_TAG, "handleRawRequest - Target request was sent with url %s, body %s", url, payloadJsonString);
             final NetworkRequest networkRequest = new NetworkRequest(url, HttpMethod.POST, payload, headers, timeout, timeout);
@@ -335,53 +316,6 @@ public class TargetExtension extends Extension {
         } catch (final DataReaderException e) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
                     "handleRawRequest - Cannot process the raw Target request, the provided request data is invalid (%s).", e.getMessage());
-        }
-    }
-
-    /**
-     * Processes the network response after the Target delivery API call for raw request.
-     *
-     * @param connection  a {@link HttpConnecting} instance.
-     * @param isContentRequest {@code boolean} indicating whether it's a prefetch or execute request.
-     * @param event  the incoming {@link Event} object.
-     */
-    private void processTargetRawResponse(final HttpConnecting connection,
-                                          final boolean isContentRequest,
-                                          final Event event) {
-        if (connection == null) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s)", TargetErrors.NO_CONNECTION);
-            dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
-            return;
-        }
-
-        try {
-            final JSONObject responseJson = new JSONObject(StreamUtils.readAsString(connection.getInputStream()));
-            final int responseCode = connection.getResponseCode();
-
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                        "processTargetRawResponse - Received Target response with connection code: " + responseCode);
-
-                final String responseError = StreamUtils.readAsString(connection.getErrorStream());
-                if (!StringUtils.isNullOrEmpty(responseError)) {
-                    Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE + responseError);
-                }
-
-                dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
-                return;
-            }
-
-            // save the network request timestamp for computing the session id expiration
-            updateSessionTimestamp();
-
-            final JSONObject idJson = responseJson.optJSONObject(TargetJson.ID);
-            setTntIdInternal(idJson == null ? null : idJson.getString(TargetJson.ID_TNT_ID));
-            setEdgeHost(responseJson.optString(TargetJson.EDGE_HOST, ""));
-
-            getApi().createSharedState(packageState(), event);
-            dispatchTargetRawResponseIfNeeded(isContentRequest,  JSONUtils.toMap(responseJson), event);
-        } catch (final Exception e) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s)", e.getMessage());
         }
     }
 
@@ -452,7 +386,7 @@ public class TargetExtension extends Extension {
             }
 
             final TargetPreviewManager previewManager = getPreviewManager();
-            targetRequestBuilder = new TargetRequestBuilder(deviceInfoService, previewManager);
+            targetRequestBuilder = new TargetRequestBuilder(deviceInfoService, previewManager, targetState);
         }
 
         return targetRequestBuilder;
@@ -483,32 +417,18 @@ public class TargetExtension extends Extension {
     /**
      * Prepares for the target requests and checks whether a target request can be sent.
      *
-     * @param configData the shared state of {@code Configuration} extension
      * @return a {@code String} error indicating why the request can't be sent, null otherwise
      */
-    private String prepareForTargetRequest(final Map<String, Object> configData) {
-        if (configData == null) {
+    private String prepareForTargetRequest() {
+        if (targetState.getClientCode().isEmpty()) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "prepareForTargetRequest - TargetRequest preparation failed because configData is null");
-            return TargetErrors.CONFIG_NULL;
-        }
-
-        final String newClientCode = DataReader.optString(configData, TargetConstants.Configuration.TARGET_CLIENT_CODE, "");
-
-        if (newClientCode.isEmpty()) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "prepareForTargetRequest - TargetRequest preparation failed because client code is empty");
+                    "prepareForTargetRequest - TargetRequest preparation failed because (%s)", TargetErrors.NO_CLIENT_CODE);
             return TargetErrors.NO_CLIENT_CODE;
         }
 
-        if (!newClientCode.equals(clientCode)) {
-            clientCode = newClientCode;
-            edgeHost = null;
-        }
-
-        final MobilePrivacyStatus privacyStatus = getMobilePrivacyStatus();
-
-        if (privacyStatus != MobilePrivacyStatus.OPT_IN) {
+        if (targetState.getMobilePrivacyStatus() != MobilePrivacyStatus.OPT_IN) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "prepareForTargetRequest - TargetRequest preparation failed because (%s)", TargetErrors.OPTED_OUT);
             return TargetErrors.OPTED_OUT;
         }
 
@@ -525,161 +445,71 @@ public class TargetExtension extends Extension {
      * {@code String} sessionId and {@code String} clientCode are also sent as query parameters in the Target request url.
      *
      * @param customServer the value of "target.server" in configuration
+     * @param clientCode the value of "target.clientCode" in configuration
      * @return the server url string
      */
-    protected String getTargetRequestUrl(final String customServer) {
+    protected String getTargetRequestUrl(final String customServer, final String clientCode) {
         // If customServer is not empty return targetRequestUrl with customServer as host
         if (!customServer.isEmpty()) {
-            return String.format(TargetConstants.PREFETCH_API_URL_BASE, customServer, clientCode, getSessionId());
+            return String.format(TargetConstants.PREFETCH_API_URL_BASE, customServer, clientCode, targetState.getSessionId());
         }
 
-        final String edgeHost = getEdgeHost();
+        final String edgeHost = targetState.getEdgeHost();
         final String host = StringUtils.isNullOrEmpty(edgeHost) ?
                 String.format(TargetConstants.API_URL_HOST_BASE, clientCode)
                 : edgeHost;
-        return String.format(TargetConstants.PREFETCH_API_URL_BASE, host, clientCode, getSessionId());
+        return String.format(TargetConstants.PREFETCH_API_URL_BASE, host, clientCode, targetState.getSessionId());
     }
 
-    /**
-     * Loads edgeHost from shared preferences; if not found or there was an error while reading from shared preferences, it returns null.
-     * <p>
-     * If current session expired, the edge host is reset to null (in memory and persistence), so
-     * the next network call will use the target client code.
-     * <p>
-     *
-     * @return the edgeHost {@link String} value
-     */
-    String getEdgeHost() {
-        if (dataStore != null) {
-            // If the session expired reset the edge host
-            if (isSessionExpired()) {
-                setEdgeHost(null);
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getEdgeHost - Resetting edge host to null as session id expired.");
-            } else if (StringUtils.isNullOrEmpty(edgeHost)) {
-                edgeHost = dataStore.getString(TargetConstants.DataStoreKeys.EDGE_HOST, null);
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getEdgeHost - Retrieved edge host from the data store.");
-            }
-        }
-
-        return edgeHost;
-    }
 
     /**
-     * Saves the new edge host to local variable and in the shared preference
+     * Processes the network response after the Target delivery API call for raw request.
      *
-     * @param newEdgeHost new edge host for the Target call which is saved in shared preference
+     * @param connection  a {@link HttpConnecting} instance.
+     * @param isContentRequest {@code boolean} indicating whether it's a prefetch or execute request.
+     * @param event  the incoming {@link Event} object.
      */
-    void setEdgeHost(final String newEdgeHost) {
-        if ((edgeHost == null && newEdgeHost == null) || (edgeHost != null && edgeHost.equals(newEdgeHost))) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "setEdgeHost - Data store is not updated as the provided edge host is same as the existing edgeHost");
+    private void processTargetRawResponse(final HttpConnecting connection,
+                                          final boolean isContentRequest,
+                                          final Event event) {
+        if (connection == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s)", TargetErrors.NO_CONNECTION);
+            dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
             return;
         }
 
-        edgeHost = newEdgeHost;
+        try {
+            final JSONObject responseJson = new JSONObject(StreamUtils.readAsString(connection.getInputStream()));
+            final int responseCode = connection.getResponseCode();
 
-        if (dataStore != null) {
-            if (StringUtils.isNullOrEmpty(edgeHost)) {
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "setEdgeHost - EdgeHost is null or empty");
-                dataStore.remove(TargetConstants.DataStoreKeys.EDGE_HOST);
-            } else {
-                dataStore.setString(TargetConstants.DataStoreKeys.EDGE_HOST, edgeHost);
-            }
-        }
-    }
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "processTargetRawResponse - Received Target response with connection code: " + responseCode);
 
-    /**
-     * Get the session id either from memory or from the datastore if session is not expired.
-     *
-     * <p>
-     * Context: AMSDK-8217
-     * Retrieves the session ID from memory. If no value in memory, it reads the value from
-     * persistence. If no value is stored in persistence either, it generates a random UUID,
-     * sets current timestamp for {@code long} sessionTimestampInSeconds and saves them in persistence.
-     * The session id is refreshed after
-     * {@link TargetConstants.Configuration#TARGET_SESSION_TIMEOUT} (secs) of inactivity
-     * (from the last successful target request).
-     * <p>
-     * The SessionId is sent in URL query parameters for each Target Network call; based on this Target will
-     * route all requests from a session to the same edge to prevent overwriting the profiles.
-     * <p>
-     *
-     * @return the session id value as {@link String}, null if it couldn't be read from persistence
-     */
-    String getSessionId() {
-        if (StringUtils.isNullOrEmpty(sessionId) && dataStore != null) {
-            sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, null);
-        }
+                final String responseError = StreamUtils.readAsString(connection.getErrorStream());
+                if (!StringUtils.isNullOrEmpty(responseError)) {
+                    Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE + responseError);
+                }
 
-        // if there is no session id persisted in local data store or if the session id is expired
-        // because there was no activity for more than certain amount of time
-        // (from the last successful network request), then generate a new session id, save it in persistence storage
-        if (StringUtils.isNullOrEmpty(sessionId) || isSessionExpired()) {
-            sessionId = UUID.randomUUID().toString();
-
-            if (dataStore != null) {
-                dataStore.setString(TargetConstants.DataStoreKeys.SESSION_ID, sessionId);
+                dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
+                return;
             }
 
-            // update session id timestamp when the new session id is generated
-            updateSessionTimestamp();
-        }
+            // save the network request timestamp for computing the session id expiration
+            targetState.updateSessionTimestamp(false);
+            final JSONObject idJson = responseJson.optJSONObject(TargetJson.ID);
+            if (idJson != null) {
+                targetState.updateTntId(idJson.getString(TargetJson.ID_TNT_ID));
+            }
+            targetState.updateEdgeHost(responseJson.optString(TargetJson.EDGE_HOST, ""));
 
-        return sessionId;
-    }
-
-
-    /**
-     * Verifies if current target session is expired.
-     *
-     * @return {@code boolean} indicating whether Target session has expired
-     */
-    private boolean isSessionExpired() {
-        if (sessionTimestampInSeconds <= 0 && dataStore != null) {
-            sessionTimestampInSeconds = dataStore.getLong(TargetConstants.DataStoreKeys.SESSION_TIMESTAMP, 0L);
-        }
-
-        final long currentTimeSeconds = TimeUtils.getUnixTimeInSeconds();
-        final int sessionTimeoutInSec = getSessionTimeout();
-
-        return (sessionTimestampInSeconds > 0) && ((currentTimeSeconds - sessionTimestampInSeconds) > sessionTimeoutInSec);
-    }
-
-    /**
-     * Get the session timeout from config or default session timeout
-     *
-     * @return {@code int} session timeout from config or default session timeout {@code int} TargetConstants#DEFAULT_TARGET_SESSION_TIMEOUT_SEC
-     */
-    private int getSessionTimeout() {
-        int sessionTimeoutInSec = TargetConstants.DEFAULT_TARGET_SESSION_TIMEOUT_SEC;
-
-        if (TargetUtils.isNullOrEmpty(lastKnownConfigurationState)
-                && lastKnownConfigurationState.containsKey(TargetConstants.Configuration.TARGET_SESSION_TIMEOUT)) {
-            sessionTimeoutInSec = DataReader.optInt(lastKnownConfigurationState,
-                    TargetConstants.Configuration.TARGET_SESSION_TIMEOUT,
-                    TargetConstants.DEFAULT_TARGET_SESSION_TIMEOUT_SEC);
-        }
-
-        return sessionTimeoutInSec;
-    }
-
-    /**
-     * Updates {@code long} sessionTimestampInSeconds to current timestamp and stores the new
-     * value in persistence.
-     *
-     * <p>
-     * Note: this method needs to be called after each successful target network request in order
-     * to compute the session id expiration date properly.
-     * <p>
-     */
-    private void updateSessionTimestamp() {
-        sessionTimestampInSeconds = TimeUtils.getUnixTimeInSeconds();
-        if (dataStore != null) {
-            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "updateSessionTimestamp - Attempting to update the session timestamp");
-            dataStore.setLong(TargetConstants.DataStoreKeys.SESSION_TIMESTAMP, sessionTimestampInSeconds);
+            getApi().createSharedState(targetState.generateSharedState(), event);
+            dispatchTargetRawResponseIfNeeded(isContentRequest,  JSONUtils.toMap(responseJson), event);
+        } catch (final JSONException e) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+            dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
         }
     }
-
 
     /**
      * Dispatches a Target response event for a raw prefetch or execute request.
@@ -723,191 +553,4 @@ public class TargetExtension extends Extension {
         final SharedStateResult configSharedState = getApi().getSharedState(TargetConstants.Configuration.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
         return configSharedState != null ? configSharedState.getValue() : null;
     }
-
-    /**
-     * Get {@code MobilePrivacyStatus} for this Target extension.
-     *
-     * @return {@link MobilePrivacyStatus} from the last known Configuration state
-     */
-    private MobilePrivacyStatus getMobilePrivacyStatus() {
-
-        if (TargetUtils.isNullOrEmpty(lastKnownConfigurationState) ||
-                !lastKnownConfigurationState.containsKey(TargetConstants.Configuration.GLOBAL_CONFIG_PRIVACY)) {
-            return MobilePrivacyStatus.UNKNOWN;
-        }
-
-        final String privacyString = DataReader.optString(lastKnownConfigurationState,
-                TargetConstants.Configuration.GLOBAL_CONFIG_PRIVACY, MobilePrivacyStatus.UNKNOWN.getValue());
-        return MobilePrivacyStatus.fromString(privacyString);
-    }
-
-    /**
-     * Saves the tntId and the edge host value derived from it to the Target data store.
-     * <p>
-     * If a valid tntId is provided and the privacy status is {@link MobilePrivacyStatus#OPT_OUT} or
-     * the provided tntId is same as the existing value, then the method returns with no further action.
-     * <p>
-     * If a null or empty value is provided for the tntId, then both tntId and edge host values are removed from the Target data store.
-     *
-     * @param newTntId {@link String} containing new tntId that needs to be set.
-     */
-    private void setTntIdInternal(final String newTntId) {
-        // do not set identifier if privacy is opt-out and the id is not being cleared
-        if (getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT && !StringUtils.isNullOrEmpty(newTntId)) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "setTntIdInternal - Cannot update Target tntId due to opt out privacy status.");
-            return;
-        }
-
-        if (tntIdValuesAreEqual(tntId, newTntId)) {
-            Log.debug(TargetConstants.LOG_TAG,
-                    "setTntIdInternal - Won't update Target tntId as provided value is same as the existing tntId value (%s).", newTntId);
-            return;
-        }
-
-        final String edgeHost = extractEdgeHost(newTntId);
-
-        if (!StringUtils.isNullOrEmpty(edgeHost)) {
-            Log.debug(TargetConstants.LOG_TAG, "setTntIdInternal - The edge host value derived from the given tntId (%s) is (%s).",
-                    newTntId, edgeHost);
-            setEdgeHost(edgeHost);
-        } else {
-            Log.debug(TargetConstants.LOG_TAG,
-                    "setTntIdInternal - The edge host value cannot be derived from the given tntId (%s) and it is removed from the data store.",
-                    newTntId);
-            setEdgeHost(null);
-        }
-
-        Log.trace(TargetConstants.LOG_TAG, "setTntIdInternal - Updating tntId with value (%s).", newTntId);
-        tntId = newTntId;
-
-        if (dataStore != null) {
-            if (StringUtils.isNullOrEmpty(newTntId)) {
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                        "setTntIdInternal - Removed tntId from the data store, provided tntId value is null or empty.");
-                dataStore.remove(TargetConstants.DataStoreKeys.TNT_ID);
-            } else {
-                Log.debug(TargetConstants.LOG_TAG, "setTntIdInternal - Persisted new tntId (%s) in the data store.", newTntId);
-                dataStore.setString(TargetConstants.DataStoreKeys.TNT_ID, newTntId);
-            }
-        } else {
-            Log.debug(TargetConstants.LOG_TAG, "setTntIdInternal - " + TargetErrors.TARGET_TNT_ID_NOT_PERSISTED,
-                    "Data store is not available.");
-        }
-    }
-
-
-    /**
-     * Reads the tntId from the Target DataStore and returns null if its unavailable.
-     *
-     * @return tntId {@link String}
-     */
-    String getTntId() {
-        if (tntId == null && dataStore != null) {
-            tntId = dataStore.getString(TargetConstants.DataStoreKeys.TNT_ID, null);
-        }
-        return tntId;
-    }
-
-    /**
-     * Compares if the given two tntID's are equal. tntId is a concatenation of {tntId}.{edgehostValue}
-     * false is returned when tntID's are different.
-     * true is returned when tntID's are same.
-     *
-     * @param oldId old tntId {@link String}
-     * @param newId new tntId {@code String}
-     * @return a {@code boolean} variable indicating if the tntId's are equal
-     */
-    boolean tntIdValuesAreEqual(final String oldId, final String newId) {
-        if (oldId == null && newId == null) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old and new tntId is null.");
-            return true;
-        }
-
-        if (oldId == null || newId == null) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - %s is null.", (oldId == null ? "oldId" : "newId"));
-            return false;
-        }
-
-        if (oldId.equals(newId)) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old tntId is equal to new tntId.");
-            return true;
-        }
-
-        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old tntId is not equal to new tntId.");
-        return false;
-    }
-
-    /**
-     * Packages this extension's state data for sharing.
-     *
-     * @return {@code Map<String, Object>} of this extension's state data
-     */
-    private Map<String, Object> packageState() {
-        final Map<String, Object> data = new HashMap<>();
-
-        if (!StringUtils.isNullOrEmpty(tntId)) {
-            data.put(TargetConstants.EventDataKeys.TNT_ID, tntId);
-        }
-
-        if (!StringUtils.isNullOrEmpty(thirdPartyId)) {
-            data.put(TargetConstants.EventDataKeys.THIRD_PARTY_ID, thirdPartyId);
-        }
-
-        return data;
-    }
-
-    /**
-     * Derives and returns the edge host value from the provided tntId.
-     * <p>
-     * The tntId has the format {@literal UUID.<profile location hint>}. The edge host value
-     * can be derived from the profile location hint.
-     * For example, if the tntId is {@literal 10abf6304b2714215b1fd39a870f01afc.28_20},
-     * then the edgeHost will be {@literal mboxedge28.tt.omtrdc.net}.
-     * <p>
-     * If the provided tntId is null or empty, or if the edge host value cannot be determined
-     *
-     * @param newTntId {@link String} containing the tntId used to derive the edge host value.
-     */
-    private String extractEdgeHost(final String newTntId) {
-        if (StringUtils.isNullOrEmpty(newTntId)) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "extractEdgeHost - Cannot extract Edge host from the provided tntId as it is null or empty.");
-            return null;
-        }
-
-        final Pattern pattern = Pattern.compile("(?<=[0-9A-Fa-f-]\\.)([\\d][^\\D]*)(?=_)");
-        final Matcher matcher = pattern.matcher(newTntId);
-
-        String locationHint = null;
-
-        if (matcher.find()) {
-            locationHint = matcher.group();
-            Log.debug(TargetConstants.LOG_TAG, "extractEdgeHost - Provided tntId (%s) contains location hint (%s).", newTntId,
-                    locationHint);
-        }
-
-        String edgeHost = null;
-
-        if (!StringUtils.isNullOrEmpty(locationHint)) {
-            edgeHost = String.format(TargetConstants.API_URL_HOST_BASE, String.format(TargetConstants.EDGE_HOST_BASE,
-                    locationHint));
-            Log.debug(TargetConstants.LOG_TAG, "extractEdgeHost - Edge host (%s) is derived from the provided tntId (%s).",
-                    edgeHost, locationHint);
-        }
-
-        return edgeHost;
-    }
-
-    /**
-     * Reads the {@code #thirdPartyId} from the Target DataStore and returns null if its unavailable.
-     *
-     * @return thirdPartyId {@link String}
-     */
-    String getThirdPartyId() {
-        if (StringUtils.isNullOrEmpty(thirdPartyId) && (dataStore != null)) {
-                thirdPartyId = dataStore.getString(TargetConstants.DataStoreKeys.THIRD_PARTY_ID, null);
-        }
-        return thirdPartyId;
-    }
-
 }

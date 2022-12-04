@@ -32,16 +32,17 @@ import java.util.Map;
  */
 class TargetRequestBuilder {
 	private static final String CLASS_NAME = "TargetRequestBuilder";
-	private DeviceInforming deviceInfoService;
-	private TargetPreviewManager targetPreviewManager;
-	private long environmentId;
+	private final DeviceInforming deviceInfoService;
+	private final TargetPreviewManager targetPreviewManager;
+	private final TargetState targetState;
 
-	private String visitorMarketingCloudId;
-	private String visitorBlob;
-	private String visitorLocationHint;
-	private List<VisitorID> visitorCustomerIds;
+	private String visitorMarketingCloudId = "";
+	private String visitorBlob = "";
+	private String visitorLocationHint = "";
+	private List<VisitorID> visitorCustomerIds = null;
 	private Map<String, String> lifecycleData;
 
+	private long environmentId;
 	private String tntId;
 	private String thirdPartyId;
 
@@ -51,10 +52,15 @@ class TargetRequestBuilder {
 	 * @param targetPreviewManager {@link TargetPreviewManager} instance
 	 */
 	TargetRequestBuilder(final DeviceInforming deviceInfoService,
-                         final TargetPreviewManager targetPreviewManager) {
+                         final TargetPreviewManager targetPreviewManager,
+						 final TargetState targetState) {
 		this.deviceInfoService = deviceInfoService;
 		this.targetPreviewManager = targetPreviewManager;
-		this.environmentId = 0;
+		this.targetState = targetState;
+
+		environmentId = targetState.getEnvironmentId();
+		tntId = targetState.getTntId();
+		thirdPartyId = targetState.getThirdPartyId();
 	}
 
 	/**
@@ -89,26 +95,6 @@ class TargetRequestBuilder {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Sets the parameters provided through shared state by the lifecycle extension
-	 *
-	 * @param environmentId target environmentId
-	 */
-	void setConfigParameters(final long environmentId) {
-		this.environmentId = environmentId;
-	}
-
-	/**
-	 * Sets the available internal parameters
-	 *
-	 * @param tntId        tntId
-	 * @param thirdPartyId thirdPartyId
-	 */
-	void setTargetInternalParameters(final String tntId, final String thirdPartyId) {
-		this.tntId = tntId;
-		this.thirdPartyId = thirdPartyId;
 	}
 
 	/**
