@@ -175,7 +175,7 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        Map<String, Object> eventData = event.getEventData();
+        final Map<String, Object> eventData = event.getEventData();
 
         if (DataReader.optBoolean(eventData, TargetConstants.EventDataKeys.IS_RAW_EVENT, false)) {
             handleRawRequest(event);
@@ -202,8 +202,8 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        String restartDeeplink = DataReader.optString(eventData, TargetConstants.EventDataKeys.PREVIEW_RESTART_DEEP_LINK, null);
-        if (StringUtils.isNullOrEmpty(restartDeeplink)) {
+        final String restartDeeplink = DataReader.optString(eventData, TargetConstants.EventDataKeys.PREVIEW_RESTART_DEEP_LINK, null);
+        if (!StringUtils.isNullOrEmpty(restartDeeplink)) {
             setPreviewRestartDeepLink(restartDeeplink);
         }
     }
@@ -239,7 +239,7 @@ public class TargetExtension extends Extension {
                 event.getName(), event.getType(),
                 event.getSource());
 
-        Map<String, Object> eventData = event.getEventData();
+        final Map<String, Object> eventData = event.getEventData();
 
         if (eventData == null || eventData.isEmpty()) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -254,23 +254,23 @@ public class TargetExtension extends Extension {
             final Map<String, Object> execute = DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.EXECUTE);
             final Map<String, Object> prefetch =  DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.PREFETCH);
             final List<Map<String, Object>> notifications =  DataReader.getTypedListOfMap(Object.class, eventData, TargetConstants.EventDataKeys.NOTIFICATIONS);
-            long environmentId = DataReader.getLong(eventData, TargetConstants.EventDataKeys.ENVIRONMENT_ID);
+            final long environmentId = DataReader.getLong(eventData, TargetConstants.EventDataKeys.ENVIRONMENT_ID);
             final Map<String, Object> property = DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.PROPERTY);
             String propertyToken = null;
-            if (property != null && !property.isEmpty()) {
+            if (!TargetUtils.isNullOrEmpty(property)) {
                 propertyToken = DataReader.getString(property, TargetConstants.EventDataKeys.TOKEN);
             }
             final boolean isContentRequest = (prefetch != null) || (execute != null);
 
             if (networkService == null) {
-                Log.error(TargetConstants.LOG_TAG, "handleRawRequest - (%s)", TargetErrors.NETWORK_SERVICE_UNAVAILABLE);
+                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "handleRawRequest - (%s)", TargetErrors.NETWORK_SERVICE_UNAVAILABLE);
                 dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
                 return;
             }
 
             targetRequestBuilder = getRequestBuilder();
             if (targetRequestBuilder == null) {
-                Log.error(TargetConstants.LOG_TAG, "handleRawRequest - (%s)", TargetErrors.REQUEST_BUILDER_INIT_FAILED);
+                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "handleRawRequest - (%s)", TargetErrors.REQUEST_BUILDER_INIT_FAILED);
                 dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
                 return;
             }
@@ -289,7 +289,7 @@ public class TargetExtension extends Extension {
 
             String configPropertyToken = "";
             long configEnvironmentId = 0L;
-            if (configData != null) {
+            if (TargetUtils.isNullOrEmpty(configData)) {
                 configEnvironmentId = DataReader.optLong(configData, TargetConstants.Configuration.TARGET_ENVIRONMENT_ID, 0L);
                 targetRequestBuilder.setConfigParameters(configEnvironmentId);
                 configPropertyToken = DataReader.optString(configData, TargetConstants.Configuration.TARGET_PROPERTY_TOKEN, "");
@@ -322,7 +322,7 @@ public class TargetExtension extends Extension {
             final byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);
             final Map<String, String> headers = new HashMap<>();
             headers.put(NetworkingConstants.Headers.CONTENT_TYPE, NetworkingConstants.HeaderValues.CONTENT_TYPE_JSON_APPLICATION);
-            int timeout = (configData != null)
+            final int timeout = (configData != null)
                     ? DataReader.optInt(configData, TargetConstants.Configuration.TARGET_NETWORK_TIMEOUT, TargetConstants.DEFAULT_NETWORK_TIMEOUT)
                     : TargetConstants.DEFAULT_NETWORK_TIMEOUT;
 
@@ -355,7 +355,7 @@ public class TargetExtension extends Extension {
         }
 
         try {
-            JSONObject responseJson = new JSONObject(StreamUtils.readAsString(connection.getInputStream()));
+            final JSONObject responseJson = new JSONObject(StreamUtils.readAsString(connection.getInputStream()));
             final int responseCode = connection.getResponseCode();
 
             if (responseCode != HttpURLConnection.HTTP_OK) {
@@ -374,13 +374,13 @@ public class TargetExtension extends Extension {
             // save the network request timestamp for computing the session id expiration
             updateSessionTimestamp();
 
-            JSONObject idJson = responseJson.optJSONObject(TargetJson.ID);
+            final JSONObject idJson = responseJson.optJSONObject(TargetJson.ID);
             setTntIdInternal(idJson == null ? null : idJson.getString(TargetJson.ID_TNT_ID));
             setEdgeHost(responseJson.optString(TargetJson.EDGE_HOST, ""));
 
             getApi().createSharedState(packageState(), event);
             dispatchTargetRawResponseIfNeeded(isContentRequest,  JSONUtils.toMap(responseJson), event);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s)", e.getMessage());
         }
     }
@@ -451,7 +451,7 @@ public class TargetExtension extends Extension {
                 return null;
             }
 
-            TargetPreviewManager previewManager = getPreviewManager();
+            final TargetPreviewManager previewManager = getPreviewManager();
             targetRequestBuilder = new TargetRequestBuilder(deviceInfoService, previewManager);
         }
 
@@ -534,7 +534,7 @@ public class TargetExtension extends Extension {
         }
 
         final String edgeHost = getEdgeHost();
-        String host = StringUtils.isNullOrEmpty(edgeHost) ?
+        final String host = StringUtils.isNullOrEmpty(edgeHost) ?
                 String.format(TargetConstants.API_URL_HOST_BASE, clientCode)
                 : edgeHost;
         return String.format(TargetConstants.PREFETCH_API_URL_BASE, host, clientCode, getSessionId());
@@ -639,8 +639,8 @@ public class TargetExtension extends Extension {
             sessionTimestampInSeconds = dataStore.getLong(TargetConstants.DataStoreKeys.SESSION_TIMESTAMP, 0L);
         }
 
-        long currentTimeSeconds = TimeUtils.getUnixTimeInSeconds();
-        int sessionTimeoutInSec = getSessionTimeout();
+        final long currentTimeSeconds = TimeUtils.getUnixTimeInSeconds();
+        final int sessionTimeoutInSec = getSessionTimeout();
 
         return (sessionTimestampInSeconds > 0) && ((currentTimeSeconds - sessionTimestampInSeconds) > sessionTimeoutInSec);
     }
@@ -653,7 +653,7 @@ public class TargetExtension extends Extension {
     private int getSessionTimeout() {
         int sessionTimeoutInSec = TargetConstants.DEFAULT_TARGET_SESSION_TIMEOUT_SEC;
 
-        if (lastKnownConfigurationState != null
+        if (TargetUtils.isNullOrEmpty(lastKnownConfigurationState)
                 && lastKnownConfigurationState.containsKey(TargetConstants.Configuration.TARGET_SESSION_TIMEOUT)) {
             sessionTimeoutInSec = DataReader.optInt(lastKnownConfigurationState,
                     TargetConstants.Configuration.TARGET_SESSION_TIMEOUT,
@@ -704,7 +704,7 @@ public class TargetExtension extends Extension {
      */
     void dispatchTargetRawResponse(final Map<String, Object> responseData, final Event requestEvent) {
 
-        Map<String, Object> data = new HashMap<>();
+        final Map<String, Object> data = new HashMap<>();
         data.put(TargetConstants.EventDataKeys.RESPONSE_DATA, responseData);
 
         // Create Event and dispatch to EventHub
@@ -715,12 +715,12 @@ public class TargetExtension extends Extension {
     }
 
     private Map<String, Object> retrieveIdentitySharedState(final Event event) {
-        SharedStateResult identitySharedState = getApi().getSharedState(TargetConstants.Identity.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
+        final SharedStateResult identitySharedState = getApi().getSharedState(TargetConstants.Identity.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
         return identitySharedState != null ? identitySharedState.getValue() : null;
     }
 
     private Map<String, Object> retrieveConfigurationSharedState(final Event event) {
-        SharedStateResult configSharedState = getApi().getSharedState(TargetConstants.Configuration.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
+        final SharedStateResult configSharedState = getApi().getSharedState(TargetConstants.Configuration.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
         return configSharedState != null ? configSharedState.getValue() : null;
     }
 
@@ -731,12 +731,12 @@ public class TargetExtension extends Extension {
      */
     private MobilePrivacyStatus getMobilePrivacyStatus() {
 
-        if (lastKnownConfigurationState == null ||
+        if (TargetUtils.isNullOrEmpty(lastKnownConfigurationState) ||
                 !lastKnownConfigurationState.containsKey(TargetConstants.Configuration.GLOBAL_CONFIG_PRIVACY)) {
             return MobilePrivacyStatus.UNKNOWN;
         }
 
-        String privacyString = DataReader.optString(lastKnownConfigurationState,
+        final String privacyString = DataReader.optString(lastKnownConfigurationState,
                 TargetConstants.Configuration.GLOBAL_CONFIG_PRIVACY, MobilePrivacyStatus.UNKNOWN.getValue());
         return MobilePrivacyStatus.fromString(privacyString);
     }
@@ -840,10 +840,10 @@ public class TargetExtension extends Extension {
     /**
      * Packages this extension's state data for sharing.
      *
-     * @return {@link Map<String, Object>} of this extension's state data
+     * @return {@code Map<String, Object>} of this extension's state data
      */
     private Map<String, Object> packageState() {
-        Map<String, Object> data = new HashMap<>();
+        final Map<String, Object> data = new HashMap<>();
 
         if (!StringUtils.isNullOrEmpty(tntId)) {
             data.put(TargetConstants.EventDataKeys.TNT_ID, tntId);

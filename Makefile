@@ -1,4 +1,4 @@
-EXTENSION-LIBRARY-FOLDER-NAME = target
+EXTENSION-LIBRARY-FOLDER-NAME = android-target-library
 
 BUILD-ASSEMBLE-LOCATION = ./ci/assemble
 ROOT_DIR=$(shell git rev-parse --show-toplevel)
@@ -17,6 +17,9 @@ clean:
 	(rm -rf ci)
 	(rm -rf $(AAR_FILE_DIR))
 	(./code/gradlew -p code clean)
+	
+checkstyle:
+	(./code/gradlew -p code/$(EXTENSION-LIBRARY-FOLDER-NAME) checkstyle)
 
 ci-build: create-ci
 	(mkdir -p ci/assemble)
