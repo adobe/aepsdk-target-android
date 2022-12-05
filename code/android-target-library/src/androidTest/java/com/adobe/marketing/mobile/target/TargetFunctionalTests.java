@@ -42,7 +42,7 @@ public class TargetFunctionalTests {
         final CountDownLatch latch = new CountDownLatch(1);
 
         List<Class<? extends Extension>> extensions = new ArrayList<>();
-        extensions.add(Target.Extension);
+        extensions.add(Target.EXTENSION);
         // extensions.add(Identity.EXTENSION);
 
         MobileCore.registerExtensions(extensions, o -> latch.countDown());

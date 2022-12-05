@@ -200,13 +200,14 @@ task platformFunctionalTestJacocoReport(type: JacocoReport, dependsOn: "createPh
     }
 }
 
+apply from: '../checkstyle.gradle'
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
 
     // Adobe Mobile SDK Core
     // implementation "com.adobe.marketing.mobile:core:${rootProject.mavenCoreVersion}"
-    implementation 'com.github.adobe.aepsdk-core-android:core:dev-v2.0.0-SNAPSHOT'
+    implementation 'com.github.adobe.aepsdk-core-android:core:v2.0.0-alpha.4'
 
     testImplementation "androidx.test.ext:junit:${rootProject.ext.junitVersion}"
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
@@ -218,8 +219,12 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
 
-    androidTestImplementation "com.adobe.marketing.mobile:edge:1.+"
-    androidTestImplementation "com.adobe.marketing.mobile:edgeidentity:1.+"
+    androidTestImplementation("com.adobe.marketing.mobile:edge:1.+"){
+        transitive = false
+    }
+    androidTestImplementation("com.adobe.marketing.mobile:edgeidentity:1.+"){
+        transitive = false
+    }
 }
 
 tasks.withType(Test) {

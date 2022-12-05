@@ -13,9 +13,14 @@
 package com.adobe.marketing.mobile.target;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 
 public class TargetUtils {
+    private static final long MILLISECONDS_PER_SECOND = 1000L;
+    private static final double SECONDS_PER_MINUTE = 60;
+
     /**
      * Checks if the given {@code collection} is null or empty.
      *
@@ -44,6 +49,17 @@ public class TargetUtils {
      */
     public static boolean isNullOrEmpty(final String str) {
         return str == null || str.isEmpty();
+    }
+
+    /**
+     * Gets the UTC time offset in minutes
+     *
+     * @return UTC time offset in minutes
+     */
+    static double getUTCTimeOffsetMinutes() {
+        final TimeZone tz = TimeZone.getDefault();
+        final Date now = new Date();
+        return tz.getOffset(now.getTime()) / (double) MILLISECONDS_PER_SECOND / SECONDS_PER_MINUTE;
     }
 
 }

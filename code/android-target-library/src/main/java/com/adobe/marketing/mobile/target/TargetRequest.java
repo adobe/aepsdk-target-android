@@ -12,8 +12,6 @@
 
 package com.adobe.marketing.mobile.target;
 
-import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
-
 import com.adobe.marketing.mobile.AdobeCallback;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
@@ -27,7 +25,7 @@ import java.util.Objects;
  * Target request object.
  */
 public class TargetRequest {
-    private static final String CLASS_NAME = TargetProduct.class.getSimpleName();
+    private static final String CLASS_NAME = "TargetProduct";
 
     final private String mboxName;
     final private TargetParameters targetParameters;
@@ -159,7 +157,7 @@ public class TargetRequest {
      */
     static TargetRequest fromEventData(final Map<String, Object> data) {
         if (TargetUtils.isNullOrEmpty(data)) {
-            Log.debug(LOG_TAG, CLASS_NAME,"Cannot create TargetRequest object, provided data Map is empty or null.");
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetRequest object, provided data Map is empty or null.");
             return null;
         }
 
@@ -174,7 +172,7 @@ public class TargetRequest {
 
             return targetRequest;
         } catch (final DataReaderException e) {
-            Log.warning(LOG_TAG, CLASS_NAME,"Cannot create TargetRequest object, provided data contains invalid fields.");
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetRequest object, provided data contains invalid fields.");
             return null;
         }
     }

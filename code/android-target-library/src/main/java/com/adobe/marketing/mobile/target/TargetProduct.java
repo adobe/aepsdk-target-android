@@ -12,7 +12,6 @@
 
 package com.adobe.marketing.mobile.target;
 
-import static com.adobe.marketing.mobile.target.TargetConstants.LOG_TAG;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
@@ -25,7 +24,7 @@ import java.util.Objects;
  * Class for specifying Target product parameters
  */
 public class TargetProduct {
-    private static final String CLASS_NAME = TargetProduct.class.getSimpleName();
+    private static final String CLASS_NAME = "TargetProduct";
 
     final private String id;
     final private String categoryId;
