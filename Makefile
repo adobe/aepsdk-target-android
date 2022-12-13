@@ -20,6 +20,9 @@ clean:
 	
 checkstyle:
 	(./code/gradlew -p code/$(EXTENSION-LIBRARY-FOLDER-NAME) checkstyle)
+	
+format-license:
+		(./code/gradlew -p code licenseFormat)
 
 ci-build: create-ci
 	(mkdir -p ci/assemble)
