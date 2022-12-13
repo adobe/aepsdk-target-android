@@ -19,7 +19,7 @@ import com.adobe.marketing.mobile.util.TimeUtils;
 
 import org.json.JSONObject;
 
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,27 +32,43 @@ public class TargetState {
     private static final String CLASS_NAME = "TargetState";
 
     private final NamedCollection dataStore;
-    private Map<String, JSONObject> prefetchedMbox;
-    private Map<String, JSONObject> loadedMbox;
-    private List<JSONObject> notifications;
+    private Map<String, JSONObject> prefetchedMbox = new HashMap<>();
+    private Map<String, JSONObject> loadedMbox = new HashMap<>();
+    private List<JSONObject> notifications = new ArrayList<>();
 
     private Map<String, Object> lastKnownConfigurationState = null;
     private String tntId = null;
     private String thirdPartyId = null;
     private String edgeHost = null;
-    protected String sessionId = null;
-    protected long sessionTimestampInSeconds = 0L;
-    private String clientCode = null;
-    
-    TargetState(NamedCollection dataStore) {
+    private String sessionId = null;
+    private long sessionTimestampInSeconds = 0L;
+
+    TargetState(final NamedCollection dataStore) {
         this.dataStore = dataStore;
         if (dataStore != null) {
             tntId = dataStore.getString(TargetConstants.DataStoreKeys.TNT_ID, null);
             thirdPartyId = dataStore.getString(TargetConstants.DataStoreKeys.THIRD_PARTY_ID, null);
             edgeHost = dataStore.getString(TargetConstants.DataStoreKeys.EDGE_HOST, null);
-            sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, null);
+            sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, "");
             sessionTimestampInSeconds =  dataStore.getLong(TargetConstants.DataStoreKeys.SESSION_TIMESTAMP, 0L);
         }
+    }
+
+    /**
+     *  Updates the stored configuration shared state if the given one is not null.
+     *  If the given configuration shared state contains a new client code, the stored `edge host` will be set with null.
+     * @param configuration {@code Map<String, Object} the shared state of the `Configuration`
+     */
+    void updateConfigurationSharedState(final Map<String, Object> configuration) {
+        if (TargetUtils.isNullOrEmpty(configuration)) {
+            return;
+        }
+
+        final String newClientCode = DataReader.optString(configuration, TargetConstants.Configuration.TARGET_CLIENT_CODE, "");
+        if (!newClientCode.equals(getClientCode())) {
+            updateEdgeHost(null);
+        }
+        lastKnownConfigurationState = configuration;
     }
 
     /**
@@ -67,12 +83,24 @@ public class TargetState {
     }
 
     /**
+     * Get the session timeout from config or default session timeout
+     *
+     * @return {@code int} session timeout from config or default session timeout {@code int} TargetConstants#DEFAULT_TARGET_SESSION_TIMEOUT_SEC
+     */
+    int getSessionTimeout() {
+        return DataReader.optInt(lastKnownConfigurationState,
+                TargetConstants.Configuration.TARGET_SESSION_TIMEOUT,
+                TargetConstants.DEFAULT_TARGET_SESSION_TIMEOUT_SEC);
+    }
+
+    /**
      * Get {@code String} client code for this Target extension.
      *
      * @return {@link String} {@link TargetConstants.Configuration#TARGET_CLIENT_CODE} value from the last known Configuration state
      */
     String getClientCode() {
-        return clientCode;
+        return DataReader.optString(lastKnownConfigurationState,
+                TargetConstants.Configuration.TARGET_ENVIRONMENT_ID, null);
     }
 
     /**
@@ -114,13 +142,16 @@ public class TargetState {
         return DataReader.optInt(lastKnownConfigurationState, TargetConstants.Configuration.TARGET_NETWORK_TIMEOUT, TargetConstants.DEFAULT_NETWORK_TIMEOUT);
     }
 
+    List<JSONObject> getNotifications() {
+        return notifications;
+    }
+
     /**
      * Get the session id either from memory or from the datastore if session is not expired.
      *
      * <p>
      * Context: AMSDK-8217
-     * Retrieves the session ID from memory. If no value in memory, it reads the value from
-     * persistence. If no value is stored in persistence either, it generates a random UUID,
+     * Retrieves the session ID from memory. If no value in memory, it generates a random UUID,
      * sets current timestamp for {@code long} sessionTimestampInSeconds and saves them in persistence.
      * The session id is refreshed after
      * {@link TargetConstants.Configuration#TARGET_SESSION_TIMEOUT} (secs) of inactivity
@@ -130,7 +161,7 @@ public class TargetState {
      * route all requests from a session to the same edge to prevent overwriting the profiles.
      * <p>
      *
-     * @return the session id value as {@link String}, null if it couldn't be read from persistence
+     * @return the session id value as {@link String}
      */
     String getSessionId() {
         // if there is no session id persisted in local data store or if the session id is expired
@@ -151,7 +182,7 @@ public class TargetState {
     }
 
     /**
-     * Loads edgeHost from shared preferences; if not found or there was an error while reading from shared preferences, it returns null.
+     * Returns edgeHost in memory.
      * <p>
      * If current session expired, the edge host is reset to null (in memory and persistence), so
      * the next network call will use the target client code.
@@ -197,24 +228,6 @@ public class TargetState {
     }
 
     /**
-     *  Updates the stored configuration shared state if the given one is not null.
-     *  If the given configuration shared state contains a new client code, the stored `edge host` will be set with an empty String.
-     * @param configuration {@code Map<String, Object} the shared state of the `Configuration`
-     */
-    void updateConfigurationSharedState(Map<String, Object> configuration) {
-        if (TargetUtils.isNullOrEmpty(configuration)) {
-            return;
-        }
-
-        final String newClientCode = DataReader.optString(configuration, TargetConstants.Configuration.TARGET_CLIENT_CODE, "");
-        if (!newClientCode.equals(clientCode)) {
-            clientCode = newClientCode;
-            updateEdgeHost(null);
-        }
-        lastKnownConfigurationState = configuration;
-    }
-
-    /**
      * Updates {@code long} session timestamp in memory and in datastore.
      * If session timestamp needs to be reset, sessionTimestampInSeconds is set to 0 and the value is removed from persistence.
      * If not, sets sessionTimestampInSeconds to the current timestamp and stores it in persistence.
@@ -225,10 +238,11 @@ public class TargetState {
      * <p>
      * @param shouldSessionTimestampReset {@link Boolean} representing if session timestamp needs to be reset
      */
-    void updateSessionTimestamp(boolean shouldSessionTimestampReset) {
+    void updateSessionTimestamp(final boolean shouldSessionTimestampReset) {
         if(shouldSessionTimestampReset) {
             sessionTimestampInSeconds = 0L;
             if (dataStore != null) {
+                Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "updateSessionTimestamp - Attempting to remove the session timestamp");
                 dataStore.remove(TargetConstants.DataStoreKeys.SESSION_TIMESTAMP);
             }
             return;
@@ -247,13 +261,14 @@ public class TargetState {
      *
      * @param updatedSessionId {@link String} containing the new sessionId to be set
      */
-    void updateSessionId(String updatedSessionId) {
+    void updateSessionId(final String updatedSessionId) {
         sessionId = updatedSessionId;
         if (dataStore != null) {
-            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "updateSessionId - Attempting to update the session id");
             if (StringUtils.isNullOrEmpty(sessionId)) {
+                Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "updateSessionId - Attempting to remove the session id");
                 dataStore.remove(TargetConstants.DataStoreKeys.SESSION_ID);
             } else {
+                Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "updateSessionId - Attempting to update the session id");
                 dataStore.setString(TargetConstants.DataStoreKeys.SESSION_ID, updatedSessionId);
             }
         }
@@ -269,33 +284,34 @@ public class TargetState {
      *
      * @param updatedTntId {@link String} containing new tntId that needs to be set.
      */
-    void updateTntId(String updatedTntId) {
+    void setTntIdInternal(final String updatedTntId) {
         // do not set identifier if privacy is opt-out and the id is not being cleared
         if (getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT && !StringUtils.isNullOrEmpty(updatedTntId)) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "setTntIdInternal - Cannot update Target tntId due to opt out privacy status.");
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "updateTntId - Cannot update Target tntId due to opt out privacy status.");
             return;
         }
 
         if (tntIdValuesAreEqual(tntId, updatedTntId)) {
-            Log.debug(TargetConstants.LOG_TAG,
-                    "setTntIdInternal - Won't update Target tntId as provided value is same as the existing tntId value (%s).", updatedTntId);
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "updateTntId - Won't update Target tntId as provided value is same as the existing tntId value (%s).", updatedTntId);
             return;
         }
 
         final String edgeHost = extractEdgeHost(updatedTntId);
 
         if (!StringUtils.isNullOrEmpty(edgeHost)) {
-            Log.debug(TargetConstants.LOG_TAG, "setTntIdInternal - The edge host value derived from the given tntId (%s) is (%s).",
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "updateTntId - The edge host value derived from the given tntId (%s) is (%s).",
                     updatedTntId, edgeHost);
             updateEdgeHost(edgeHost);
         } else {
-            Log.debug(TargetConstants.LOG_TAG,
-                    "setTntIdInternal - The edge host value cannot be derived from the given tntId (%s) and it is removed from the data store.",
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "updateTntId - The edge host value cannot be derived from the given tntId (%s) and it is removed from the data store.",
                     updatedTntId);
             updateEdgeHost(null);
         }
 
-        Log.trace(TargetConstants.LOG_TAG, "setTntIdInternal - Updating tntId with value (%s).", updatedTntId);
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "setTntIdInternal - Updating tntId with value (%s).", updatedTntId);
         tntId = updatedTntId;
 
         if (dataStore != null) {
@@ -319,7 +335,7 @@ public class TargetState {
      *
      * @param updatedThirdPartyId newThirdPartyID {@link String} to be set
      */
-    void updateThirdPartyId(String updatedThirdPartyId) {
+    void setThirdPartyIdInternal(final String updatedThirdPartyId) {
         // do not set identifier if privacy is opt-out and the id is not being cleared
         if (getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT && !StringUtils.isNullOrEmpty(updatedThirdPartyId)) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -387,6 +403,37 @@ public class TargetState {
         return data;
     }
 
+    void mergePrefetchedMboxJson(final Map<String, JSONObject> mboxMap) {
+        prefetchedMbox.putAll(mboxMap);
+    }
+
+    /**
+     * Removes mboxes from loadedMboxes if they are also present in the prefetchedMboxes cache
+     */
+    void removeDuplicateLoadedMboxes() {
+        for (String mboxName : prefetchedMbox.keySet()) {
+            if (mboxName != null) {
+                loadedMbox.remove(mboxName);
+            }
+        }
+    }
+
+    Map<String, JSONObject> getPrefetchedMbox() {
+        return prefetchedMbox;
+    }
+
+    Map<String, JSONObject> getLoadedMbox() {
+        return loadedMbox;
+    }
+
+    void clearNotifications() {
+        notifications.clear();
+    }
+
+    void addNotification(final JSONObject notification) {
+        notifications.add(notification);
+    }
+
     /**
      * Verifies if current target session is expired.
      *
@@ -396,17 +443,6 @@ public class TargetState {
         final long currentTimeSeconds = TimeUtils.getUnixTimeInSeconds();
 
         return (sessionTimestampInSeconds > 0) && ((currentTimeSeconds - sessionTimestampInSeconds) > getSessionTimeout());
-    }
-
-    /**
-     * Get the session timeout from config or default session timeout
-     *
-     * @return {@code int} session timeout from config or default session timeout {@code int} TargetConstants#DEFAULT_TARGET_SESSION_TIMEOUT_SEC
-     */
-    private int getSessionTimeout() {
-        return DataReader.optInt(lastKnownConfigurationState,
-                TargetConstants.Configuration.TARGET_SESSION_TIMEOUT,
-                TargetConstants.DEFAULT_TARGET_SESSION_TIMEOUT_SEC);
     }
 
     /**
