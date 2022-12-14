@@ -12,6 +12,9 @@
 package com.adobe.marketing.mobile.target;
 
 import com.adobe.marketing.mobile.services.HttpConnecting;
+import androidx.annotation.Nullable;
+
+import com.adobe.marketing.mobile.internal.util.MapExtensionsKt;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.JSONUtils;
 import com.adobe.marketing.mobile.util.StreamUtils;
@@ -272,6 +275,7 @@ class TargetResponseParser {
 	 * @param json {@link JSONObject} containing analytics payload
 	 * @return {@code Map<String, String>} containing A4T params
 	 */
+	@Nullable
 	Map<String, String> getAnalyticsForTargetPayload(final JSONObject json) {
 		if (json == null) {
 			return null;
@@ -289,8 +293,7 @@ class TargetResponseParser {
 			return null;
 		}
 
-		// todo
-		return mapFromJsonObject(payloadJson);
+		return TargetUtils.toStringMap(payloadJson);
 	}
 
 	/**
@@ -324,8 +327,7 @@ class TargetResponseParser {
 			return null;
 		}
 
-		// todo
-		return mapFromJsonObject(responseTokens);
+		return TargetUtils.toStringMap(responseTokens);
 	}
 
 	/**

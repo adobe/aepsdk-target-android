@@ -16,17 +16,20 @@ import com.adobe.marketing.mobile.VisitorID;
 import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
+import com.adobe.marketing.mobile.util.DataReaderException;
 import com.adobe.marketing.mobile.util.StringUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This class is used to create the json body for the target requests.
@@ -36,6 +39,7 @@ class TargetRequestBuilder {
 	private final DeviceInforming deviceInfoService;
 	private final TargetPreviewManager targetPreviewManager;
 
+	private Map<String, String> lifecycleData;
 	private long environmentId;
 	private String tntId;
 	private String thirdPartyId;
@@ -63,6 +67,16 @@ class TargetRequestBuilder {
 		this.environmentId = 0;
 		this.thirdPartyId = null;
 		this.tntId = null;
+		this.lifecycleData = null;
+	}
+
+	/**
+	 * Sets the parameters provided through shared state by the config extension
+	 *
+	 * @param lifecycleData {@code  Map<String, String>} of lifecycle context data
+	 */
+	void setLifecycleParameters(final Map<String, String> lifecycleData) {
+		this.lifecycleData = lifecycleData;
 	}
 
 	/**
@@ -70,6 +84,7 @@ class TargetRequestBuilder {
 	 *
 	 * @param prefetchArray     the list of {@link TargetPrefetch} objects with mboxes that we want to prefetch
 	 * @param executeArray      the list of {@link TargetRequest} objects with mboxes that we want to execute
+	 * @param prefetchViews a {@code boolean} enabling Target View prefetch
 	 * @param parameters        {@link TargetParameters} object provided by the customer
 	 * @param notifications     viewed mboxes that we cached
 	 * @param propertyToken a {@link String} to be passed for all requests
@@ -79,6 +94,7 @@ class TargetRequestBuilder {
 	 */
 	JSONObject getRequestPayload(final List<TargetPrefetch> prefetchArray,
 								 final List<TargetRequest> executeArray,
+								 final boolean prefetchViews,
 								 final TargetParameters parameters,
 								 final List<JSONObject> notifications,
 								 final String propertyToken,

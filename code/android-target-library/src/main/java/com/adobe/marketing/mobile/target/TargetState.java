@@ -20,6 +20,7 @@ import com.adobe.marketing.mobile.util.TimeUtils;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +31,9 @@ class TargetState {
     private static final String CLASS_NAME = "TargetState";
 
     private final NamedCollection dataStore;
-    private Map<String, JSONObject> prefetchedMbox = new HashMap<>();
-    private Map<String, JSONObject> loadedMbox = new HashMap<>();
-    private List<JSONObject> notifications = new ArrayList<>();
+    final private Map<String, JSONObject> prefetchedMbox = new HashMap<>();
+    final private Map<String, JSONObject> loadedMbox = new HashMap<>();
+    final private List<JSONObject> notifications = new ArrayList<>();
 
     private Map<String, Object> storedConfigurationSharedState = null;
     private String tntId = "";
@@ -40,6 +41,9 @@ class TargetState {
     private String edgeHost = "";
     private String sessionId = "";
     private long sessionTimestampInSeconds = 0L;
+
+    private static final List<String> LOADED_MBOX_ACCEPTED_KEYS = Arrays.asList(TargetJson.Mbox.NAME,
+            TargetJson.METRICS);
 
     TargetState(final NamedCollection dataStore) {
         this.dataStore = dataStore;

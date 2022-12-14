@@ -19,9 +19,9 @@ import com.adobe.marketing.mobile.target.TargetExtension;
 import com.adobe.marketing.mobile.target.TargetParameters;
 import com.adobe.marketing.mobile.target.TargetPrefetch;
 import com.adobe.marketing.mobile.target.TargetRequest;
-import com.adobe.marketing.mobile.target.TargetUtils;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
+import com.adobe.marketing.mobile.util.StringUtils;
 
 import android.net.Uri;
 
@@ -156,7 +156,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (TargetUtils.isNullOrEmpty(eventData)) {
+                if (eventData == null || eventData.isEmpty()) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -207,7 +207,7 @@ public class Target {
 
             // Skip the target request objects with null/empty mbox names
             final String mboxName = request.getMboxName();
-            if (TargetUtils.isNullOrEmpty(mboxName)) {
+            if (StringUtils.isNullOrEmpty(mboxName)) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to retrieve Target location content (%s), returning default content.",
                         NULL_MBOX_MESSAGE);
                 final String defaultContent = request.getDefaultContent();
@@ -298,7 +298,7 @@ public class Target {
      * @param parameters {@link TargetParameters} object for the location clicked
      */
     public static void locationClicked(@NonNull final String mboxName, @Nullable final TargetParameters parameters) {
-        if (TargetUtils.isNullOrEmpty(mboxName)) {
+        if (StringUtils.isNullOrEmpty(mboxName)) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to send click notification (%s).",
                     NULL_MBOX_MESSAGE);
@@ -358,7 +358,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (TargetUtils.isNullOrEmpty(eventData)) {
+                if (eventData == null || eventData.isEmpty()) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -430,7 +430,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (TargetUtils.isNullOrEmpty(eventData)) {
+                if (eventData == null || eventData.isEmpty()) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -508,7 +508,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (TargetUtils.isNullOrEmpty(eventData)) {
+                if (eventData == null || eventData.isEmpty()) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -627,7 +627,7 @@ public class Target {
         final AdobeCallbackWithError<?> callbackWithError = callback instanceof AdobeCallbackWithError ?
                 (AdobeCallbackWithError<?>) callback : null;
 
-        if (TargetUtils.isNullOrEmpty(request)) {
+        if (request == null || request.isEmpty()) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to execute raw Target request (%s).", NULL_RAW_REQUEST_MESSAGE);
 
@@ -673,7 +673,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (TargetUtils.isNullOrEmpty(eventData)) {
+                if (eventData == null || eventData.isEmpty()) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -697,7 +697,7 @@ public class Target {
      * @see #executeRawRequest(Map, AdobeCallback)
      */
     public static void sendRawNotifications(@NonNull final Map<String, Object> request) {
-        if (TargetUtils.isNullOrEmpty(request)) {
+        if (request == null || request.isEmpty()) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Failed to send raw Target notification(s) (%s).", NULL_RAW_REQUEST_MESSAGE);
             return;
@@ -740,7 +740,7 @@ public class Target {
                     }
 
                     final Map<String, Object> eventData = event.getEventData();
-                    if (TargetUtils.isNullOrEmpty(eventData)) {
+                    if (eventData == null || eventData.isEmpty()) {
                        fail(AdobeError.UNEXPECTED_ERROR);
                         return;
                     }
@@ -751,7 +751,7 @@ public class Target {
                     } catch (final DataReaderException e) {
                         Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is invalid (%s).", e.getLocalizedMessage());
                     }
-                    if (TargetUtils.isNullOrEmpty(id)) {
+                    if (StringUtils.isNullOrEmpty(id)) {
                         Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is not available.");
                         return;
                     }
@@ -762,7 +762,7 @@ public class Target {
                     } catch (final DataReaderException e) {
                         Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is invalid (%s).", e.getLocalizedMessage());
                     }
-                    if (TargetUtils.isNullOrEmpty(responsePairId)) {
+                    if (StringUtils.isNullOrEmpty(responsePairId)) {
                         Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is not available.");
                         return;
                     }
@@ -806,7 +806,7 @@ public class Target {
      * @return a {@code Map<String, Object>} containing mbox values received in {@code data} map.
      */
     private static Map<String, Object> createMboxPayloadMap(final Map<String, Object> data, final TargetRequest request) {
-        if (TargetUtils.isNullOrEmpty(data)) {
+        if (data == null || data.isEmpty()) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
                     "The data payload map containing response tokens and analytics payload is not present for the mbox location (%s)", request.getMboxName());
             return null;
