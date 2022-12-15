@@ -22,6 +22,7 @@ import com.adobe.marketing.mobile.ExtensionApi;
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.SharedStateResolution;
 import com.adobe.marketing.mobile.SharedStateResult;
+import com.adobe.marketing.mobile.Target;
 import com.adobe.marketing.mobile.services.DataStoring;
 import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.HttpConnecting;
@@ -140,7 +141,7 @@ public class TargetExtension extends Extension {
      */
     @Override
     protected String getVersion() {
-        return TargetConstants.EXTENSION_VERSION;
+        return Target.extensionVersion();
     }
 
     @Override

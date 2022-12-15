@@ -81,7 +81,7 @@ class TargetUtils {
             try {
                 map.put(name, jsonObject.getString(name));
             } catch (JSONException e) {
-                return null;
+                continue;
             }
         }
 

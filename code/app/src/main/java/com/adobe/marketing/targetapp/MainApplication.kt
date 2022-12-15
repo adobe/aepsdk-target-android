@@ -32,7 +32,7 @@ class MainApplication : Application() {
 
         MobileCore.registerExtensions(
             listOf(
-                Target.Extension
+                Target.EXTENSION
             )
         ) {}
         Identity.registerExtension()
