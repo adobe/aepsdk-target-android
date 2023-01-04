@@ -91,7 +91,11 @@ class TargetRequestBuilder {
 			String mboxATProperty = "";
 
 			// add default parameters
-			final JSONObject defaultParamJson = getDefaultJsonObject(identitySharedState);
+			final JSONObject defaultParamJson = getDefaultJsonObject(null,
+					null,
+					null,
+					environmentId,
+					identitySharedState);
 
 			// add prefetch mBoxes
 			final JSONArray prefetchMboxesNode = getPrefetchMboxes(prefetchArray, parameters, lifecycleData);
@@ -238,56 +242,6 @@ class TargetRequestBuilder {
 			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "getRequestPayload - (%s) (%s)", TargetErrors.REQUEST_GENERATION_FAILED, e);
 			return null;
 		}
-	}
-
-
-	/**
-	 * Gets the default payload data which need to be used in every target request.
-	 *
-	 * @return {@code JSONObject} containing the common json payload
-	 * @param identityData {@code Map<String, Object>} shared state of Identity extension
-	 * @throws JSONException json exception thrown when it fails to add field to the json object
-	 */
-	private JSONObject getDefaultJsonObject(final Map<String, Object> identityData) throws JSONException {
-		final JSONObject defaultParamJson = new JSONObject();
-
-		if (environmentId != 0L) {
-			defaultParamJson.put(TargetJson.ENVIRONMENT_ID, environmentId);
-		}
-
-		// use any of the ids we have
-		final JSONObject idNode = new JSONObject();
-
-		if (!StringUtils.isNullOrEmpty(tntId)) {
-			idNode.put(TargetJson.ID_TNT_ID, tntId);
-		}
-
-		if (!StringUtils.isNullOrEmpty(thirdPartyId)) {
-			idNode.put(TargetJson.ID_THIRD_PARTY_ID, thirdPartyId);
-		}
-
-		final String visitorMarketingCloudId = DataReader.optString(identityData, TargetConstants.Identity.VISITOR_ID_MID, "");
-		if (!StringUtils.isNullOrEmpty(visitorMarketingCloudId)) {
-			idNode.put(TargetJson.ID_MARKETING_CLOUD_VISITOR_ID, visitorMarketingCloudId);
-		}
-
-		// set customer IDs information
-		final List<VisitorID> visitorCustomerIds = DataReader.optTypedList(VisitorID.class, identityData, TargetConstants.Identity.VISITOR_IDS_LIST, null);
-		if (visitorCustomerIds != null && !visitorCustomerIds.isEmpty()) {
-			idNode.put(TargetJson.ID_CUSTOMER_IDS, getCustomerIDs(visitorCustomerIds));
-		}
-
-		if (idNode.length() > 0) {
-			defaultParamJson.put(TargetJson.ID, idNode);
-		}
-
-		final String visitorBlob = DataReader.optString(identityData, TargetConstants.Identity.VISITOR_ID_BLOB, "");
-		final String visitorLocationHint = DataReader.optString(identityData, TargetConstants.Identity.VISITOR_ID_LOCATION_HINT, "");
-		defaultParamJson.put(TargetJson.EXPERIENCE_CLOUD, getExperienceCloudObject(visitorBlob, visitorLocationHint));
-
-		defaultParamJson.put(TargetJson.CONTEXT_PARAMETERS, getContextObject());
-
-		return defaultParamJson;
 	}
 
 	/**

@@ -581,15 +581,15 @@ public class TargetExtension extends Extension {
                             return;
                         }
 
-                        if (responseCode == HttpURLConnection.HTTP_OK) {
-                            targetState.clearNotifications();
-                        } else {
+                        if (responseCode != HttpURLConnection.HTTP_OK) {
                             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                                     "prefetchMboxContent - Unable to prefetch mbox content, Error %s",
                                     TargetErrors.ERROR_RESPONSE + responseCode);
                             dispatchMboxPrefetchResult(TargetErrors.ERROR_RESPONSE, event);
                             return;
                         }
+
+                        targetState.clearNotifications();
 
                         final TargetResponseParser responseParser = new TargetResponseParser();
                         // save the network request timestamp for computing the session id expiration
@@ -602,7 +602,7 @@ public class TargetExtension extends Extension {
                         final Map<String, JSONObject> batchedMboxes = responseParser.extractPrefetchedMboxes(
                                 responseJson);
                         if (TargetUtils.isNullOrEmpty(batchedMboxes)) {
-                            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,TargetErrors.NO_PREFETCH_MBOXES);
+                            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.NO_PREFETCH_MBOXES);
                             dispatchMboxPrefetchResult(TargetErrors.NO_PREFETCH_MBOXES, event);
                             return;
                         }
@@ -612,7 +612,7 @@ public class TargetExtension extends Extension {
                         // check if we have duplicates in memory and remove them
                         targetState.removeDuplicateLoadedMboxes();
                         Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                        "prefetchMboxContent - Current cached mboxes : %s, size: %d",
+                                "prefetchMboxContent - Current cached mboxes : %s, size: %d",
                                 Arrays.toString(targetState.getPrefetchedMbox().keySet().toArray()),
                                 targetState.getPrefetchedMbox().size());
 
