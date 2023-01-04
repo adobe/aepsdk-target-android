@@ -399,7 +399,7 @@ class TargetRequestBuilder {
 				mBoxArrayNode.put(createMboxJsonObject(currentMbox.getMboxName(),
 						currentMbox.getTargetParameters(), index, globalParameters, lifecycleData));
 				index++;
-			} catch (JSONException exception) {
+			} catch (final JSONException exception) {
 				Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
 						"getExecuteMboxes -Failed to create Json Node for mbox %s (%s)",
 						currentMbox.getMboxName(), exception);
@@ -582,7 +582,7 @@ class TargetRequestBuilder {
 		final JSONArray prefetchMboxesArrayNode = new JSONArray();
 		int index = 0;
 
-		for (TargetPrefetch currentMbox : prefetchList) {
+		for (final TargetPrefetch currentMbox : prefetchList) {
 			try {
 				prefetchMboxesArrayNode.put(createMboxJsonObject(currentMbox.getMboxName(),
 						currentMbox.getTargetParameters(), index, globalParameters, lifecycleData));
@@ -756,8 +756,8 @@ class TargetRequestBuilder {
 			}
 
 			return orderJson;
-		} catch (JSONException ex) {
-			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to create target order parameters (%s)", ex);
+		} catch (final JSONException ex) {
+			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "getOrderParameters - Failed to create target order parameters (%s)", ex);
 		}
 
 		return null;
@@ -786,9 +786,9 @@ class TargetRequestBuilder {
 			if (!StringUtils.isNullOrEmpty(product.getCategoryId())) {
 				productNode.put(TargetJson.Product.CATEGORY_ID, product.getCategoryId());
 			}
-		} catch (JSONException exception) {
+		} catch (final JSONException exception) {
 			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-					"Failed to append product parameters to the target request json (%s)",
+					"getProductParameters - Failed to append product parameters to the target request json (%s)",
 					exception);
 			return null;
 		}

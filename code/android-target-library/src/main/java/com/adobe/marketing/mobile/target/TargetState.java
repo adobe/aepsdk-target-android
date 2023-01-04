@@ -27,7 +27,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TargetState {
+class TargetState {
 
     private static final String CLASS_NAME = "TargetState";
 
@@ -45,13 +45,16 @@ public class TargetState {
 
     TargetState(final NamedCollection dataStore) {
         this.dataStore = dataStore;
-        if (dataStore != null) {
-            tntId = dataStore.getString(TargetConstants.DataStoreKeys.TNT_ID, null);
-            thirdPartyId = dataStore.getString(TargetConstants.DataStoreKeys.THIRD_PARTY_ID, null);
-            edgeHost = dataStore.getString(TargetConstants.DataStoreKeys.EDGE_HOST, null);
-            sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, "");
-            sessionTimestampInSeconds =  dataStore.getLong(TargetConstants.DataStoreKeys.SESSION_TIMESTAMP, 0L);
+        if (dataStore == null) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to initialize TargetState, datastore is null");
+            return;
         }
+        tntId = dataStore.getString(TargetConstants.DataStoreKeys.TNT_ID, null);
+        thirdPartyId = dataStore.getString(TargetConstants.DataStoreKeys.THIRD_PARTY_ID, null);
+        edgeHost = dataStore.getString(TargetConstants.DataStoreKeys.EDGE_HOST, null);
+        sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, "");
+        sessionTimestampInSeconds =  dataStore.getLong(TargetConstants.DataStoreKeys.SESSION_TIMESTAMP, 0L);
+
     }
 
     /**
@@ -65,7 +68,7 @@ public class TargetState {
         }
 
         final String newClientCode = DataReader.optString(configuration, TargetConstants.Configuration.TARGET_CLIENT_CODE, "");
-        if (!newClientCode.equals(getClientCode())) {
+        if (!newClientCode.equals(getClientCode()) && lastKnownConfigurationState !=null) {
             updateEdgeHost(null);
         }
         lastKnownConfigurationState = configuration;
@@ -100,7 +103,7 @@ public class TargetState {
      */
     String getClientCode() {
         return DataReader.optString(lastKnownConfigurationState,
-                TargetConstants.Configuration.TARGET_ENVIRONMENT_ID, null);
+                TargetConstants.Configuration.TARGET_CLIENT_CODE, "");
     }
 
     /**
@@ -130,7 +133,7 @@ public class TargetState {
      */
     String getTargetServer() {
         return DataReader.optString(lastKnownConfigurationState,
-                TargetConstants.Configuration.TARGET_SERVER, null);
+                TargetConstants.Configuration.TARGET_SERVER, "");
     }
 
     /**

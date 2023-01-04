@@ -479,7 +479,7 @@ public class TargetExtension extends Extension {
      * @param clientCode the value of "target.clientCode" in configuration
      * @return the server url string
      */
-    protected String getTargetRequestUrl(final String customServer, final String clientCode) {
+    private String getTargetRequestUrl(final String customServer, final String clientCode) {
         // If customServer is not empty return targetRequestUrl with customServer as host
         if (!customServer.isEmpty()) {
             return String.format(TargetConstants.PREFETCH_API_URL_BASE, customServer, clientCode, targetState.getSessionId());

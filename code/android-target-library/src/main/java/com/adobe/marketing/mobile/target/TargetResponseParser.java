@@ -86,16 +86,16 @@ class TargetResponseParser {
 	 * @return A {@link Map} of all the batched mboxes
 	 */
 	Map<String, JSONObject> extractBatchedMBoxes(final JSONObject serverResponseJson) {
-		JSONArray batchedMboxes = getMboxesFromKey(serverResponseJson, TargetJson.EXECUTE);
+		final JSONArray batchedMboxes = getMboxesFromKey(serverResponseJson, TargetJson.EXECUTE);
 
 		if (batchedMboxes == null) {
 			return null;
 		}
 
-		Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>();
+		final Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>();
 
 		for (int i = 0; i < batchedMboxes.length(); i++) {
-			JSONObject mboxJson = batchedMboxes.optJSONObject(i);
+			final JSONObject mboxJson = batchedMboxes.optJSONObject(i);
 
 			if (mboxJson == null) {
 				continue;
@@ -124,16 +124,16 @@ class TargetResponseParser {
 	 * @return A {@link Map} of all the prefetched mboxes
 	 */
 	Map<String, JSONObject> extractPrefetchedMboxes(final JSONObject serverResponseJson) {
-		JSONArray prefetchedMboxes = getMboxesFromKey(serverResponseJson, TargetJson.PREFETCH);
+		final JSONArray prefetchedMboxes = getMboxesFromKey(serverResponseJson, TargetJson.PREFETCH);
 
 		if (prefetchedMboxes == null) {
 			return null;
 		}
 
-		Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>();
+		final Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>();
 
 		for (int i = 0; i < prefetchedMboxes.length(); i++) {
-			JSONObject mboxJson = prefetchedMboxes.optJSONObject(i);
+			final JSONObject mboxJson = prefetchedMboxes.optJSONObject(i);
 
 			if (mboxJson == null) {
 				continue;
@@ -145,14 +145,14 @@ class TargetResponseParser {
 				continue;
 			}
 
-			Iterator<String> keyIterator = mboxJson.keys();
-			List<String> keyCache = new ArrayList<String>();
+			final Iterator<String> keyIterator = mboxJson.keys();
+			final List<String> keyCache = new ArrayList<String>();
 
 			while (keyIterator.hasNext()) {
 				keyCache.add(keyIterator.next());
 			}
 
-			for (String key : keyCache) {
+			for (final String key : keyCache) {
 				if (!TargetJson.CACHED_MBOX_ACCEPTED_KEYS.contains(key)) {
 					mboxJson.remove(key);
 				}
@@ -415,7 +415,7 @@ class TargetResponseParser {
 			return null;
 		}
 
-		JSONArray optionsArray = mboxJson.optJSONArray(TargetJson.OPTIONS);
+		final JSONArray optionsArray = mboxJson.optJSONArray(TargetJson.OPTIONS);
 
 		if (optionsArray == null) {
 			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -423,7 +423,7 @@ class TargetResponseParser {
 			return null;
 		}
 
-		StringBuilder contentBuilder = new StringBuilder();
+		final StringBuilder contentBuilder = new StringBuilder();
 
 		for (int i = 0; i < optionsArray.length(); i++) {
 			JSONObject option = optionsArray.optJSONObject(i);
