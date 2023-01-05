@@ -664,7 +664,6 @@ class TargetRequestBuilder {
 				}
 			}
 
-			mboxParametersJson.remove(TargetConstants.OLD_API_COMPAT_PARAM);
 		} catch (JSONException exception) {
 			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
 					"getMboxParameters - Failed to append internal parameters to the target request json (%s)",

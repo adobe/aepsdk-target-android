@@ -25,7 +25,6 @@ public final class TargetConstants {
     static final String PREFETCH_API_URL_BASE 	= "https://%s/rest/v1/delivery/?client=%s&sessionId=%s";
     static final String REQUEST_CONTENT_TYPE  	= "application/json";
     static final String MBOX_AT_PROPERTY_KEY  		= "at_property";
-    static final String OLD_API_COMPAT_PARAM = "__oldTargetSdkApiCompatParam__";
 
     static final int DEFAULT_NETWORK_TIMEOUT = 2;
     static final int DEFAULT_TARGET_SESSION_TIMEOUT_SEC = 30 * 60; // 30 mins

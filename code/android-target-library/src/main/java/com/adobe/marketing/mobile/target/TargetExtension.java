@@ -49,6 +49,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Adobe Target is the Adobe Marketing Cloud solution that provides everything you need to tailor and personalize your customers
@@ -144,7 +146,7 @@ public class TargetExtension extends Extension {
     @Override
     public boolean readyForEvent(@NonNull final Event event) {
         targetState.updateConfigurationSharedState(retrieveConfigurationSharedState(event));
-        return targetState.getLastKnownConfigurationState() != null;
+        return targetState.getStoredConfigurationSharedState() != null;
     }
 
     @Override
@@ -527,10 +529,10 @@ public class TargetExtension extends Extension {
             }
 
             // save the network request timestamp for computing the session id expiration
-            targetState.updateSessionTimestamp(false);
+            targetState.resetSessionTimestamp(false);
             final JSONObject idJson = responseJson.optJSONObject(TargetJson.ID);
             if (idJson != null) {
-                targetState.setTntIdInternal(idJson.getString(TargetJson.ID_TNT_ID));
+                setTntIdInternal(idJson.getString(TargetJson.ID_TNT_ID));
             }
             targetState.updateEdgeHost(responseJson.optString(TargetJson.EDGE_HOST, ""));
 
@@ -593,8 +595,8 @@ public class TargetExtension extends Extension {
 
                         final TargetResponseParser responseParser = new TargetResponseParser();
                         // save the network request timestamp for computing the session id expiration
-                        targetState.updateSessionTimestamp(false);
-                        targetState.setTntIdInternal(responseParser.getTntId(responseJson));
+                        targetState.resetSessionTimestamp(false);
+                        setTntIdInternal(responseParser.getTntId(responseJson));
                         targetState.updateEdgeHost(responseParser.getEdgeHost(responseJson));
 
                         getApi().createSharedState(targetState.generateSharedState(), event);
@@ -758,6 +760,139 @@ public class TargetExtension extends Extension {
             return previewParams != null && !previewParams.isEmpty();
         }
 
+        return false;
+    }
+
+    /**
+     * Saves the tntId and the edge host value derived from it to the {@link TargetState}.
+     * <p>
+     * If a valid tntId is provided and the privacy status is {@link MobilePrivacyStatus#OPT_OUT} or
+     * the provided tntId is same as the existing value, then the method returns with no further action.
+     *
+     * @param updatedTntId {@link String} containing new tntId that needs to be set.
+     */
+    void setTntIdInternal(final String updatedTntId) {
+        // do not set identifier if privacy is opt-out and the id is not being cleared
+        if (targetState.getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT && !StringUtils.isNullOrEmpty(updatedTntId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "updateTntId - Cannot update Target tntId due to opt out privacy status.");
+            return;
+        }
+
+        if (tntIdValuesAreEqual(targetState.getTntId(), updatedTntId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "updateTntId - Won't update Target tntId as provided value is same as the existing tntId value (%s).", updatedTntId);
+            return;
+        }
+
+        final String edgeHost = extractEdgeHost(updatedTntId);
+
+        if (!StringUtils.isNullOrEmpty(edgeHost)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "updateTntId - The edge host value derived from the given tntId (%s) is (%s).",
+                    updatedTntId, edgeHost);
+            targetState.updateEdgeHost(edgeHost);
+        } else {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "updateTntId - The edge host value cannot be derived from the given tntId (%s) and it is removed from the data store.",
+                    updatedTntId);
+            targetState.updateEdgeHost(null);
+        }
+
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "setTntIdInternal - Updating tntId with value (%s).", updatedTntId);
+        targetState.setTntId(updatedTntId);
+    }
+
+    /**
+     * Saves the {@code #thirdPartyId} to the Target DataStore or remove its key in the dataStore if the newThirdPartyId {@link String} is null
+     * If the {@code #thirdPartyId} ID is changed. We set the sessionID to null to start a new session.
+     *
+     * @param updatedThirdPartyId newThirdPartyID {@link String} to be set
+     */
+    void setThirdPartyIdInternal(final String updatedThirdPartyId) {
+        // do not set identifier if privacy is opt-out and the id is not being cleared
+        if (targetState.getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT && !StringUtils.isNullOrEmpty(updatedThirdPartyId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "setThirdPartyIdInternal - Cannot update Target thirdPartyId due to opt out privacy status.");
+            return;
+        }
+
+        if (targetState.getThirdPartyId() != null && targetState.getThirdPartyId().equals(updatedThirdPartyId)) {
+            Log.debug(TargetConstants.LOG_TAG,
+                    "setThirdPartyIdInternal - New thirdPartyId value is same as the existing thirdPartyId (%s).", targetState.getThirdPartyId());
+            return;
+        }
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "setThirdPartyIdInternal - Updating thirdPartyId with value (%s).", updatedThirdPartyId);
+        targetState.setThirdPartyId(updatedThirdPartyId);
+    }
+
+    /**
+     * Derives and returns the edge host value from the provided tntId.
+     * <p>
+     * The tntId has the format {@literal UUID.<profile location hint>}. The edge host value
+     * can be derived from the profile location hint.
+     * For example, if the tntId is {@literal 10abf6304b2714215b1fd39a870f01afc.28_20},
+     * then the edgeHost will be {@literal mboxedge28.tt.omtrdc.net}.
+     * <p>
+     * If the provided tntId is null or empty, or if the edge host value cannot be determined
+     *
+     * @param newTntId {@link String} containing the tntId used to derive the edge host value.
+     */
+    private String extractEdgeHost(final String newTntId) {
+        if (StringUtils.isNullOrEmpty(newTntId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "extractEdgeHost - Cannot extract Edge host from the provided tntId as it is null or empty.");
+            return null;
+        }
+
+        final Pattern pattern = Pattern.compile("(?<=[0-9A-Fa-f-]\\.)([\\d][^\\D]*)(?=_)");
+        final Matcher matcher = pattern.matcher(newTntId);
+
+        String locationHint = null;
+
+        if (matcher.find()) {
+            locationHint = matcher.group();
+            Log.debug(TargetConstants.LOG_TAG, "extractEdgeHost - Provided tntId (%s) contains location hint (%s).", newTntId,
+                    locationHint);
+        }
+
+        String edgeHost = null;
+
+        if (!StringUtils.isNullOrEmpty(locationHint)) {
+            edgeHost = String.format(TargetConstants.API_URL_HOST_BASE, String.format(TargetConstants.EDGE_HOST_BASE,
+                    locationHint));
+            Log.debug(TargetConstants.LOG_TAG, "extractEdgeHost - Edge host (%s) is derived from the provided tntId (%s).",
+                    edgeHost, locationHint);
+        }
+
+        return edgeHost;
+    }
+
+    /**
+     * Compares if the given two tntID's are equal. tntId is a concatenation of {tntId}.{edgehostValue}
+     * false is returned when tntID's are different.
+     * true is returned when tntID's are same.
+     *
+     * @param oldId old tntId {@link String}
+     * @param newId new tntId {@code String}
+     * @return a {@code boolean} variable indicating if the tntId's are equal
+     */
+    private boolean tntIdValuesAreEqual(final String oldId, final String newId) {
+        if (oldId == null && newId == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old and new tntId is null.");
+            return true;
+        }
+
+        if (oldId == null || newId == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - %s is null.", (oldId == null ? "oldId" : "newId"));
+            return false;
+        }
+
+        if (oldId.equals(newId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old tntId is equal to new tntId.");
+            return true;
+        }
+
+        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old tntId is not equal to new tntId.");
         return false;
     }
 
