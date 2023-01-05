@@ -817,7 +817,7 @@ public class TargetExtension extends Extension {
         }
 
         if (targetState.getThirdPartyId() != null && targetState.getThirdPartyId().equals(updatedThirdPartyId)) {
-            Log.debug(TargetConstants.LOG_TAG,
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
                     "setThirdPartyIdInternal - New thirdPartyId value is same as the existing thirdPartyId (%s).", targetState.getThirdPartyId());
             return;
         }
@@ -851,7 +851,7 @@ public class TargetExtension extends Extension {
 
         if (matcher.find()) {
             locationHint = matcher.group();
-            Log.debug(TargetConstants.LOG_TAG, "extractEdgeHost - Provided tntId (%s) contains location hint (%s).", newTntId,
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "extractEdgeHost - Provided tntId (%s) contains location hint (%s).", newTntId,
                     locationHint);
         }
 
@@ -860,7 +860,7 @@ public class TargetExtension extends Extension {
         if (!StringUtils.isNullOrEmpty(locationHint)) {
             edgeHost = String.format(TargetConstants.API_URL_HOST_BASE, String.format(TargetConstants.EDGE_HOST_BASE,
                     locationHint));
-            Log.debug(TargetConstants.LOG_TAG, "extractEdgeHost - Edge host (%s) is derived from the provided tntId (%s).",
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "extractEdgeHost - Edge host (%s) is derived from the provided tntId (%s).",
                     edgeHost, locationHint);
         }
 
