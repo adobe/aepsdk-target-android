@@ -524,7 +524,7 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        try{
+        try {
             targetResponseParser = getResponseParser();
             final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
             if (responseJson == null) {
@@ -588,6 +588,12 @@ public class TargetExtension extends Extension {
                     final String responseError = targetResponseParser.getErrorMessage(responseJson);
                     final int responseCode = connection.getResponseCode();
                     connection.close();
+
+                    if (responseJson == null) {
+                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+                        dispatchMboxPrefetchResult(TargetErrors.NULL_RESPONSE_JSON + responseError, event);
+                        return;
+                    }
 
                     if (!StringUtils.isNullOrEmpty(responseError)) {
                         if (responseError.contains(TargetErrors.NOTIFICATION_ERROR_TAG)) {
