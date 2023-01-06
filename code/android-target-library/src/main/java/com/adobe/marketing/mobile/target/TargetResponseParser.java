@@ -58,14 +58,14 @@ class TargetResponseParser {
 	 * @return all the mboxes for the given key
 	 */
 	private JSONArray getMboxesFromKey(final JSONObject serverResponseJson, final String key) {
-		JSONObject containerJson = serverResponseJson.optJSONObject(key);
+		final JSONObject containerJson = serverResponseJson.optJSONObject(key);
 
 		if (containerJson == null) {
 			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getMboxesFromKey - Unable to retrieve mboxes from key, json is null");
 			return null;
 		}
 
-		JSONArray mboxJSONArray = containerJson.optJSONArray(TargetJson.MBOXES);
+		final JSONArray mboxJSONArray = containerJson.optJSONArray(TargetJson.MBOXES);
 
 		if (mboxJSONArray == null) {
 			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getMboxesFromKey - Unable to retrieve mboxes from key, mboxes array is null");
@@ -165,41 +165,6 @@ class TargetResponseParser {
 	}
 
 	/**
-	 * Extracts the prefetched views from the server response and returns them as a JSON {@code String}
-	 * <p>
-	 * Returns null if there is no {@link TargetJson#VIEWS} key found in the server prefetch response.
-	 * Do not pass a null {@code JSONObject} serverResponseJson.
-	 *
-	 * @param serverResponseJson A {@link JSONObject} server response
-	 * @return A {@link String} containing the prefetched views JSON
-	 */
-	String extractPrefetchedViews(final JSONObject serverResponseJson) {
-		if (serverResponseJson == null) {
-			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-					  "extractPrefetchedViews - unable to extract prefetch views, server response is null");
-			return null;
-		}
-
-		final JSONObject containerJson = serverResponseJson.optJSONObject(TargetJson.PREFETCH);
-
-		if (containerJson == null) {
-			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-					"extractPrefetchedViews - unable to extract prefetch views, container json is null");
-			return null;
-		}
-
-		final JSONArray viewsJSONArray = containerJson.optJSONArray(TargetJson.VIEWS);
-
-		if (viewsJSONArray == null || viewsJSONArray.length() == 0) {
-			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-					"extractPrefetchedViews - unable to extract prefetch views, views array is null");
-			return null;
-		}
-
-		return viewsJSONArray.toString();
-	}
-
-	/**
 	 * Get the tnt id from the {@code JSONObject} server response.
 	 * <p>
 	 * Returns null if there is no {@code TargetJson#ID} key found in the server response.
@@ -209,7 +174,7 @@ class TargetResponseParser {
 	 * @return A {@link String} tntid
 	 */
 	String getTntId(final JSONObject serverResponseJson) {
-		JSONObject idJson = serverResponseJson.optJSONObject(TargetJson.ID);
+		final JSONObject idJson = serverResponseJson.optJSONObject(TargetJson.ID);
 
 		if (idJson == null) {
 			return null;
@@ -344,7 +309,7 @@ class TargetResponseParser {
 	 * @return {@code Map<String, String>} containing click metric A4T params
 	 */
 	Map<String, String> extractClickMetricAnalyticsPayload(final JSONObject mboxJson) {
-		JSONObject clickMetric = getClickMetric(mboxJson);
+		final JSONObject clickMetric = getClickMetric(mboxJson);
 		return getAnalyticsForTargetPayload(clickMetric);
 	}
 
@@ -426,7 +391,7 @@ class TargetResponseParser {
 		final StringBuilder contentBuilder = new StringBuilder();
 
 		for (int i = 0; i < optionsArray.length(); i++) {
-			JSONObject option = optionsArray.optJSONObject(i);
+			final JSONObject option = optionsArray.optJSONObject(i);
 
 			if (option == null || StringUtils.isNullOrEmpty(option.optString(TargetJson.Option.CONTENT, ""))) {
 				continue;
@@ -438,7 +403,7 @@ class TargetResponseParser {
 			if (optionType.equals(TargetJson.HTML)) {
 				optionContent = option.optString(TargetJson.Option.CONTENT, "");
 			} else if (optionType.equals(TargetJson.JSON)) {
-				JSONObject contentJSON = option.optJSONObject(TargetJson.Option.CONTENT);
+				final JSONObject contentJSON = option.optJSONObject(TargetJson.Option.CONTENT);
 
 				if (contentJSON != null) {
 					optionContent = contentJSON.toString();

@@ -70,7 +70,6 @@ class TargetRequestBuilder {
 	 *
 	 * @param prefetchArray     the list of {@link TargetPrefetch} objects with mboxes that we want to prefetch
 	 * @param executeArray      the list of {@link TargetRequest} objects with mboxes that we want to execute
-	 * @param prefetchViews a {@code boolean} enabling Target View prefetch
 	 * @param parameters        {@link TargetParameters} object provided by the customer
 	 * @param notifications     viewed mboxes that we cached
 	 * @param propertyToken a {@link String} to be passed for all requests
@@ -80,7 +79,6 @@ class TargetRequestBuilder {
 	 */
 	JSONObject getRequestPayload(final List<TargetPrefetch> prefetchArray,
 								 final List<TargetRequest> executeArray,
-								 final boolean prefetchViews,
 								 final TargetParameters parameters,
 								 final List<JSONObject> notifications,
 								 final String propertyToken,
@@ -106,22 +104,6 @@ class TargetRequestBuilder {
 				final JSONObject prefetchJson = new JSONObject();
 				prefetchJson.put(TargetJson.MBOXES, prefetchMboxesNode);
 				defaultParamJson.put(TargetJson.PREFETCH, prefetchJson);
-			}
-
-			// todo check if VEC related
-			// add prefetch Views
-			if (prefetchViews) {
-				final JSONArray prefetchViewsNode = getPrefetchViews(parameters, lifecycleData);
-
-				if (prefetchViewsNode != null && prefetchViewsNode.length() > 0) {
-					mboxATProperty = removeATPropertyFromParameters(prefetchViewsNode);
-
-					JSONObject prefetchJson = defaultParamJson.optJSONObject(TargetJson.PREFETCH);
-					prefetchJson = prefetchJson == null ? new JSONObject() : prefetchJson;
-					prefetchJson.put(TargetJson.VIEWS, prefetchViewsNode);
-
-					defaultParamJson.put(TargetJson.PREFETCH, prefetchJson);
-				}
 			}
 
 			// add notification mBoxes
@@ -480,7 +462,7 @@ class TargetRequestBuilder {
 	 * @return the {@code JSONArray} generated
 	 */
 	private JSONArray getCustomerIDs(final List<VisitorID> customerIDs) {
-		JSONArray customerIDsArrayNode = new JSONArray();
+		final JSONArray customerIDsArrayNode = new JSONArray();
 
 		try {
 			for (VisitorID visitorID : customerIDs) {
@@ -549,23 +531,6 @@ class TargetRequestBuilder {
 		}
 
 		return prefetchMboxesArrayNode;
-	}
-
-	/**
-	 * Creates a {@code JSONArray} containing the view prefetch parameters
-	 *
-	 * @param parameters {@link TargetParameters} object provided by the customer
-	 * @param lifecycleData {@code Map<String, String>} shared state of lifecycle extension
-	 * @return the {@code JSONArray} containing view prefetch parameters
-	 * @throws JSONException json exception when it fails to add node to the json object
-	 */
-	private JSONArray getPrefetchViews(final TargetParameters parameters,
-									   final Map<String, String> lifecycleData) throws JSONException {
-		final JSONArray viewsArrayNode = new JSONArray();
-		final JSONObject viewNode = new JSONObject();
-		setTargetParametersJson(viewNode, parameters, lifecycleData);
-		viewsArrayNode.put(viewNode);
-		return viewsArrayNode;
 	}
 
 	/**
@@ -664,7 +629,7 @@ class TargetRequestBuilder {
 				}
 			}
 
-		} catch (JSONException exception) {
+		} catch (final JSONException exception) {
 			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
 					"getMboxParameters - Failed to append internal parameters to the target request json (%s)",
 					exception);
@@ -801,7 +766,7 @@ class TargetRequestBuilder {
 		if (targetPreviewManager.getPreviewToken() != null && targetPreviewManager.getPreviewParameters() != null) {
 			try {
 				return new JSONObject(targetPreviewManager.getPreviewParameters());
-			} catch (JSONException e) {
+			} catch (final JSONException e) {
 				Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
 							"getPreviewParameters - Could not compile the target preview params with the Target request (%s)", e.getMessage());
 			}

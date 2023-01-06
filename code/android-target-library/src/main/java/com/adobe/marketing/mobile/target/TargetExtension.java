@@ -558,8 +558,8 @@ public class TargetExtension extends Extension {
                                      final Map<String, Object> lifecycleData,
                                      final Map<String, Object> identityData,
                                      final Event event) {
-        final String error = sendTargetRequest(null, targetPrefetchRequests, false,
-                targetParameters, lifecycleData, identityData, null, connection -> {
+        final String error = sendTargetRequest(null, targetPrefetchRequests, targetParameters,
+                lifecycleData, identityData, null, connection -> {
                     try {
 
                         if (connection == null) {
@@ -645,7 +645,6 @@ public class TargetExtension extends Extension {
      */
     private String sendTargetRequest(final List<TargetRequest> batchRequests,
                                      final List<TargetPrefetch> prefetchRequests,
-                                     final boolean prefetchViews,
                                      final TargetParameters targetParameters,
                                      final Map<String, Object> lifecycleData,
                                      final Map<String, Object> identityData,
@@ -668,7 +667,7 @@ public class TargetExtension extends Extension {
 
         // Valid property token, if passed in view prefetch request, takes higher precedence than configuration property token.
         final JSONObject payloadJson = targetRequestBuilder.getRequestPayload(prefetchRequests,
-                batchRequests, prefetchViews, targetParameters, targetState.getNotifications(),
+                batchRequests, targetParameters, targetState.getNotifications(),
                 StringUtils.isNullOrEmpty(targetState.getPropertyToken()) ? targetState.getPropertyToken() : propertyToken,
                 identityData, lifecycleContextData);
 
