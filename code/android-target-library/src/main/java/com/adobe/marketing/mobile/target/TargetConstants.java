@@ -22,7 +22,7 @@ public final class TargetConstants {
 
     static final String API_URL_HOST_BASE 		= "%s.tt.omtrdc.net";
     static final String EDGE_HOST_BASE = "mboxedge%s";
-    static final String PREFETCH_API_URL_BASE 	= "https://%s/rest/v1/delivery/?client=%s&sessionId=%s";
+    static final String DELIVERY_API_URL_BASE = "https://%s/rest/v1/delivery/?client=%s&sessionId=%s";
     static final String REQUEST_CONTENT_TYPE  	= "application/json";
     static final String MBOX_AT_PROPERTY_KEY  		= "at_property";
 
@@ -33,7 +33,7 @@ public final class TargetConstants {
 
     static final HashMap<String, String> MAP_TO_CONTEXT_DATA_KEYS = createMap();
     static HashMap<String, String> createMap() {
-        final HashMap<String, String> map = new HashMap<String, String>();
+        final HashMap<String, String> map = new HashMap<>();
         map.put(Identity.ADVERTISING_IDENTIFIER, ContextDataKeys.ADVERTISING_IDENTIFIER);
         map.put(Lifecycle.APP_ID, ContextDataKeys.APPLICATION_IDENTIFIER);
         map.put(Lifecycle.CARRIER_NAME, ContextDataKeys.CARRIER_NAME);

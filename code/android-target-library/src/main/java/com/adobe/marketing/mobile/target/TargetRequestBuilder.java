@@ -149,7 +149,7 @@ class TargetRequestBuilder {
 				final Iterator<String> keys = previewParameters.keys();
 
 				while (keys.hasNext()) {
-					String key = keys.next();
+					final String key = keys.next();
 					defaultParamJson.put(key, previewParameters.get(key));
 				}
 			}
@@ -473,7 +473,7 @@ class TargetRequestBuilder {
 									 getAuthenticationStateToString(visitorID.getAuthenticationState()));
 				customerIDsArrayNode.put(newVisitorIDNode);
 			}
-		} catch (JSONException exception) {
+		} catch (final JSONException exception) {
 			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to create json node for customer visitor ids (%s)", exception);
 
 		}
@@ -523,7 +523,7 @@ class TargetRequestBuilder {
 				prefetchMboxesArrayNode.put(createMboxJsonObject(currentMbox.getMboxName(),
 						currentMbox.getTargetParameters(), index, globalParameters, lifecycleData));
 				index++;
-			} catch (JSONException exception) {
+			} catch (final JSONException exception) {
 				Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
 						"getPrefetchMboxes - Failed to create json node for mbox %s (%s)",
 						currentMbox.getMboxName(), exception);

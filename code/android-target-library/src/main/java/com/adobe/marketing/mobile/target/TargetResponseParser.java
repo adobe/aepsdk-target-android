@@ -11,8 +11,10 @@
 
 package com.adobe.marketing.mobile.target;
 
+import com.adobe.marketing.mobile.services.HttpConnecting;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.JSONUtils;
+import com.adobe.marketing.mobile.util.StreamUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
 
 import org.json.JSONArray;
@@ -28,6 +30,32 @@ import java.util.Map;
 class TargetResponseParser {
 
 	private static final String CLASS_NAME = "TargetResponseParser";
+
+	/**
+	 * Parse the target server response to a json object if there is no error.
+	 * <p>
+	 * Do not pass a null connection object to this method.
+	 * This method return null if
+	 * <ol>
+	 *   <li>There is any error occurred while reading the JSON response.</li>
+	 *   <li>If the response code for the connection is not 200 (HTTP_OK).</li>
+	 *   <li>If the response from the server is empty or not a valid JSON.</li>
+	 * </ol>
+	 *
+	 * @param connection the network {@link com.adobe.marketing.mobile.services.HttpConnecting} object returned from server
+	 * @return the {@link JSONObject} if the response is valid
+	 */
+	JSONObject parseResponseToJson(final HttpConnecting connection) {
+		try {
+			String responseString = StreamUtils.readAsString(connection.getInputStream());
+			JSONObject responseJson = new JSONObject(responseString);
+			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Target Response was received : %s", responseString);
+			return responseJson;
+		} catch (JSONException e) {
+			Log.error(TargetConstants.LOG_TAG, CLASS_NAME,"Unable to parse Target Response, Error (%s)", e);
+			return null;
+		}
+	}
 
 	/**
 	 * Extracts the raw server response and returns it as a {@code Map} containing the
@@ -180,7 +208,7 @@ class TargetResponseParser {
 			return null;
 		}
 
-		return idJson.optString(TargetJson.ID_TNT_ID, null);
+		return idJson.optString(TargetJson.ID_TNT_ID, "");
 	}
 
 	/**

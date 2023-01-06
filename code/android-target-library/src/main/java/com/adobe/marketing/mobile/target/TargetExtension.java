@@ -37,7 +37,6 @@ import com.adobe.marketing.mobile.services.ui.UIService;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
 import com.adobe.marketing.mobile.util.JSONUtils;
-import com.adobe.marketing.mobile.util.StreamUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
 
 import org.json.JSONException;
@@ -93,6 +92,7 @@ public class TargetExtension extends Extension {
     private final UIService uiService;
 
     private final TargetState targetState;
+    private TargetResponseParser targetResponseParser;
     private TargetRequestBuilder targetRequestBuilder = null;
     private TargetPreviewManager targetPreviewManager = null;
 
@@ -301,7 +301,7 @@ public class TargetExtension extends Extension {
             final byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);
             final Map<String, String> headers = new HashMap<>();
             headers.put(NetworkingConstants.Headers.CONTENT_TYPE, NetworkingConstants.HeaderValues.CONTENT_TYPE_JSON_APPLICATION);
-            int timeout = targetState.getNetworkTimeout();
+            final int timeout = targetState.getNetworkTimeout();
 
             Log.debug(TargetConstants.LOG_TAG, "handleRawRequest - Target request was sent with url %s, body %s", url, payloadJsonString);
             final NetworkRequest networkRequest = new NetworkRequest(url, HttpMethod.POST, payload, headers, timeout, timeout);
@@ -428,6 +428,19 @@ public class TargetExtension extends Extension {
     }
 
     /**
+     * Gets the {@code TargetResponseParser} instance used to parse the json response.
+     *
+     * @return the {@link TargetResponseParser} instance
+     */
+    private TargetResponseParser getResponseParser() {
+        if (targetResponseParser == null) {
+            targetResponseParser = new TargetResponseParser();
+        }
+
+        return targetResponseParser;
+    }
+
+    /**
      * Gets the {@code TargetPreviewManager} instance.
      * <p>
      * Returns null if either of {@link Networking} or {@link UIService} is null.
@@ -484,14 +497,14 @@ public class TargetExtension extends Extension {
     private String getTargetRequestUrl(final String customServer, final String clientCode) {
         // If customServer is not empty return targetRequestUrl with customServer as host
         if (!customServer.isEmpty()) {
-            return String.format(TargetConstants.PREFETCH_API_URL_BASE, customServer, clientCode, targetState.getSessionId());
+            return String.format(TargetConstants.DELIVERY_API_URL_BASE, customServer, clientCode, targetState.getSessionId());
         }
 
         final String edgeHost = targetState.getEdgeHost();
         final String host = StringUtils.isNullOrEmpty(edgeHost) ?
                 String.format(TargetConstants.API_URL_HOST_BASE, clientCode)
                 : edgeHost;
-        return String.format(TargetConstants.PREFETCH_API_URL_BASE, host, clientCode, targetState.getSessionId());
+        return String.format(TargetConstants.DELIVERY_API_URL_BASE, host, clientCode, targetState.getSessionId());
     }
 
 
@@ -511,30 +524,31 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        try {
-            final JSONObject responseJson = new JSONObject(StreamUtils.readAsString(connection.getInputStream()));
-            final int responseCode = connection.getResponseCode();
+        try{
+            targetResponseParser = getResponseParser();
+            final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
+            if (responseJson == null) {
+                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+                dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
+                return;
+            }
 
+            final int responseCode = connection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                         "processTargetRawResponse - Received Target response with connection code: " + responseCode);
-
-                final String responseError = StreamUtils.readAsString(connection.getErrorStream());
+                final String responseError = targetResponseParser.getErrorMessage(responseJson);
                 if (!StringUtils.isNullOrEmpty(responseError)) {
                     Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE + responseError);
                 }
-
                 dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
                 return;
             }
 
             // save the network request timestamp for computing the session id expiration
-            targetState.resetSessionTimestamp(false);
-            final JSONObject idJson = responseJson.optJSONObject(TargetJson.ID);
-            if (idJson != null) {
-                setTntIdInternal(idJson.getString(TargetJson.ID_TNT_ID));
-            }
-            targetState.updateEdgeHost(responseJson.optString(TargetJson.EDGE_HOST, ""));
+            targetState.updateSessionTimestamp(false);
+            setTntIdInternal( targetResponseParser.getTntId(responseJson));
+            targetState.updateEdgeHost(targetResponseParser.getEdgeHost(responseJson));
 
             getApi().createSharedState(targetState.generateSharedState(), event);
             dispatchTargetRawResponseIfNeeded(isContentRequest,  JSONUtils.toMap(responseJson), event);
@@ -560,72 +574,64 @@ public class TargetExtension extends Extension {
                                      final Event event) {
         final String error = sendTargetRequest(null, targetPrefetchRequests, targetParameters,
                 lifecycleData, identityData, null, connection -> {
-                    try {
 
-                        if (connection == null) {
-                            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                                    "prefetchMboxContent - Unable to prefetch mbox content, Error %s",
-                                    TargetErrors.NO_CONNECTION);
-                            dispatchMboxPrefetchResult(TargetErrors.NO_CONNECTION, event);
-                            return;
-                        }
-
-                        final int responseCode = connection.getResponseCode();
-                        final JSONObject responseJson = new JSONObject(StreamUtils.readAsString(connection.getInputStream()));
-                        final String responseError = StreamUtils.readAsString(connection.getErrorStream());
-                        connection.close();
-
-                        if (!StringUtils.isNullOrEmpty(responseError)) {
-                            if (responseError.contains(TargetErrors.NOTIFICATION_ERROR_TAG)) {
-                                targetState.clearNotifications();
-                            }
-                            dispatchMboxPrefetchResult(TargetErrors.ERROR_RESPONSE + responseError, event);
-                            return;
-                        }
-
-                        if (responseCode != HttpURLConnection.HTTP_OK) {
-                            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                                    "prefetchMboxContent - Unable to prefetch mbox content, Error %s",
-                                    TargetErrors.ERROR_RESPONSE + responseCode);
-                            dispatchMboxPrefetchResult(TargetErrors.ERROR_RESPONSE, event);
-                            return;
-                        }
-
-                        targetState.clearNotifications();
-
-                        final TargetResponseParser responseParser = new TargetResponseParser();
-                        // save the network request timestamp for computing the session id expiration
-                        targetState.resetSessionTimestamp(false);
-                        setTntIdInternal(responseParser.getTntId(responseJson));
-                        targetState.updateEdgeHost(responseParser.getEdgeHost(responseJson));
-
-                        getApi().createSharedState(targetState.generateSharedState(), event);
-
-                        final Map<String, JSONObject> batchedMboxes = responseParser.extractPrefetchedMboxes(
-                                responseJson);
-                        if (TargetUtils.isNullOrEmpty(batchedMboxes)) {
-                            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.NO_PREFETCH_MBOXES);
-                            dispatchMboxPrefetchResult(TargetErrors.NO_PREFETCH_MBOXES, event);
-                            return;
-                        }
-
-                        targetState.mergePrefetchedMboxJson(batchedMboxes);
-
-                        // check if we have duplicates in memory and remove them
-                        targetState.removeDuplicateLoadedMboxes();
-                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                                "prefetchMboxContent - Current cached mboxes : %s, size: %d",
-                                Arrays.toString(targetState.getPrefetchedMbox().keySet().toArray()),
-                                targetState.getPrefetchedMbox().size());
-
-                        dispatchMboxPrefetchResult(null, event);
-
-                    } catch (JSONException e) {
-                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                                "prefetchMboxContent - (%s) ",
-                                TargetErrors.NULL_RESPONSE_JSON);
-                        dispatchMboxPrefetchResult(TargetErrors.ERROR_RESPONSE, event);
+                    if (connection == null) {
+                        Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                                "prefetchMboxContent - Unable to prefetch mbox content, Error %s",
+                                TargetErrors.NO_CONNECTION);
+                        dispatchMboxPrefetchResult(TargetErrors.NO_CONNECTION, event);
+                        return;
                     }
+
+                    targetResponseParser = getResponseParser();
+                    final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
+                    final String responseError = targetResponseParser.getErrorMessage(responseJson);
+                    final int responseCode = connection.getResponseCode();
+                    connection.close();
+
+                    if (!StringUtils.isNullOrEmpty(responseError)) {
+                        if (responseError.contains(TargetErrors.NOTIFICATION_ERROR_TAG)) {
+                            targetState.clearNotifications();
+                        }
+                        dispatchMboxPrefetchResult(TargetErrors.ERROR_RESPONSE + responseError, event);
+                        return;
+                    }
+
+                    if (responseCode != HttpURLConnection.HTTP_OK) {
+                        Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                                "prefetchMboxContent - Unable to prefetch mbox content, Error %s",
+                                TargetErrors.ERROR_RESPONSE + responseCode);
+                        dispatchMboxPrefetchResult(TargetErrors.ERROR_RESPONSE, event);
+                        return;
+                    }
+
+                    targetState.clearNotifications();
+
+                    // save the network request timestamp for computing the session id expiration
+                    targetState.updateSessionTimestamp(false);
+                    setTntIdInternal(targetResponseParser.getTntId(responseJson));
+                    targetState.updateEdgeHost(targetResponseParser.getEdgeHost(responseJson));
+
+                    getApi().createSharedState(targetState.generateSharedState(), event);
+
+                    final Map<String, JSONObject> prefetchedMboxes = targetResponseParser.extractPrefetchedMboxes(
+                            responseJson);
+                    if (TargetUtils.isNullOrEmpty(prefetchedMboxes)) {
+                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.NO_PREFETCH_MBOXES);
+                        dispatchMboxPrefetchResult(TargetErrors.NO_PREFETCH_MBOXES, event);
+                        return;
+                    }
+
+                    targetState.mergePrefetchedMboxJson(prefetchedMboxes);
+
+                    // check if we have duplicates in memory and remove them
+                    targetState.removeDuplicateLoadedMboxes();
+                    Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                            "prefetchMboxContent - Current cached mboxes : %s, size: %d",
+                            Arrays.toString(targetState.getPrefetchedMbox().keySet().toArray()),
+                            targetState.getPrefetchedMbox().size());
+
+                    dispatchMboxPrefetchResult(null, event);
                 });
         if (!StringUtils.isNullOrEmpty(error)) {
             dispatchMboxPrefetchResult(error, event);
@@ -680,10 +686,10 @@ public class TargetExtension extends Extension {
 
         final Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", TargetConstants.REQUEST_CONTENT_TYPE);
-        int timeout = targetState.getNetworkTimeout();
+        final int timeout = targetState.getNetworkTimeout();
         final String url = getTargetRequestUrl( targetState.getTargetServer(), targetState.getClientCode());
         final String payloadJsonString = payloadJson.toString();
-        byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);
+        final byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);
         final NetworkRequest networkRequest = new NetworkRequest(url, HttpMethod.POST, payload, headers, timeout, timeout);
 
         Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,

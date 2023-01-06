@@ -1,5 +1,5 @@
 /*
-  Copyright 2022 Adobe. All rights reserved.
+  Copyright 2023 Adobe. All rights reserved.
   This file is licensed to you under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License. You may obtain a copy
   of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -176,7 +176,7 @@ class TargetState {
             }
 
             // update session id timestamp when the new session id is generated
-            resetSessionTimestamp(false);
+            updateSessionTimestamp(false);
         }
 
         return sessionId;
@@ -236,10 +236,10 @@ class TargetState {
      * Note: this method needs to be called after each successful target network request in order
      * to compute the session id expiration date properly.
      * <p>
-     * @param shouldSessionTimestampReset {@link Boolean} representing if session timestamp needs to be reset
+     * @param resetSessionTimestamp {@link Boolean} representing if session timestamp needs to be reset
      */
-    void resetSessionTimestamp(final boolean shouldSessionTimestampReset) {
-        if(shouldSessionTimestampReset) {
+    void updateSessionTimestamp(final boolean resetSessionTimestamp) {
+        if(resetSessionTimestamp) {
             sessionTimestampInSeconds = 0L;
             if (dataStore != null) {
                 Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "updateSessionTimestamp - Attempting to remove the session timestamp");
