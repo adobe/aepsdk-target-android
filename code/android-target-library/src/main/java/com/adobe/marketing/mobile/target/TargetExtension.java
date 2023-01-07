@@ -957,7 +957,7 @@ public class TargetExtension extends Extension {
                     if (connection != null) {
                         connection.close();
                     }
-                });
+        });
     }
 
     /**
@@ -1124,8 +1124,9 @@ public class TargetExtension extends Extension {
         targetRequestBuilder.clean();
 
         if (lifecycleData != null) {
+
             final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
-            targetRequestBuilder.setLifecycleParameters(lifecycleContextData);
+             targetRequestBuilder.setLifecycleParameters(lifecycleContextData);
         }
 
         JSONObject displayNotificationJson = targetRequestBuilder.getDisplayNotificationJsonObject(mboxName, mboxJson,

@@ -16,7 +16,6 @@ import androidx.annotation.Nullable;
 
 import com.adobe.marketing.mobile.services.Log;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -70,7 +69,7 @@ class TargetUtils {
      * @return {@code Map<String, String} if given object has valid format, null otherwise
      */
     @Nullable
-    static Map<String, String> toStringMap(@Nullable JSONObject jsonObject) {
+    static Map<String, String> toStringMap(@Nullable final JSONObject jsonObject) {
         if (jsonObject == null) {
             return null;
         }

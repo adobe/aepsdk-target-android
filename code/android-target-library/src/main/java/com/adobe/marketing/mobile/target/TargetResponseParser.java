@@ -1,5 +1,5 @@
 /*
-  Copyright 2023 Adobe. All rights reserved.
+  Copyright 2022 Adobe. All rights reserved.
   This file is licensed to you under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License. You may obtain a copy
   of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -15,6 +15,7 @@ import com.adobe.marketing.mobile.services.HttpConnecting;
 import androidx.annotation.Nullable;
 
 import com.adobe.marketing.mobile.internal.util.MapExtensionsKt;
+import com.adobe.marketing.mobile.services.HttpConnecting;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.JSONUtils;
 import com.adobe.marketing.mobile.util.StreamUtils;
@@ -48,6 +49,7 @@ class TargetResponseParser {
 	 * @param connection the network {@link com.adobe.marketing.mobile.services.HttpConnecting} object returned from server
 	 * @return the {@link JSONObject} if the response is valid
 	 */
+	@Nullable
 	JSONObject parseResponseToJson(final HttpConnecting connection) {
 		try {
 			final String responseString = StreamUtils.readAsString(connection.getInputStream());
@@ -116,6 +118,7 @@ class TargetResponseParser {
 	 * @param serverResponseJson A {@link JSONObject} server response
 	 * @return A {@link Map} of all the batched mboxes
 	 */
+	@Nullable
 	Map<String, JSONObject> extractBatchedMBoxes(final JSONObject serverResponseJson) {
 		final JSONArray batchedMboxes = getMboxesFromKey(serverResponseJson, TargetJson.EXECUTE);
 
@@ -123,7 +126,7 @@ class TargetResponseParser {
 			return null;
 		}
 
-		final Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>();
+		final Map<String, JSONObject> mboxResponses = new HashMap<>();
 
 		for (int i = 0; i < batchedMboxes.length(); i++) {
 			final JSONObject mboxJson = batchedMboxes.optJSONObject(i);
@@ -154,6 +157,7 @@ class TargetResponseParser {
 	 * @param serverResponseJson A {@link JSONObject} server response
 	 * @return A {@link Map} of all the prefetched mboxes
 	 */
+	@Nullable
 	Map<String, JSONObject> extractPrefetchedMboxes(final JSONObject serverResponseJson) {
 		final JSONArray prefetchedMboxes = getMboxesFromKey(serverResponseJson, TargetJson.PREFETCH);
 
@@ -204,6 +208,7 @@ class TargetResponseParser {
 	 * @param serverResponseJson  A {@link JSONObject} server response
 	 * @return A {@link String} tntid
 	 */
+	@Nullable
 	String getTntId(final JSONObject serverResponseJson) {
 		final JSONObject idJson = serverResponseJson.optJSONObject(TargetJson.ID);
 
@@ -236,6 +241,7 @@ class TargetResponseParser {
 	 * @param mboxJson A prefetched mbox {@link JSONObject}
 	 * @return A {@link Map} containing a4t payload
 	 */
+	@Nullable
 	Map<String, String> getAnalyticsForTargetPayload(final JSONObject mboxJson, final String sessionId) {
 		final Map<String, String> payload = getAnalyticsForTargetPayload(mboxJson);
 		return preprocessAnalyticsForTargetPayload(payload, sessionId);
@@ -250,6 +256,7 @@ class TargetResponseParser {
 	 * @param sessionId Target session id
 	 * @return {@code Map<String, String>} with processed keys
 	 */
+	@Nullable
 	Map<String, String> preprocessAnalyticsForTargetPayload(final Map<String, String> payload, final String sessionId) {
 		if (payload == null || payload.isEmpty()) {
 			return null;
