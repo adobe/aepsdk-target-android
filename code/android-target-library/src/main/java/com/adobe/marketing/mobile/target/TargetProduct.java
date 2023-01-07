@@ -81,21 +81,21 @@ public class TargetProduct {
      */
     static TargetProduct fromEventData(final Map<String, String> data) {
         if (TargetUtils.isNullOrEmpty(data)) {
-            Log.debug(LOG_TAG, CLASS_NAME,"Cannot create TargetProduct object, provided data Map is empty or null.");
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetProduct object, provided data Map is empty or null.");
             return null;
         }
 
         try {
             final String id = DataReader.getString(data, TargetConstants.EventDataKeys.Product.ID);
             if (TargetUtils.isNullOrEmpty(id)) {
-                Log.debug(LOG_TAG, CLASS_NAME, "Cannot create TargetProduct object, provided data Map doesn't contain valid product ID.");
+                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Cannot create TargetProduct object, provided data Map doesn't contain valid product ID.");
                 return null;
             }
             final String categoryId = DataReader.getString(data, TargetConstants.EventDataKeys.Product.CATEGORY_ID);
 
             return new TargetProduct(id, categoryId);
         } catch (final DataReaderException e) {
-            Log.warning(LOG_TAG, CLASS_NAME,"Cannot create TargetProduct object, provided data contains invalid fields.");
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetProduct object, provided data contains invalid fields.");
             return null;
         }
     }

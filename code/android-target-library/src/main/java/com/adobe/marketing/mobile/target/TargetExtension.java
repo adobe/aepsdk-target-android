@@ -28,6 +28,7 @@ import com.adobe.marketing.mobile.services.HttpConnecting;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NamedCollection;
+import com.adobe.marketing.mobile.services.NetworkCallback;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
 import com.adobe.marketing.mobile.services.NetworkingConstants;
@@ -36,19 +37,17 @@ import com.adobe.marketing.mobile.services.ui.UIService;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
 import com.adobe.marketing.mobile.util.JSONUtils;
-import com.adobe.marketing.mobile.util.StreamUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
-import com.adobe.marketing.mobile.util.TimeUtils;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -87,28 +86,15 @@ public class TargetExtension extends Extension {
     private static final String CLASS_NAME = "TargetExtension";
     private static final String TARGET_EVENT_DISPATCH_MESSAGE = "Dispatching - Target response content event";
 
-    private DeviceInforming deviceInfoService;
-    private NamedCollection dataStore;
-    private Networking networkService;
+    private final DeviceInforming deviceInfoService;
+    private final NamedCollection dataStore;
+    private final Networking networkService;
     private final UIService uiService;
 
-    protected String tntId;
-    protected String thirdPartyId;
-    protected String edgeHost;
-    protected String clientCode;
-    protected Map<String, JSONObject> prefetchedMbox;
-    protected Map<String, JSONObject> loadedMbox;
-    protected List<JSONObject> notifications;
-    protected Map<String, Object> lastKnownConfigurationState;
-
-    private TargetRequestBuilder targetRequestBuilder;
-    private TargetPreviewManager targetPreviewManager;
-
-    // ================================================================================
-    // session variables
-    // ================================================================================
-    protected String sessionId = null;
-    protected long sessionTimestampInSeconds = 0L;
+    private final TargetState targetState;
+    private TargetResponseParser targetResponseParser;
+    private TargetRequestBuilder targetRequestBuilder = null;
+    private TargetPreviewManager targetPreviewManager = null;
 
     /**
      * Constructor for {@code TargetExtension}.
@@ -125,9 +111,7 @@ public class TargetExtension extends Extension {
         networkService = ServiceProvider.getInstance().getNetworkService();
         uiService = ServiceProvider.getInstance().getUIService();
 
-        prefetchedMbox = new HashMap<>();
-        loadedMbox = new HashMap<>();
-        notifications = new ArrayList<>();
+        targetState = new TargetState(dataStore);
     }
 
     /**
@@ -160,6 +144,12 @@ public class TargetExtension extends Extension {
     }
 
     @Override
+    public boolean readyForEvent(@NonNull final Event event) {
+        targetState.updateConfigurationSharedState(retrieveConfigurationSharedState(event));
+        return targetState.getStoredConfigurationSharedState() != null;
+    }
+
+    @Override
     protected void onRegistered() {
         getApi().registerEventListener(EventType.TARGET, EventSource.REQUEST_CONTENT, this::handleTargetRequestContentEvent);
         getApi().registerEventListener(EventType.TARGET, EventSource.REQUEST_RESET, this::handleTargetRequestResetEvent);
@@ -187,7 +177,7 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        if (DataReader.optTypedList(TargetRequest.class, eventData, TargetConstants.EventDataKeys.PREFETCH, null) != null) {
+        if (DataReader.optTypedList(TargetRequest.class, eventData, TargetConstants.EventDataKeys.LOAD_REQUEST, null) != null) {
             loadRequests(event);
             return;
         }
@@ -234,18 +224,12 @@ public class TargetExtension extends Extension {
      *
      * @param event the incoming {@link Event} object.
      */
-    void handleRawRequest(final Event event) {
+    void handleRawRequest(@NonNull final Event event) {
         Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "Processing the raw Target request - event %s type: %s source: %s ",
                 event.getName(), event.getType(),
                 event.getSource());
 
         final Map<String, Object> eventData = event.getEventData();
-
-        if (eventData == null || eventData.isEmpty()) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleRawRequest - Cannot process the raw Target request, provided request map is null or empty.");
-            return;
-        }
 
         try {
             final Map<String, Object> id =  DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.ID);
@@ -254,12 +238,7 @@ public class TargetExtension extends Extension {
             final Map<String, Object> execute = DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.EXECUTE);
             final Map<String, Object> prefetch =  DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.PREFETCH);
             final List<Map<String, Object>> notifications =  DataReader.getTypedListOfMap(Object.class, eventData, TargetConstants.EventDataKeys.NOTIFICATIONS);
-            final long environmentId = DataReader.getLong(eventData, TargetConstants.EventDataKeys.ENVIRONMENT_ID);
-            final Map<String, Object> property = DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.PROPERTY);
-            String propertyToken = null;
-            if (!TargetUtils.isNullOrEmpty(property)) {
-                propertyToken = DataReader.getString(property, TargetConstants.EventDataKeys.TOKEN);
-            }
+
             final boolean isContentRequest = (prefetch != null) || (execute != null);
 
             if (networkService == null) {
@@ -268,47 +247,47 @@ public class TargetExtension extends Extension {
                 return;
             }
 
+            String propertyToken = targetState.getPropertyToken();
+            if (StringUtils.isNullOrEmpty(propertyToken)) {
+                final Map<String, Object> property = DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.PROPERTY);
+                if (!TargetUtils.isNullOrEmpty(property)) {
+                    propertyToken = DataReader.getString(property, TargetConstants.EventDataKeys.TOKEN);
+                }
+            }
+
+            long environmentId = targetState.getEnvironmentId();
+            if (environmentId == 0) {
+                environmentId = DataReader.getLong(eventData, TargetConstants.EventDataKeys.ENVIRONMENT_ID);
+            }
+
             targetRequestBuilder = getRequestBuilder();
             if (targetRequestBuilder == null) {
                 Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "handleRawRequest - (%s)", TargetErrors.REQUEST_BUILDER_INIT_FAILED);
                 dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
                 return;
             }
-
             targetRequestBuilder.clean();
-            targetRequestBuilder.setTargetInternalParameters(getTntId(), getThirdPartyId());
 
-            final Map<String, Object> configData = retrieveConfigurationSharedState(event);
-
-            final String sendRequestError = prepareForTargetRequest(configData);
+            final String sendRequestError = prepareForTargetRequest();
             if (sendRequestError != null) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "handleRawRequest - ", sendRequestError);
                 dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
                 return;
             }
 
-            String configPropertyToken = "";
-            long configEnvironmentId = 0L;
-            if (TargetUtils.isNullOrEmpty(configData)) {
-                configEnvironmentId = DataReader.optLong(configData, TargetConstants.Configuration.TARGET_ENVIRONMENT_ID, 0L);
-                targetRequestBuilder.setConfigParameters(configEnvironmentId);
-                configPropertyToken = DataReader.optString(configData, TargetConstants.Configuration.TARGET_PROPERTY_TOKEN, "");
-            }
-
-            targetRequestBuilder.setIdentityData(retrieveIdentitySharedState(event));
-
             final JSONObject defaultJsonObject = targetRequestBuilder.getDefaultJsonObject(
                     id,
                     context,
                     experienceCloud,
-                    (configEnvironmentId != 0L) ? configEnvironmentId : environmentId);
+                    environmentId,
+                    retrieveIdentitySharedState(event));
 
             final JSONObject payloadJson = targetRequestBuilder.getRequestPayload(
                     defaultJsonObject,
                     prefetch,
                     execute,
                     notifications,
-                    StringUtils.isNullOrEmpty(configPropertyToken) ? propertyToken : configPropertyToken);
+                    propertyToken);
 
             if (payloadJson == null || payloadJson.length() == 0) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -317,14 +296,12 @@ public class TargetExtension extends Extension {
                 return;
             }
 
-            final String url = getTargetRequestUrl(DataReader.optString(configData, TargetConstants.Configuration.TARGET_SERVER, ""));
+            final String url = getTargetRequestUrl(targetState.getTargetServer(), targetState.getClientCode());
             final String payloadJsonString = payloadJson.toString();
             final byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);
             final Map<String, String> headers = new HashMap<>();
             headers.put(NetworkingConstants.Headers.CONTENT_TYPE, NetworkingConstants.HeaderValues.CONTENT_TYPE_JSON_APPLICATION);
-            final int timeout = (configData != null)
-                    ? DataReader.optInt(configData, TargetConstants.Configuration.TARGET_NETWORK_TIMEOUT, TargetConstants.DEFAULT_NETWORK_TIMEOUT)
-                    : TargetConstants.DEFAULT_NETWORK_TIMEOUT;
+            final int timeout = targetState.getNetworkTimeout();
 
             Log.debug(TargetConstants.LOG_TAG, "handleRawRequest - Target request was sent with url %s, body %s", url, payloadJsonString);
             final NetworkRequest networkRequest = new NetworkRequest(url, HttpMethod.POST, payload, headers, timeout, timeout);
@@ -339,60 +316,50 @@ public class TargetExtension extends Extension {
     }
 
     /**
-     * Processes the network response after the Target delivery API call for raw request.
-     *
-     * @param connection  a {@link HttpConnecting} instance.
-     * @param isContentRequest {@code boolean} indicating whether it's a prefetch or execute request.
-     * @param event  the incoming {@link Event} object.
-     */
-    private void processTargetRawResponse(final HttpConnecting connection,
-                                          final boolean isContentRequest,
-                                          final Event event) {
-        if (connection == null) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s)", TargetErrors.NO_CONNECTION);
-            dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
-            return;
-        }
-
-        try {
-            final JSONObject responseJson = new JSONObject(StreamUtils.readAsString(connection.getInputStream()));
-            final int responseCode = connection.getResponseCode();
-
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                        "processTargetRawResponse - Received Target response with connection code: " + responseCode);
-
-                final String responseError = StreamUtils.readAsString(connection.getErrorStream());
-                if (!StringUtils.isNullOrEmpty(responseError)) {
-                    Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE + responseError);
-                }
-
-                dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
-                return;
-            }
-
-            // save the network request timestamp for computing the session id expiration
-            updateSessionTimestamp();
-
-            final JSONObject idJson = responseJson.optJSONObject(TargetJson.ID);
-            setTntIdInternal(idJson == null ? null : idJson.getString(TargetJson.ID_TNT_ID));
-            setEdgeHost(responseJson.optString(TargetJson.EDGE_HOST, ""));
-
-            getApi().createSharedState(packageState(), event);
-            dispatchTargetRawResponseIfNeeded(isContentRequest,  JSONUtils.toMap(responseJson), event);
-        } catch (final Exception e) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s)", e.getMessage());
-        }
-    }
-
-    /**
      * Prefetch multiple Target mboxes in a single network call.
      * The content will be cached locally and returned immediately if any prefetched mbox is requested though a loadRequest call.
      *
      * @param event                  the {@link Event} object
      */
-    void handleMboxPrefetch(final Event event) {
-        // todo
+    void handleMboxPrefetch(@NonNull final Event event) {
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+                "handleMboxPrefetch - Prefetched mbox event details - event %s type: %s source: %s ",
+                event.getName(), event.getType(), event.getSource());
+
+        if (inPreviewMode()) {
+            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "handleMboxPrefetch - In preview mode");
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.NO_PREFETCH_IN_PREVIEW);
+            dispatchMboxPrefetchResult(TargetErrors.NO_PREFETCH_IN_PREVIEW, event);
+            return;
+        }
+
+        final Map<String, Object> eventData = event.getEventData();
+        final List<TargetPrefetch> targetPrefetchRequests = DataReader.optTypedList(TargetPrefetch.class,
+                eventData,
+                TargetConstants.EventDataKeys.PREFETCH,
+                null);
+        if (TargetUtils.isNullOrEmpty(targetPrefetchRequests)) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleMboxPrefetch - Unable to prefetch mbox content, Error %s",
+                    TargetErrors.NO_PREFETCH_REQUESTS);
+            dispatchMboxPrefetchResult(TargetErrors.NO_PREFETCH_REQUESTS, event);
+            return;
+        }
+
+        final String sendRequestError = prepareForTargetRequest();
+        if (sendRequestError != null) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleMboxPrefetch - Unable to prefetch mbox content, Error %s",
+                    sendRequestError);
+            dispatchMboxPrefetchResult(sendRequestError, event);
+            return;
+        }
+
+        final TargetParameters targetParameters = TargetParameters.fromEventData(eventData);
+        final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
+        final Map<String, Object> identityData = retrieveIdentitySharedState(event);
+        prefetchMboxContent(targetPrefetchRequests, targetParameters, lifecycleData, identityData,
+                event);
     }
 
     /**
@@ -407,7 +374,8 @@ public class TargetExtension extends Extension {
     /**
      * Sends display notifications to Target
      * <p>
-     * Reads the display tokens from the cache either {@link #prefetchedMbox} or {@link #loadedMbox} to send the display notifications.
+     * Reads the display tokens from the cache either {@link TargetState#getPrefetchedMbox()} or
+     * {@link TargetState#getLoadedMbox()} to send the display notifications.
      * The display notification is not sent if,
      * <ol>
      *     <li> Target Extension is not configured.</li>
@@ -424,7 +392,8 @@ public class TargetExtension extends Extension {
     /**
      * Sends a click notification to Target if click metrics are enabled for the provided location name.
      * <p>
-     * Reads the clicked token from the cached either {@link #prefetchedMbox} or {@link #loadedMbox} to send the click notification.
+     * Reads the clicked token from the cached either {@link TargetState#getPrefetchedMbox()} or
+     * {@link TargetState#getLoadedMbox()} to send the click notification.
      * The clicked notification is not sent if,
      * <ol>
      *     <li> Target Extension is not configured.</li>
@@ -451,11 +420,24 @@ public class TargetExtension extends Extension {
                 return null;
             }
 
-            final TargetPreviewManager previewManager = getPreviewManager();
-            targetRequestBuilder = new TargetRequestBuilder(deviceInfoService, previewManager);
+            targetPreviewManager = getPreviewManager();
+            targetRequestBuilder = new TargetRequestBuilder(deviceInfoService, targetPreviewManager, targetState);
         }
 
         return targetRequestBuilder;
+    }
+
+    /**
+     * Gets the {@code TargetResponseParser} instance used to parse the json response.
+     *
+     * @return the {@link TargetResponseParser} instance
+     */
+    private TargetResponseParser getResponseParser() {
+        if (targetResponseParser == null) {
+            targetResponseParser = new TargetResponseParser();
+        }
+
+        return targetResponseParser;
     }
 
     /**
@@ -463,7 +445,6 @@ public class TargetExtension extends Extension {
      * <p>
      * Returns null if either of {@link Networking} or {@link UIService} is null.
      *
-     * @return the {@link TargetPreviewManager} instance
      */
     private TargetPreviewManager getPreviewManager() {
         if (targetPreviewManager == null) {
@@ -474,41 +455,26 @@ public class TargetExtension extends Extension {
                 Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, UI services are not available");
                 return null;
             }
-            targetPreviewManager = new TargetPreviewManager(networkService, uiService, getApi());
+            return new TargetPreviewManager(networkService, uiService, getApi());
         }
-
         return targetPreviewManager;
     }
 
     /**
      * Prepares for the target requests and checks whether a target request can be sent.
      *
-     * @param configData the shared state of {@code Configuration} extension
      * @return a {@code String} error indicating why the request can't be sent, null otherwise
      */
-    private String prepareForTargetRequest(final Map<String, Object> configData) {
-        if (configData == null) {
+    private String prepareForTargetRequest() {
+        if (targetState.getClientCode().isEmpty()) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "prepareForTargetRequest - TargetRequest preparation failed because configData is null");
-            return TargetErrors.CONFIG_NULL;
-        }
-
-        final String newClientCode = DataReader.optString(configData, TargetConstants.Configuration.TARGET_CLIENT_CODE, "");
-
-        if (newClientCode.isEmpty()) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "prepareForTargetRequest - TargetRequest preparation failed because client code is empty");
+                    "prepareForTargetRequest - TargetRequest preparation failed because (%s)", TargetErrors.NO_CLIENT_CODE);
             return TargetErrors.NO_CLIENT_CODE;
         }
 
-        if (!newClientCode.equals(clientCode)) {
-            clientCode = newClientCode;
-            edgeHost = null;
-        }
-
-        final MobilePrivacyStatus privacyStatus = getMobilePrivacyStatus();
-
-        if (privacyStatus != MobilePrivacyStatus.OPT_IN) {
+        if (targetState.getMobilePrivacyStatus() != MobilePrivacyStatus.OPT_IN) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "prepareForTargetRequest - TargetRequest preparation failed because (%s)", TargetErrors.OPTED_OUT);
             return TargetErrors.OPTED_OUT;
         }
 
@@ -525,161 +491,219 @@ public class TargetExtension extends Extension {
      * {@code String} sessionId and {@code String} clientCode are also sent as query parameters in the Target request url.
      *
      * @param customServer the value of "target.server" in configuration
+     * @param clientCode the value of "target.clientCode" in configuration
      * @return the server url string
      */
-    protected String getTargetRequestUrl(final String customServer) {
+    private String getTargetRequestUrl(final String customServer, final String clientCode) {
         // If customServer is not empty return targetRequestUrl with customServer as host
         if (!customServer.isEmpty()) {
-            return String.format(TargetConstants.PREFETCH_API_URL_BASE, customServer, clientCode, getSessionId());
+            return String.format(TargetConstants.DELIVERY_API_URL_BASE, customServer, clientCode, targetState.getSessionId());
         }
 
-        final String edgeHost = getEdgeHost();
+        final String edgeHost = targetState.getEdgeHost();
         final String host = StringUtils.isNullOrEmpty(edgeHost) ?
                 String.format(TargetConstants.API_URL_HOST_BASE, clientCode)
                 : edgeHost;
-        return String.format(TargetConstants.PREFETCH_API_URL_BASE, host, clientCode, getSessionId());
+        return String.format(TargetConstants.DELIVERY_API_URL_BASE, host, clientCode, targetState.getSessionId());
     }
 
-    /**
-     * Loads edgeHost from shared preferences; if not found or there was an error while reading from shared preferences, it returns null.
-     * <p>
-     * If current session expired, the edge host is reset to null (in memory and persistence), so
-     * the next network call will use the target client code.
-     * <p>
-     *
-     * @return the edgeHost {@link String} value
-     */
-    String getEdgeHost() {
-        if (dataStore != null) {
-            // If the session expired reset the edge host
-            if (isSessionExpired()) {
-                setEdgeHost(null);
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getEdgeHost - Resetting edge host to null as session id expired.");
-            } else if (StringUtils.isNullOrEmpty(edgeHost)) {
-                edgeHost = dataStore.getString(TargetConstants.DataStoreKeys.EDGE_HOST, null);
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getEdgeHost - Retrieved edge host from the data store.");
-            }
-        }
-
-        return edgeHost;
-    }
 
     /**
-     * Saves the new edge host to local variable and in the shared preference
+     * Processes the network response after the Target delivery API call for raw request.
      *
-     * @param newEdgeHost new edge host for the Target call which is saved in shared preference
+     * @param connection  a {@link HttpConnecting} instance.
+     * @param isContentRequest {@code boolean} indicating whether it's a prefetch or execute request.
+     * @param event  the incoming {@link Event} object.
      */
-    void setEdgeHost(final String newEdgeHost) {
-        if ((edgeHost == null && newEdgeHost == null) || (edgeHost != null && edgeHost.equals(newEdgeHost))) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "setEdgeHost - Data store is not updated as the provided edge host is same as the existing edgeHost");
+    private void processTargetRawResponse(final HttpConnecting connection,
+                                          final boolean isContentRequest,
+                                          final Event event) {
+        if (connection == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s)", TargetErrors.NO_CONNECTION);
+            dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
             return;
         }
 
-        edgeHost = newEdgeHost;
-
-        if (dataStore != null) {
-            if (StringUtils.isNullOrEmpty(edgeHost)) {
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "setEdgeHost - EdgeHost is null or empty");
-                dataStore.remove(TargetConstants.DataStoreKeys.EDGE_HOST);
-            } else {
-                dataStore.setString(TargetConstants.DataStoreKeys.EDGE_HOST, edgeHost);
-            }
-        }
-    }
-
-    /**
-     * Get the session id either from memory or from the datastore if session is not expired.
-     *
-     * <p>
-     * Context: AMSDK-8217
-     * Retrieves the session ID from memory. If no value in memory, it reads the value from
-     * persistence. If no value is stored in persistence either, it generates a random UUID,
-     * sets current timestamp for {@code long} sessionTimestampInSeconds and saves them in persistence.
-     * The session id is refreshed after
-     * {@link TargetConstants.Configuration#TARGET_SESSION_TIMEOUT} (secs) of inactivity
-     * (from the last successful target request).
-     * <p>
-     * The SessionId is sent in URL query parameters for each Target Network call; based on this Target will
-     * route all requests from a session to the same edge to prevent overwriting the profiles.
-     * <p>
-     *
-     * @return the session id value as {@link String}, null if it couldn't be read from persistence
-     */
-    String getSessionId() {
-        if (StringUtils.isNullOrEmpty(sessionId) && dataStore != null) {
-            sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, null);
-        }
-
-        // if there is no session id persisted in local data store or if the session id is expired
-        // because there was no activity for more than certain amount of time
-        // (from the last successful network request), then generate a new session id, save it in persistence storage
-        if (StringUtils.isNullOrEmpty(sessionId) || isSessionExpired()) {
-            sessionId = UUID.randomUUID().toString();
-
-            if (dataStore != null) {
-                dataStore.setString(TargetConstants.DataStoreKeys.SESSION_ID, sessionId);
+        try {
+            targetResponseParser = getResponseParser();
+            final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
+            if (responseJson == null) {
+                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+                dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
+                return;
             }
 
-            // update session id timestamp when the new session id is generated
-            updateSessionTimestamp();
+            final int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "processTargetRawResponse - Received Target response with connection code: " + responseCode);
+                final String responseError = targetResponseParser.getErrorMessage(responseJson);
+                if (!StringUtils.isNullOrEmpty(responseError)) {
+                    Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE + responseError);
+                }
+                dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
+                return;
+            }
+
+            // save the network request timestamp for computing the session id expiration
+            targetState.updateSessionTimestamp(false);
+            setTntIdInternal( targetResponseParser.getTntId(responseJson));
+            targetState.updateEdgeHost(targetResponseParser.getEdgeHost(responseJson));
+
+            getApi().createSharedState(targetState.generateSharedState(), event);
+            dispatchTargetRawResponseIfNeeded(isContentRequest,  JSONUtils.toMap(responseJson), event);
+        } catch (final JSONException e) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+            dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
         }
-
-        return sessionId;
-    }
-
-
-    /**
-     * Verifies if current target session is expired.
-     *
-     * @return {@code boolean} indicating whether Target session has expired
-     */
-    private boolean isSessionExpired() {
-        if (sessionTimestampInSeconds <= 0 && dataStore != null) {
-            sessionTimestampInSeconds = dataStore.getLong(TargetConstants.DataStoreKeys.SESSION_TIMESTAMP, 0L);
-        }
-
-        final long currentTimeSeconds = TimeUtils.getUnixTimeInSeconds();
-        final int sessionTimeoutInSec = getSessionTimeout();
-
-        return (sessionTimestampInSeconds > 0) && ((currentTimeSeconds - sessionTimestampInSeconds) > sessionTimeoutInSec);
-    }
-
-    /**
-     * Get the session timeout from config or default session timeout
-     *
-     * @return {@code int} session timeout from config or default session timeout {@code int} TargetConstants#DEFAULT_TARGET_SESSION_TIMEOUT_SEC
-     */
-    private int getSessionTimeout() {
-        int sessionTimeoutInSec = TargetConstants.DEFAULT_TARGET_SESSION_TIMEOUT_SEC;
-
-        if (TargetUtils.isNullOrEmpty(lastKnownConfigurationState)
-                && lastKnownConfigurationState.containsKey(TargetConstants.Configuration.TARGET_SESSION_TIMEOUT)) {
-            sessionTimeoutInSec = DataReader.optInt(lastKnownConfigurationState,
-                    TargetConstants.Configuration.TARGET_SESSION_TIMEOUT,
-                    TargetConstants.DEFAULT_TARGET_SESSION_TIMEOUT_SEC);
-        }
-
-        return sessionTimeoutInSec;
     }
 
     /**
-     * Updates {@code long} sessionTimestampInSeconds to current timestamp and stores the new
-     * value in persistence.
+     * Internal method to send a Mbox prefetch request.
      *
-     * <p>
-     * Note: this method needs to be called after each successful target network request in order
-     * to compute the session id expiration date properly.
-     * <p>
+     * @param targetPrefetchRequests an {@code List<TargetPrefetch>} representing the desired mboxes to preftech
+     * @param targetParameters       {@link TargetParameters} object to be passed in all prefetch requests
+     * @param lifecycleData          {@code Map<String, Object>} shared state of Lifecycle extension
+     * @param identityData           {@code Map<String, Object> shared state of Identity extension
+     * @param event          the {@link Event} which triggered this method call
      */
-    private void updateSessionTimestamp() {
-        sessionTimestampInSeconds = TimeUtils.getUnixTimeInSeconds();
-        if (dataStore != null) {
-            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "updateSessionTimestamp - Attempting to update the session timestamp");
-            dataStore.setLong(TargetConstants.DataStoreKeys.SESSION_TIMESTAMP, sessionTimestampInSeconds);
+    private void prefetchMboxContent(final List<TargetPrefetch> targetPrefetchRequests,
+                                     final TargetParameters targetParameters,
+                                     final Map<String, Object> lifecycleData,
+                                     final Map<String, Object> identityData,
+                                     final Event event) {
+        final String error = sendTargetRequest(null, targetPrefetchRequests, targetParameters,
+                lifecycleData, identityData, null, connection -> {
+
+                    if (connection == null) {
+                        Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                                "prefetchMboxContent - Unable to prefetch mbox content, Error %s",
+                                TargetErrors.NO_CONNECTION);
+                        dispatchMboxPrefetchResult(TargetErrors.NO_CONNECTION, event);
+                        return;
+                    }
+
+                    targetResponseParser = getResponseParser();
+                    final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
+                    final String responseError = targetResponseParser.getErrorMessage(responseJson);
+                    final int responseCode = connection.getResponseCode();
+                    connection.close();
+
+                    if (responseJson == null) {
+                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+                        dispatchMboxPrefetchResult(TargetErrors.NULL_RESPONSE_JSON + responseError, event);
+                        return;
+                    }
+
+                    if (!StringUtils.isNullOrEmpty(responseError)) {
+                        if (responseError.contains(TargetErrors.NOTIFICATION_ERROR_TAG)) {
+                            targetState.clearNotifications();
+                        }
+                        dispatchMboxPrefetchResult(TargetErrors.ERROR_RESPONSE + responseError, event);
+                        return;
+                    }
+
+                    if (responseCode != HttpURLConnection.HTTP_OK) {
+                        Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                                "prefetchMboxContent - Unable to prefetch mbox content, Error %s",
+                                TargetErrors.ERROR_RESPONSE + responseCode);
+                        dispatchMboxPrefetchResult(TargetErrors.ERROR_RESPONSE, event);
+                        return;
+                    }
+
+                    targetState.clearNotifications();
+
+                    // save the network request timestamp for computing the session id expiration
+                    targetState.updateSessionTimestamp(false);
+                    setTntIdInternal(targetResponseParser.getTntId(responseJson));
+                    targetState.updateEdgeHost(targetResponseParser.getEdgeHost(responseJson));
+
+                    getApi().createSharedState(targetState.generateSharedState(), event);
+
+                    final Map<String, JSONObject> prefetchedMboxes = targetResponseParser.extractPrefetchedMboxes(
+                            responseJson);
+                    if (TargetUtils.isNullOrEmpty(prefetchedMboxes)) {
+                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.NO_PREFETCH_MBOXES);
+                        dispatchMboxPrefetchResult(TargetErrors.NO_PREFETCH_MBOXES, event);
+                        return;
+                    }
+
+                    targetState.mergePrefetchedMboxJson(prefetchedMboxes);
+
+                    // check if we have duplicates in memory and remove them
+                    targetState.removeDuplicateLoadedMboxes();
+                    Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                            "prefetchMboxContent - Current cached mboxes : %s, size: %d",
+                            Arrays.toString(targetState.getPrefetchedMbox().keySet().toArray()),
+                            targetState.getPrefetchedMbox().size());
+
+                    dispatchMboxPrefetchResult(null, event);
+                });
+        if (!StringUtils.isNullOrEmpty(error)) {
+            dispatchMboxPrefetchResult(error, event);
         }
     }
 
+    /**
+     * Creates a network connection and sends the request to target server.
+     *
+     * @param batchRequests    {@link List<TargetRequest>} representing the desired mboxes to load
+     * @param prefetchRequests {@link List<TargetPrefetch>} representing the desired mboxes to preftech
+     * @param targetParameters {@link TargetParameters} object to be passed in all prefetch requests
+     * @param lifecycleData    {@code Map<String, Object>} shared state of Lifecycle extension
+     * @param identityData     {@code Map<String, Object>} shared state of Identity} extension
+     * @param propertyToken    {@link String} to be passed for all requests
+     * @param networkCallback {@link NetworkCallback} instance
+     */
+    private String sendTargetRequest(final List<TargetRequest> batchRequests,
+                                     final List<TargetPrefetch> prefetchRequests,
+                                     final TargetParameters targetParameters,
+                                     final Map<String, Object> lifecycleData,
+                                     final Map<String, Object> identityData,
+                                     final String propertyToken,
+                                     final NetworkCallback networkCallback) {
+
+        if (networkService == null) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.NETWORK_SERVICE_UNAVAILABLE);
+            return TargetErrors.NETWORK_SERVICE_UNAVAILABLE;
+        }
+
+        targetRequestBuilder = getRequestBuilder();
+        if (targetRequestBuilder == null) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.REQUEST_BUILDER_INIT_FAILED);
+            return TargetErrors.REQUEST_BUILDER_INIT_FAILED;
+        }
+        targetRequestBuilder.clean();
+
+        final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
+
+        // Valid property token, if passed in view prefetch request, takes higher precedence than configuration property token.
+        final JSONObject payloadJson = targetRequestBuilder.getRequestPayload(prefetchRequests,
+                batchRequests, targetParameters, targetState.getNotifications(),
+                StringUtils.isNullOrEmpty(targetState.getPropertyToken()) ? targetState.getPropertyToken() : propertyToken,
+                identityData, lifecycleContextData);
+
+        if (payloadJson == null || payloadJson.length() == 0) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "sendTargetRequest - Unable to send target request, Payload json is (%s)",
+                    (payloadJson == null ? "null" : "empty"));
+            return TargetErrors.REQUEST_GENERATION_FAILED;
+        }
+
+        final Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", TargetConstants.REQUEST_CONTENT_TYPE);
+        final int timeout = targetState.getNetworkTimeout();
+        final String url = getTargetRequestUrl( targetState.getTargetServer(), targetState.getClientCode());
+        final String payloadJsonString = payloadJson.toString();
+        final byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);
+        final NetworkRequest networkRequest = new NetworkRequest(url, HttpMethod.POST, payload, headers, timeout, timeout);
+
+        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                "sendTargetRequest - Target request was sent with url %s, body %s",
+                url, payloadJsonString);
+        networkService.connectAsync(networkRequest, networkCallback);
+        return null;
+    }
 
     /**
      * Dispatches a Target response event for a raw prefetch or execute request.
@@ -709,151 +733,107 @@ public class TargetExtension extends Extension {
 
         // Create Event and dispatch to EventHub
         Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "dispatchTargetRawResponse - (%s) ", TARGET_EVENT_DISPATCH_MESSAGE);
-        Event responseEvent = new Event.Builder(TargetConstants.EventName.TARGET_RAW_RESPONSE_EVENT_NAME, EventType.TARGET,
+        final Event responseEvent = new Event.Builder(TargetConstants.EventName.TARGET_RAW_RESPONSE_EVENT_NAME, EventType.TARGET,
                 EventSource.RESPONSE_CONTENT).setEventData(data).inResponseToEvent(requestEvent).build();
         getApi().dispatch(responseEvent);
     }
 
-    private Map<String, Object> retrieveIdentitySharedState(final Event event) {
-        final SharedStateResult identitySharedState = getApi().getSharedState(TargetConstants.Identity.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
-        return identitySharedState != null ? identitySharedState.getValue() : null;
-    }
-
-    private Map<String, Object> retrieveConfigurationSharedState(final Event event) {
-        final SharedStateResult configSharedState = getApi().getSharedState(TargetConstants.Configuration.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
-        return configSharedState != null ? configSharedState.getValue() : null;
+    /**
+     * Dispatches the Target Mbox Prefetch result.
+     *
+     * @param error {@code String} prefetch result error, if any.
+     * @param event {@code Event} the associated TargetRequestContent event.
+     */
+    private void dispatchMboxPrefetchResult(final String error, final Event event) {
+        final Map<String, Object> eventData = new HashMap<>();
+        eventData.put(TargetConstants.EventDataKeys.PREFETCH_ERROR, error);
+        eventData.put(TargetConstants.EventDataKeys.PREFETCH_RESULT, error == null);
+        // Create Event and dispatch to EventHub
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "dispatchMboxContent - " + TARGET_EVENT_DISPATCH_MESSAGE);
+        final Event responseEvent = new Event.Builder(TargetConstants.EventName.TARGET_RESPONSE_EVENT_NAME,
+                EventType.TARGET,
+                EventSource.RESPONSE_CONTENT)
+                .setEventData(eventData).inResponseToEvent(event).build();
+        getApi().dispatch(responseEvent);
     }
 
     /**
-     * Get {@code MobilePrivacyStatus} for this Target extension.
+     * Verifies if the target extension is in preview mode.
      *
-     * @return {@link MobilePrivacyStatus} from the last known Configuration state
+     * @return {@code boolean} indicating if the target extension is in preview mode
      */
-    private MobilePrivacyStatus getMobilePrivacyStatus() {
+    private boolean inPreviewMode() {
+        targetPreviewManager = getPreviewManager();
 
-        if (TargetUtils.isNullOrEmpty(lastKnownConfigurationState) ||
-                !lastKnownConfigurationState.containsKey(TargetConstants.Configuration.GLOBAL_CONFIG_PRIVACY)) {
-            return MobilePrivacyStatus.UNKNOWN;
+        if (targetPreviewManager != null) {
+            final String previewParams = targetPreviewManager.getPreviewParameters();
+
+            return previewParams != null && !previewParams.isEmpty();
         }
 
-        final String privacyString = DataReader.optString(lastKnownConfigurationState,
-                TargetConstants.Configuration.GLOBAL_CONFIG_PRIVACY, MobilePrivacyStatus.UNKNOWN.getValue());
-        return MobilePrivacyStatus.fromString(privacyString);
-    }
-
-    /**
-     * Saves the tntId and the edge host value derived from it to the Target data store.
-     * <p>
-     * If a valid tntId is provided and the privacy status is {@link MobilePrivacyStatus#OPT_OUT} or
-     * the provided tntId is same as the existing value, then the method returns with no further action.
-     * <p>
-     * If a null or empty value is provided for the tntId, then both tntId and edge host values are removed from the Target data store.
-     *
-     * @param newTntId {@link String} containing new tntId that needs to be set.
-     */
-    private void setTntIdInternal(final String newTntId) {
-        // do not set identifier if privacy is opt-out and the id is not being cleared
-        if (getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT && !StringUtils.isNullOrEmpty(newTntId)) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "setTntIdInternal - Cannot update Target tntId due to opt out privacy status.");
-            return;
-        }
-
-        if (tntIdValuesAreEqual(tntId, newTntId)) {
-            Log.debug(TargetConstants.LOG_TAG,
-                    "setTntIdInternal - Won't update Target tntId as provided value is same as the existing tntId value (%s).", newTntId);
-            return;
-        }
-
-        final String edgeHost = extractEdgeHost(newTntId);
-
-        if (!StringUtils.isNullOrEmpty(edgeHost)) {
-            Log.debug(TargetConstants.LOG_TAG, "setTntIdInternal - The edge host value derived from the given tntId (%s) is (%s).",
-                    newTntId, edgeHost);
-            setEdgeHost(edgeHost);
-        } else {
-            Log.debug(TargetConstants.LOG_TAG,
-                    "setTntIdInternal - The edge host value cannot be derived from the given tntId (%s) and it is removed from the data store.",
-                    newTntId);
-            setEdgeHost(null);
-        }
-
-        Log.trace(TargetConstants.LOG_TAG, "setTntIdInternal - Updating tntId with value (%s).", newTntId);
-        tntId = newTntId;
-
-        if (dataStore != null) {
-            if (StringUtils.isNullOrEmpty(newTntId)) {
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                        "setTntIdInternal - Removed tntId from the data store, provided tntId value is null or empty.");
-                dataStore.remove(TargetConstants.DataStoreKeys.TNT_ID);
-            } else {
-                Log.debug(TargetConstants.LOG_TAG, "setTntIdInternal - Persisted new tntId (%s) in the data store.", newTntId);
-                dataStore.setString(TargetConstants.DataStoreKeys.TNT_ID, newTntId);
-            }
-        } else {
-            Log.debug(TargetConstants.LOG_TAG, "setTntIdInternal - " + TargetErrors.TARGET_TNT_ID_NOT_PERSISTED,
-                    "Data store is not available.");
-        }
-    }
-
-
-    /**
-     * Reads the tntId from the Target DataStore and returns null if its unavailable.
-     *
-     * @return tntId {@link String}
-     */
-    String getTntId() {
-        if (tntId == null && dataStore != null) {
-            tntId = dataStore.getString(TargetConstants.DataStoreKeys.TNT_ID, null);
-        }
-        return tntId;
-    }
-
-    /**
-     * Compares if the given two tntID's are equal. tntId is a concatenation of {tntId}.{edgehostValue}
-     * false is returned when tntID's are different.
-     * true is returned when tntID's are same.
-     *
-     * @param oldId old tntId {@link String}
-     * @param newId new tntId {@code String}
-     * @return a {@code boolean} variable indicating if the tntId's are equal
-     */
-    boolean tntIdValuesAreEqual(final String oldId, final String newId) {
-        if (oldId == null && newId == null) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old and new tntId is null.");
-            return true;
-        }
-
-        if (oldId == null || newId == null) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - %s is null.", (oldId == null ? "oldId" : "newId"));
-            return false;
-        }
-
-        if (oldId.equals(newId)) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old tntId is equal to new tntId.");
-            return true;
-        }
-
-        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old tntId is not equal to new tntId.");
         return false;
     }
 
     /**
-     * Packages this extension's state data for sharing.
+     * Saves the tntId and the edge host value derived from it to the {@link TargetState}.
+     * <p>
+     * If a valid tntId is provided and the privacy status is {@link MobilePrivacyStatus#OPT_OUT} or
+     * the provided tntId is same as the existing value, then the method returns with no further action.
      *
-     * @return {@code Map<String, Object>} of this extension's state data
+     * @param updatedTntId {@link String} containing new tntId that needs to be set.
      */
-    private Map<String, Object> packageState() {
-        final Map<String, Object> data = new HashMap<>();
-
-        if (!StringUtils.isNullOrEmpty(tntId)) {
-            data.put(TargetConstants.EventDataKeys.TNT_ID, tntId);
+    void setTntIdInternal(final String updatedTntId) {
+        // do not set identifier if privacy is opt-out and the id is not being cleared
+        if (targetState.getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT && !StringUtils.isNullOrEmpty(updatedTntId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "updateTntId - Cannot update Target tntId due to opt out privacy status.");
+            return;
         }
 
-        if (!StringUtils.isNullOrEmpty(thirdPartyId)) {
-            data.put(TargetConstants.EventDataKeys.THIRD_PARTY_ID, thirdPartyId);
+        if (tntIdValuesAreEqual(targetState.getTntId(), updatedTntId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "updateTntId - Won't update Target tntId as provided value is same as the existing tntId value (%s).", updatedTntId);
+            return;
         }
 
-        return data;
+        final String edgeHost = extractEdgeHost(updatedTntId);
+
+        if (!StringUtils.isNullOrEmpty(edgeHost)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "updateTntId - The edge host value derived from the given tntId (%s) is (%s).",
+                    updatedTntId, edgeHost);
+            targetState.updateEdgeHost(edgeHost);
+        } else {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "updateTntId - The edge host value cannot be derived from the given tntId (%s) and it is removed from the data store.",
+                    updatedTntId);
+            targetState.updateEdgeHost(null);
+        }
+
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "setTntIdInternal - Updating tntId with value (%s).", updatedTntId);
+        targetState.setTntId(updatedTntId);
+    }
+
+    /**
+     * Saves the {@code #thirdPartyId} to the Target DataStore or remove its key in the dataStore if the newThirdPartyId {@link String} is null
+     * If the {@code #thirdPartyId} ID is changed. We set the sessionID to null to start a new session.
+     *
+     * @param updatedThirdPartyId newThirdPartyID {@link String} to be set
+     */
+    void setThirdPartyIdInternal(final String updatedThirdPartyId) {
+        // do not set identifier if privacy is opt-out and the id is not being cleared
+        if (targetState.getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT && !StringUtils.isNullOrEmpty(updatedThirdPartyId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "setThirdPartyIdInternal - Cannot update Target thirdPartyId due to opt out privacy status.");
+            return;
+        }
+
+        if (targetState.getThirdPartyId() != null && targetState.getThirdPartyId().equals(updatedThirdPartyId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "setThirdPartyIdInternal - New thirdPartyId value is same as the existing thirdPartyId (%s).", targetState.getThirdPartyId());
+            return;
+        }
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "setThirdPartyIdInternal - Updating thirdPartyId with value (%s).", updatedThirdPartyId);
+        targetState.setThirdPartyId(updatedThirdPartyId);
     }
 
     /**
@@ -882,7 +862,7 @@ public class TargetExtension extends Extension {
 
         if (matcher.find()) {
             locationHint = matcher.group();
-            Log.debug(TargetConstants.LOG_TAG, "extractEdgeHost - Provided tntId (%s) contains location hint (%s).", newTntId,
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "extractEdgeHost - Provided tntId (%s) contains location hint (%s).", newTntId,
                     locationHint);
         }
 
@@ -891,7 +871,7 @@ public class TargetExtension extends Extension {
         if (!StringUtils.isNullOrEmpty(locationHint)) {
             edgeHost = String.format(TargetConstants.API_URL_HOST_BASE, String.format(TargetConstants.EDGE_HOST_BASE,
                     locationHint));
-            Log.debug(TargetConstants.LOG_TAG, "extractEdgeHost - Edge host (%s) is derived from the provided tntId (%s).",
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "extractEdgeHost - Edge host (%s) is derived from the provided tntId (%s).",
                     edgeHost, locationHint);
         }
 
@@ -899,15 +879,98 @@ public class TargetExtension extends Extension {
     }
 
     /**
-     * Reads the {@code #thirdPartyId} from the Target DataStore and returns null if its unavailable.
+     * Compares if the given two tntID's are equal. tntId is a concatenation of {tntId}.{edgehostValue}
+     * false is returned when tntID's are different.
+     * true is returned when tntID's are same.
      *
-     * @return thirdPartyId {@link String}
+     * @param oldId old tntId {@link String}
+     * @param newId new tntId {@code String}
+     * @return a {@code boolean} variable indicating if the tntId's are equal
      */
-    String getThirdPartyId() {
-        if (StringUtils.isNullOrEmpty(thirdPartyId) && (dataStore != null)) {
-                thirdPartyId = dataStore.getString(TargetConstants.DataStoreKeys.THIRD_PARTY_ID, null);
+    private boolean tntIdValuesAreEqual(final String oldId, final String newId) {
+        if (oldId == null && newId == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old and new tntId is null.");
+            return true;
         }
-        return thirdPartyId;
+
+        if (oldId == null || newId == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - %s is null.", (oldId == null ? "oldId" : "newId"));
+            return false;
+        }
+
+        if (oldId.equals(newId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old tntId is equal to new tntId.");
+            return true;
+        }
+
+        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "tntIdValuesAreEqual - old tntId is not equal to new tntId.");
+        return false;
     }
 
+    /**
+     * Converts data from a lifecycle event into its form desired by Target.
+     *
+     * @param lifecycleData {@code Map<String, Object} shared state of Lifecycle extension
+     * @return {@code Map<String, String>} containing Lifecycle data transformed for Target
+     */
+    private Map<String, String> getLifecycleDataForTarget(final Map<String, Object> lifecycleData) {
+        if (TargetUtils.isNullOrEmpty(lifecycleData)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "getLifecycleDataForTarget - lifecycleData is (%s)",
+                    (lifecycleData == null ? "null" : "empty"));
+            return null;
+        }
+
+        // copy the event's data so we don't accidentally overwrite it for someone else consuming this event
+        final Map<String, String> tempLifecycleContextData = new HashMap<>(DataReader.optStringMap(
+                lifecycleData,
+                TargetConstants.Lifecycle.LIFECYCLE_CONTEXT_DATA, null));
+
+        final Map<String, String> lifecycleContextData = new HashMap<>();
+
+        for (Map.Entry<String, String> kvp : TargetConstants.MAP_TO_CONTEXT_DATA_KEYS.entrySet()) {
+            final String value = tempLifecycleContextData.get(kvp.getKey());
+            if (!StringUtils.isNullOrEmpty(value)) {
+                lifecycleContextData.put(kvp.getValue(), value);
+                tempLifecycleContextData.remove(kvp.getKey());
+            }
+        }
+
+        lifecycleContextData.putAll(tempLifecycleContextData);
+
+        return lifecycleContextData;
+    }
+
+    /**
+     * Gets the latest valid {@code Lifecycle} shared state at the given {@code event} version.
+     *
+     * @param event the {@code Lifecycle} state version to retrieve
+     * @return the last known valid {@code Lifecycle} state, may be null if no valid state was found
+     */
+    private Map<String, Object> retrieveLifecycleSharedState(final Event event) {
+        final SharedStateResult lifecycleSharedState = getApi().getSharedState(TargetConstants.Lifecycle.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
+        return lifecycleSharedState != null ? lifecycleSharedState.getValue() : null;
+    }
+
+    /**
+     * Gets the latest valid {@code Identity} shared state at the given {@code event} version.
+     *
+     * @param event the {@code Identity} state version to retrieve
+     * @return the last known valid {@code Identity} state, may be null if no valid state was found
+     */
+    private Map<String, Object> retrieveIdentitySharedState(final Event event) {
+        final SharedStateResult identitySharedState = getApi().getSharedState(TargetConstants.Identity.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
+        return identitySharedState != null ? identitySharedState.getValue() : null;
+    }
+
+    /**
+     * Gets the latest valid {@code Configuration} shared state at the given {@code event} version.
+     *
+     * @param event the {@code Configuration} state version to retrieve
+     * @return the last known valid {@code Configuration} state, may be null if no valid state was found
+     */
+    private Map<String, Object> retrieveConfigurationSharedState(final Event event) {
+        final SharedStateResult configSharedState = getApi().getSharedState(TargetConstants.Configuration.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
+        return configSharedState != null ? configSharedState.getValue() : null;
+    }
 }
