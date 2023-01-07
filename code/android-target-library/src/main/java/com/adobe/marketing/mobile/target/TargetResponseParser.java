@@ -47,11 +47,11 @@ class TargetResponseParser {
 	 */
 	JSONObject parseResponseToJson(final HttpConnecting connection) {
 		try {
-			String responseString = StreamUtils.readAsString(connection.getInputStream());
-			JSONObject responseJson = new JSONObject(responseString);
+			final String responseString = StreamUtils.readAsString(connection.getInputStream());
+			final JSONObject responseJson = new JSONObject(responseString);
 			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Target Response was received : %s", responseString);
 			return responseJson;
-		} catch (JSONException e) {
+		} catch (final JSONException e) {
 			Log.error(TargetConstants.LOG_TAG, CLASS_NAME,"Unable to parse Target Response, Error (%s)", e);
 			return null;
 		}
