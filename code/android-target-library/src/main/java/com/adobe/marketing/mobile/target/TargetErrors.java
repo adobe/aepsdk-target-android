@@ -20,7 +20,7 @@ final class TargetErrors {
 	static final String NO_CONNECTION = "Unable to open connection";
 	static final String RESPONSE_PARSER_INIT_FAILED = "Target response parser initialization failed";
 	static final String NULL_RESPONSE_JSON = "Null response Json";
-	static final String ERROR_RESPONSE = "Errors returned in Target response: (%s)";
+	static final String ERROR_RESPONSE = "Errors returned in Target response: ";
 	static final String NOTIFICATION_ERROR_TAG = "Notification";
 	static final String NO_PREFETCH_MBOXES = "No prefetch mbox content in Target response";
 	static final String NO_PREFETCH_VIEWS = "No prefetch view content in Target response";

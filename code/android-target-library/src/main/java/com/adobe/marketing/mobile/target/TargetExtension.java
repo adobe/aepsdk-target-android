@@ -159,8 +159,8 @@ public class TargetExtension extends Extension {
         getApi().registerEventListener(EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT, this::handleConfigurationResponseContentEvent);
     }
 
-    void handleTargetRequestContentEvent(final Event event) {
-        if (event == null || TargetUtils.isNullOrEmpty(event.getEventData())) {
+    void handleTargetRequestContentEvent(@NonNull final Event event) {
+        if (TargetUtils.isNullOrEmpty(event.getEventData())) {
             Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
                     "handleTargetRequestContentEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
             return;
@@ -199,8 +199,8 @@ public class TargetExtension extends Extension {
         }
     }
 
-    void handleTargetRequestResetEvent(final Event event) {
-        if (event == null || TargetUtils.isNullOrEmpty(event.getEventData())) {
+    void handleTargetRequestResetEvent(@NonNull final Event event) {
+        if (TargetUtils.isNullOrEmpty(event.getEventData())) {
             Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
                     "handleTargetRequestResetEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
             return;
@@ -217,8 +217,8 @@ public class TargetExtension extends Extension {
         }
     }
 
-    void handleTargetRequestIdentityEvent(final Event event) {
-        if (event == null || TargetUtils.isNullOrEmpty(event.getEventData())) {
+    void handleTargetRequestIdentityEvent(@NonNull final Event event) {
+        if (TargetUtils.isNullOrEmpty(event.getEventData())) {
             Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
                     "handleTargetRequestIdentityEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
             return;
@@ -242,8 +242,8 @@ public class TargetExtension extends Extension {
         }
     }
 
-    void handleGenericDataOSEvent(final Event event) {
-        if (event == null || TargetUtils.isNullOrEmpty(event.getEventData())) {
+    void handleGenericDataOSEvent(@NonNull final Event event) {
+        if (TargetUtils.isNullOrEmpty(event.getEventData())) {
             Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
                     "handleTargetRequestIdentityEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
             return;
@@ -255,8 +255,8 @@ public class TargetExtension extends Extension {
         }
     }
 
-    void handleConfigurationResponseContentEvent(final Event event) {
-        if (event == null || TargetUtils.isNullOrEmpty(event.getEventData())) {
+    void handleConfigurationResponseContentEvent( @NonNull Event event) {
+        if (TargetUtils.isNullOrEmpty(event.getEventData())) {
             Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
                     "handleConfigurationResponseContentEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
             return;
@@ -288,7 +288,7 @@ public class TargetExtension extends Extension {
 
         if (targetPreviewManager == null) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.PREVIEW_MANAGER_INIT_FAILED +
-                    " For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#set-preview-restart-deeplink");
+                    " For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#setpreviewrestartdeeplink");
             return;
         }
 
@@ -461,7 +461,7 @@ public class TargetExtension extends Extension {
     /**
      * Sends display notifications to Target
      * <p>
-     * Reads the display tokens from the cache either {@link TargetState#getPrefetchedMboxes()} or
+     * Reads the display tokens from the cache either {@link TargetState#getPrefetchedMbox()} or
      * {@link TargetState#getLoadedMbox()} to send the display notifications.
      * The display notification is not sent if,
      * <ol>
@@ -477,6 +477,13 @@ public class TargetExtension extends Extension {
                 "handleLocationsDisplayed - event %s type: %s source: %s ",
                 event.getName(), event.getType(), event.getSource());
 
+        final String sendRequestError = prepareForTargetRequest();
+        if (sendRequestError != null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.DISPLAY_NOTIFICATION_SEND_FAILED,
+                    sendRequestError);
+            return;
+        }
+
         final Map<String, Object> eventData = event.getEventData();
         final List<String> mboxNames = DataReader.optStringList(eventData, TargetConstants.EventDataKeys.MBOX_NAMES, null);
         if (TargetUtils.isNullOrEmpty(mboxNames)) {
@@ -485,20 +492,11 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        final String sendRequestError = prepareForTargetRequest();
-
-        if (sendRequestError != null) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.DISPLAY_NOTIFICATION_SEND_FAILED,
-                    sendRequestError);
-            return;
-        }
-
         final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
         final TargetParameters targetParameters = TargetParameters.fromEventData(eventData);
+        targetResponseParser = getResponseParser();
 
-        JSONObject mboxJson;
         int addedNotifications = 0;
-
         for (String mboxName : mboxNames) {
 
             //If loadedMbox contains mboxName then do not send analytics request again
@@ -506,25 +504,26 @@ public class TargetExtension extends Extension {
                 continue;
             }
 
-            if (targetState.getPrefetchedMboxes().containsKey(mboxName)) {
-                mboxJson = targetState.getPrefetchedMboxes().get(mboxName);
+            final JSONObject mboxJson;
+            if (targetState.getPrefetchedMbox().containsKey(mboxName)) {
+                mboxJson = targetState.getPrefetchedMbox().get(mboxName);
             } else {
                 Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
                         TargetErrors.DISPLAY_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CACHED_MBOX_FOUND +
-                                " For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#send-an-mbox-display-notification",
+                                " For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#displayedlocations",
                         mboxName);
                 continue;
             }
 
             if (!addDisplayNotification(mboxName, mboxJson, targetParameters, lifecycleData, event.getTimestamp())) {
-                Log.debug(TargetConstants.LOG_TAG,
-                        "handleLocationsDisplayed - %s mBox not added for display notification. For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#send-an-mbox-display-notification",
+                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "handleLocationsDisplayed - %s mBox not added for display notification." +
+                                "For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#displayedlocations",
                         mboxName);
                 continue;
             }
 
             addedNotifications++;
-            targetResponseParser = getResponseParser();
             dispatchAnalyticsForTargetRequest(targetResponseParser.getAnalyticsForTargetPayload(mboxJson,
                     targetState.getSessionId()));
         }
@@ -549,7 +548,7 @@ public class TargetExtension extends Extension {
     /**
      * Sends a click notification to Target if click metrics are enabled for the provided location name.
      * <p>
-     * Reads the clicked token from the cached either {@link TargetState#getPrefetchedMboxes()} or
+     * Reads the clicked token from the cached either {@link TargetState#getPrefetchedMbox()} or
      * {@link TargetState#getLoadedMbox()} to send the click notification.
      * The clicked notification is not sent if,
      * <ol>
@@ -565,10 +564,17 @@ public class TargetExtension extends Extension {
         Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
                 "handleLocationClicked - event %s type: %s source: %s ", event.getName(),
                 event.getType(), event.getSource());
-        final Map<String, Object> eventData = event.getEventData();
-        final String mboxName =  DataReader.optString(eventData,
-                TargetConstants.EventDataKeys.MBOX_NAME, null);
+        // bail out if the target configuration is not available or if the privacy is opted-out
+        final String sendRequestError = prepareForTargetRequest();
+        if (sendRequestError != null) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    TargetErrors.CLICK_NOTIFICATION_SEND_FAILED  + sendRequestError);
+            return;
+        }
 
+
+        final Map<String, Object> eventData = event.getEventData();
+        final String mboxName =  DataReader.optString(eventData, TargetConstants.EventDataKeys.MBOX_NAME, null);
         if (StringUtils.isNullOrEmpty(mboxName)) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Location clicked unsuccessful " + TargetErrors.MBOX_NAME_NULL_OR_EMPTY);
@@ -578,35 +584,25 @@ public class TargetExtension extends Extension {
         // Check if the mbox is already prefetched or loaded.
         // if not, Log and bail out
         JSONObject mboxJson;
-        if (targetState.getPrefetchedMboxes().containsKey(mboxName)) {
-            mboxJson = targetState.getPrefetchedMboxes().get(mboxName);
+        if (targetState.getPrefetchedMbox().containsKey(mboxName)) {
+            mboxJson = targetState.getPrefetchedMbox().get(mboxName);
         } else if (targetState.getLoadedMbox().containsKey(mboxName)) {
             mboxJson = targetState.getLoadedMbox().get(mboxName);
         } else {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     TargetErrors.CLICK_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CACHED_MBOX_FOUND +
-                            " For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#send-an-mbox-click-notification",
+                            " For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#clickedlocation",
                     mboxName);
             return;
         }
 
         targetResponseParser = getResponseParser();
         final JSONObject clickMetric = targetResponseParser.getClickMetric(mboxJson);
-
         if (clickMetric == null) {
             Log.warning(TargetConstants.LOG_TAG,
                     TargetErrors.CLICK_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CLICK_METRIC_FOUND +
-                            " For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#send-an-mbox-click-notification",
+                            " For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#clickedlocation",
                     mboxName);
-            return;
-        }
-
-        // bail out if the target configuration is not available or if the privacy is opted-out
-        final String sendRequestError = prepareForTargetRequest();
-
-        if (sendRequestError != null) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                    TargetErrors.CLICK_NOTIFICATION_SEND_FAILED  + sendRequestError);
             return;
         }
 
@@ -617,18 +613,17 @@ public class TargetExtension extends Extension {
 
         // create and add click notification to the notification list
         if (!addClickedNotificationToList(mboxJson, null, targetParameters, lifecycleData, event.getTimestamp())) {
-            Log.debug(TargetConstants.LOG_TAG,
-                    "handleLocationClicked - %s mBox not added for click notification. For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#send-an-mbox-click-notification",
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleLocationClicked - %s mBox not added for click notification. " +
+                            "For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#clickedlocation",
                     mboxName);
             return;
         }
 
         final Map<String, String> clickMetricA4TParams = targetResponseParser.getAnalyticsForTargetPayload(clickMetric);
-
         if (TargetUtils.isNullOrEmpty(clickMetricA4TParams)) {
-            dispatchAnalyticsForTargetRequest(
-                    targetResponseParser.preprocessAnalyticsForTargetPayload(clickMetricA4TParams, targetState.getSessionId())
-            );
+            dispatchAnalyticsForTargetRequest(targetResponseParser.preprocessAnalyticsForTargetPayload(
+                    clickMetricA4TParams, targetState.getSessionId()));
         }
 
         // send network request
@@ -690,7 +685,7 @@ public class TargetExtension extends Extension {
      *
      * @return the server url string
      */
-    protected String getTargetRequestUrl() {
+    private String getTargetRequestUrl() {
         // If customServer is not empty return targetRequestUrl with customServer as host
         if (!targetState.getTargetServer().isEmpty()) {
             return String.format(TargetConstants.DELIVERY_API_URL_BASE, targetState.getTargetServer(),
@@ -736,7 +731,7 @@ public class TargetExtension extends Extension {
                         "processTargetRawResponse - Received Target response with connection code: " + responseCode);
                 final String responseError = targetResponseParser.getErrorMessage(responseJson);
                 if (!StringUtils.isNullOrEmpty(responseError)) {
-                    Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE, responseError);
+                    Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE + responseError);
                 }
                 dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
                 return;
@@ -796,7 +791,7 @@ public class TargetExtension extends Extension {
                         if (responseError.contains(TargetErrors.NOTIFICATION_ERROR_TAG)) {
                             targetState.clearNotifications();
                         }
-                        Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE, responseError);
+                        Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE + responseError);
                         dispatchMboxPrefetchResult(TargetErrors.ERROR_RESPONSE + responseError, event);
                         return;
                     }
@@ -832,8 +827,8 @@ public class TargetExtension extends Extension {
                     targetState.removeDuplicateLoadedMboxes();
                     Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
                             "prefetchMboxContent - Current cached mboxes : %s, size: %d",
-                            Arrays.toString(targetState.getPrefetchedMboxes().keySet().toArray()),
-                            targetState.getPrefetchedMboxes().size());
+                            Arrays.toString(targetState.getPrefetchedMbox().keySet().toArray()),
+                            targetState.getPrefetchedMbox().size());
 
                     dispatchMboxPrefetchResult(null, event);
                 });
@@ -874,13 +869,12 @@ public class TargetExtension extends Extension {
         targetRequestBuilder.clean();
 
         final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
-        targetRequestBuilder.setLifecycleParameters(lifecycleContextData);
 
         // Valid property token, if passed in view prefetch request, takes higher precedence than configuration property token.
         final JSONObject payloadJson = targetRequestBuilder.getRequestPayload(prefetchRequests,
                 batchRequests, targetParameters, targetState.getNotifications(),
                 StringUtils.isNullOrEmpty(targetState.getPropertyToken()) ? targetState.getPropertyToken() : propertyToken,
-                identityData);
+                identityData, lifecycleContextData);
 
         if (payloadJson == null || payloadJson.length() == 0) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -940,7 +934,7 @@ public class TargetExtension extends Extension {
 
         if (!inPreviewMode()) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Current cached mboxes : %s, size: %d",
-                    Arrays.toString(targetState.getPrefetchedMboxes().keySet().toArray()), targetState.getPrefetchedMboxes().size());
+                    Arrays.toString(targetState.getPrefetchedMbox().keySet().toArray()), targetState.getPrefetchedMbox().size());
             requestsToSend = processCachedTargetRequest(targetBatchRequests);
         }
 
@@ -950,7 +944,7 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        List<TargetRequest> finalRequestsToSend = requestsToSend;
+        final List<TargetRequest> finalRequestsToSend = requestsToSend;
         sendTargetRequest(requestsToSend, null, targetParameters,
                 lifecycleData, identityData, null, connection -> {
                     processTargetRequestResponse(finalRequestsToSend, connection, event);
@@ -969,10 +963,10 @@ public class TargetExtension extends Extension {
      * @return {@code List<TargetRequest>} that didn't hit the cache
      */
     List<TargetRequest> processCachedTargetRequest(final List<TargetRequest> batchRequests) {
-        List<TargetRequest> requestsToSend = new ArrayList<>();
+        final List<TargetRequest> requestsToSend = new ArrayList<>();
 
         for (TargetRequest targetRequest : batchRequests) {
-            if (!targetState.getPrefetchedMboxes().containsKey(targetRequest.getMboxName())) {
+            if (!targetState.getPrefetchedMbox().containsKey(targetRequest.getMboxName())) {
                 Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
                         "processCachedTargetRequest - (%s) (%s) ",
                         TargetErrors.NO_CACHED_MBOX_FOUND, targetRequest.getMboxName());
@@ -990,7 +984,7 @@ public class TargetExtension extends Extension {
                 continue;
             }
 
-            JSONObject cachedMboxJson = targetState.getPrefetchedMboxes().get(targetRequest.getMboxName());
+            final JSONObject cachedMboxJson = targetState.getPrefetchedMbox().get(targetRequest.getMboxName());
 
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
                     "processCachedTargetRequest - Cached mbox found for %s with data %s",
@@ -1044,7 +1038,7 @@ public class TargetExtension extends Extension {
             if (responseError.contains(TargetErrors.NOTIFICATION_ERROR_TAG)) {
                 targetState.clearNotifications();
             }
-            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE, responseError);
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE + responseError);
             runDefaultCallbacks(batchRequests);
             return;
         }
@@ -1123,14 +1117,9 @@ public class TargetExtension extends Extension {
 
         targetRequestBuilder.clean();
 
-        if (lifecycleData != null) {
-
-            final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
-             targetRequestBuilder.setLifecycleParameters(lifecycleContextData);
-        }
-
-        JSONObject displayNotificationJson = targetRequestBuilder.getDisplayNotificationJsonObject(mboxName, mboxJson,
-                targetParameters, timestamp);
+        final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
+        final JSONObject displayNotificationJson = targetRequestBuilder.getDisplayNotificationJsonObject(mboxName, mboxJson,
+                targetParameters, timestamp, lifecycleContextData);
 
         if (displayNotificationJson == null) {
             Log.debug(TargetConstants.LOG_TAG, "addDisplayNotification - " + TargetErrors.DISPLAY_NOTIFICATION_NULL_FOR_MBOX,
@@ -1170,7 +1159,7 @@ public class TargetExtension extends Extension {
             if (responseError.contains(TargetErrors.NOTIFICATION_ERROR_TAG)) {
                 targetState.clearNotifications();
             }
-            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE, responseError);
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE + responseError);
             return;
         }
 
@@ -1215,19 +1204,15 @@ public class TargetExtension extends Extension {
         targetRequestBuilder.clean();
 
         // set lifecycle data to that targetRequestBuilder
-        if (lifecycleData != null) {
-            final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
-            targetRequestBuilder.setLifecycleParameters(lifecycleContextData);
-        }
-
+        final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
         final JSONObject clickNotificationJson;
 
         if (mboxJson != null) {
             clickNotificationJson = targetRequestBuilder.getClickNotificationJsonObject(mboxJson, targetParameters,
-                    timestamp);
+                    timestamp, lifecycleContextData);
         } else {
             clickNotificationJson = targetRequestBuilder.getClickNotificationJsonObject(notification, targetParameters,
-                    timestamp);
+                    timestamp, lifecycleContextData);
         }
 
         if (clickNotificationJson == null) {
@@ -1252,7 +1237,6 @@ public class TargetExtension extends Extension {
     private void setupPreviewMode(final Event event, final String deepLink) {
 
         final String sendRequestError = prepareForTargetRequest();
-
         if (sendRequestError != null) {
             Log.debug(TargetConstants.LOG_TAG, "setupPreviewMode - " + TargetErrors.TARGET_NOT_ENABLED_FOR_PREVIEW,
                     sendRequestError);
@@ -1267,7 +1251,6 @@ public class TargetExtension extends Extension {
         }
 
         targetPreviewManager = getPreviewManager();
-
         if (targetPreviewManager == null) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.PREVIEW_MANAGER_INIT_FAILED);
             return;
@@ -1340,7 +1323,7 @@ public class TargetExtension extends Extension {
     void dispatchMboxContent(final String content, final Map<String, String> a4tParams,
                              final Map<String, String> clickMetricA4TParams,
                              final Map<String, String> responseTokens, final String pairId) {
-        Map<String, Object> data = new HashMap<>();
+        final Map<String, Object> data = new HashMap<>();
         data.put(TargetConstants.EventDataKeys.TARGET_CONTENT, content);
 
         if (a4tParams != null) {
@@ -1361,7 +1344,7 @@ public class TargetExtension extends Extension {
 
         // Create Event and dispatch to EventHub
         Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "dispatchMboxContent - " + TARGET_EVENT_DISPATCH_MESSAGE);
-        Event responseEvent = new Event.Builder(TargetConstants.EventName.TARGET_RESPONSE_EVENT_NAME,
+        final Event responseEvent = new Event.Builder(TargetConstants.EventName.TARGET_RESPONSE_EVENT_NAME,
                 EventType.TARGET, EventSource.RESPONSE_CONTENT).setEventData(data).build();
         getApi().dispatch(responseEvent);
     }
@@ -1380,13 +1363,13 @@ public class TargetExtension extends Extension {
         }
 
         // Create EventData
-        Map<String, Object> eventData = new HashMap<>();
+        final Map<String, Object> eventData = new HashMap<>();
         eventData.put(TargetConstants.EventDataKeys.CONTEXT_DATA, payload);
         eventData.put(TargetConstants.EventDataKeys.TRACK_ACTION, TargetConstants.A4T_ACTION_NAME);
         eventData.put(TargetConstants.EventDataKeys.TRACK_INTERNAL, true);
 
         // Create Event and dispatch
-        Event analyticsForTargetEvent = new Event.Builder(TargetConstants.EventName.ANALYTICS_FOR_TARGET_REQUEST_EVENT_NAME, EventType.ANALYTICS,
+        final Event analyticsForTargetEvent = new Event.Builder(TargetConstants.EventName.ANALYTICS_FOR_TARGET_REQUEST_EVENT_NAME, EventType.ANALYTICS,
                 EventSource.REQUEST_CONTENT)
                 .setEventData(eventData)
                 .build();
@@ -1399,7 +1382,7 @@ public class TargetExtension extends Extension {
      * @param event {@link Event} the associated TargetRequestReset event
      */
     void dispatchIdentityResetCompletion(final Event event) {
-        Event completionEvent = new Event.Builder(TargetConstants.EventName.IDENTITY_RESET_COMPLETION_EVENT_NAME, EventType.TARGET,
+        final Event completionEvent = new Event.Builder(TargetConstants.EventName.IDENTITY_RESET_COMPLETION_EVENT_NAME, EventType.TARGET,
                 EventSource.REQUEST_RESET)
                 .inResponseToEvent(event)
                 .build();
@@ -1412,11 +1395,11 @@ public class TargetExtension extends Extension {
      * @param event       {@link Event} the associated TargetRequestIdentity event
      */
     void dispatchIdentity(final Event event) {
-        Map<String, Object> responseEventData = new HashMap<>();
+        final Map<String, Object> responseEventData = new HashMap<>();
         responseEventData.put(TargetConstants.EventDataKeys.THIRD_PARTY_ID, targetState.getThirdPartyId());
         responseEventData.put(TargetConstants.EventDataKeys.TNT_ID, targetState.getTntId());
         responseEventData.put(TargetConstants.EventDataKeys.SESSION_ID, targetState.getSessionId());
-        Event responseEvent = new Event.Builder(TargetConstants.EventName.IDENTITY_RESPONSE_EVENT_NAME,
+        final Event responseEvent = new Event.Builder(TargetConstants.EventName.IDENTITY_RESPONSE_EVENT_NAME,
                 EventType.TARGET, EventSource.RESPONSE_IDENTITY)
                 .setEventData(responseEventData)
                 .inResponseToEvent(event)

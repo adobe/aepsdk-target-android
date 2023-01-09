@@ -35,9 +35,9 @@ class TargetState {
     private static final String CLASS_NAME = "TargetState";
 
     private final NamedCollection dataStore;
-    final private Map<String, JSONObject> prefetchedMbox = new HashMap<>();
-    final private Map<String, JSONObject> loadedMbox = new HashMap<>();
-    final private List<JSONObject> notifications = new ArrayList<>();
+    private final Map<String, JSONObject> prefetchedMbox = new HashMap<>();
+    private final Map<String, JSONObject> loadedMbox = new HashMap<>();
+    private final List<JSONObject> notifications = new ArrayList<>();
 
     private Map<String, Object> storedConfigurationSharedState = null;
     private String tntId = "";
@@ -205,6 +205,12 @@ class TargetState {
      * @return the edgeHost {@link String} value
      */
     String getEdgeHost() {
+        if (StringUtils.isNullOrEmpty(edgeHost)) {
+            if (dataStore != null) {
+                edgeHost = dataStore.getString(TargetConstants.DataStoreKeys.EDGE_HOST, null);
+            }
+        }
+
         // If the session expired reset the edge host
         if (isSessionExpired()) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getEdgeHost - Resetting edge host to null as session id expired.");
@@ -386,7 +392,7 @@ class TargetState {
         prefetchedMbox.putAll(mboxMap);
     }
 
-    Map<String, JSONObject> getPrefetchedMboxes() {
+    Map<String, JSONObject> getPrefetchedMbox() {
         return prefetchedMbox;
     }
 
@@ -402,11 +408,11 @@ class TargetState {
      */
     void saveLoadedMbox(@NonNull final Map<String, JSONObject> mBoxResponses) {
         for (Map.Entry<String, JSONObject> mbox : mBoxResponses.entrySet()) {
-            String mboxName = mbox.getKey();
-            JSONObject mboxNode = mbox.getValue();
+            final String mboxName = mbox.getKey();
+            final JSONObject mboxNode = mbox.getValue();
 
             if (!StringUtils.isNullOrEmpty(mboxName) && !prefetchedMbox.containsKey(mboxName) && mboxNode != null) {
-                JSONObject clearedMboxNode;
+                final JSONObject clearedMboxNode;
                 try {
                     clearedMboxNode = new JSONObject(mboxNode.toString());
                 } catch (JSONException e) {
@@ -414,10 +420,10 @@ class TargetState {
                 }
 
                 // remove not accepted keys
-                Iterator<String> iterator = mboxNode.keys();
+                final Iterator<String> iterator = mboxNode.keys();
 
                 while (iterator.hasNext()) {
-                    String key = iterator.next();
+                    final String key = iterator.next();
 
                     if (!LOADED_MBOX_ACCEPTED_KEYS.contains(key)) {
                         clearedMboxNode.remove(key);

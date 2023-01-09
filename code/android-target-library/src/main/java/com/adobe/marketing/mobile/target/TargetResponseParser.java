@@ -14,8 +14,6 @@ package com.adobe.marketing.mobile.target;
 import com.adobe.marketing.mobile.services.HttpConnecting;
 import androidx.annotation.Nullable;
 
-import com.adobe.marketing.mobile.internal.util.MapExtensionsKt;
-import com.adobe.marketing.mobile.services.HttpConnecting;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.JSONUtils;
 import com.adobe.marketing.mobile.util.StreamUtils;
