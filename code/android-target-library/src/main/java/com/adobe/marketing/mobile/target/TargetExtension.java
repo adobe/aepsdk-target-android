@@ -45,6 +45,7 @@ import org.json.JSONObject;
 
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -88,7 +89,6 @@ public class TargetExtension extends Extension {
     private static final String TARGET_EVENT_DISPATCH_MESSAGE = "Dispatching - Target response content event";
 
     private final DeviceInforming deviceInfoService;
-    private final NamedCollection dataStore;
     private final Networking networkService;
     private final UIService uiService;
 
@@ -108,7 +108,7 @@ public class TargetExtension extends Extension {
         super(extensionApi);
 
         deviceInfoService = ServiceProvider.getInstance().getDeviceInfoService();
-        dataStore = ServiceProvider.getInstance().getDataStoreService().getNamedCollection(TargetConstants.DATA_STORE_KEY);
+        NamedCollection dataStore = ServiceProvider.getInstance().getDataStoreService().getNamedCollection(TargetConstants.DATA_STORE_KEY);
         networkService = ServiceProvider.getInstance().getNetworkService();
         uiService = ServiceProvider.getInstance().getUIService();
 
@@ -200,15 +200,82 @@ public class TargetExtension extends Extension {
     }
 
     void handleTargetRequestResetEvent(final Event event) {
+        if (event == null || TargetUtils.isNullOrEmpty(event.getEventData())) {
+            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleTargetRequestResetEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
+            return;
+        }
+
+        final Map<String, Object> eventData = event.getEventData();
+
+        if (DataReader.optBoolean(eventData, TargetConstants.EventDataKeys.RESET_EXPERIENCE, false)) {
+            resetIdentity(event);
+            return;
+        }
+        if (DataReader.optBoolean(eventData, TargetConstants.EventDataKeys.CLEAR_PREFETCH_CACHE, false)) {
+            clearPrefetchCache();
+        }
     }
 
     void handleTargetRequestIdentityEvent(final Event event) {
+        if (event == null || TargetUtils.isNullOrEmpty(event.getEventData())) {
+            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleTargetRequestIdentityEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
+            return;
+        }
+
+        final Map<String, Object> eventData = event.getEventData();
+
+        if (eventData.containsKey(TargetConstants.EventDataKeys.THIRD_PARTY_ID)) {
+            final String thirdPartyId = DataReader.optString(eventData, TargetConstants.EventDataKeys.THIRD_PARTY_ID, null);
+            setThirdPartyIdInternal(thirdPartyId);
+            getApi().createSharedState(targetState.generateSharedState(), event);
+        } else if (eventData.containsKey(TargetConstants.EventDataKeys.TNT_ID)) {
+            final String tntId = DataReader.optString(eventData, TargetConstants.EventDataKeys.TNT_ID, null);
+            setTntIdInternal(tntId);
+            getApi().createSharedState(targetState.generateSharedState(), event);
+        } else if (eventData.containsKey(TargetConstants.EventDataKeys.SESSION_ID)) {
+            final String sessionId = DataReader.optString(eventData, TargetConstants.EventDataKeys.SESSION_ID, null);
+            setSessionId(sessionId);
+        } else {
+            dispatchIdentity(event);
+        }
     }
 
     void handleGenericDataOSEvent(final Event event) {
+        if (event == null || TargetUtils.isNullOrEmpty(event.getEventData())) {
+            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleTargetRequestIdentityEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
+            return;
+        }
+        String deepLink = DataReader.optString(event.getEventData(), TargetConstants.PreviewKeys.DEEPLINK, null);
+
+        if (!StringUtils.isNullOrEmpty(deepLink)) {
+            setupPreviewMode(event, deepLink);
+        }
     }
 
     void handleConfigurationResponseContentEvent(final Event event) {
+        if (event == null || TargetUtils.isNullOrEmpty(event.getEventData())) {
+            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleConfigurationResponseContentEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
+            return;
+        }
+
+        Log.trace(TargetConstants.LOG_TAG, "handleConfigurationResponse - event %s type: %s source: %s ", event.getName(),
+                event.getType(), event.getSource());
+
+        if (targetState.getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT) {
+            resetIdentity();
+
+            // clear identifiers stored in request builder
+            if (targetRequestBuilder != null) {
+                targetRequestBuilder.clean();
+            }
+
+            // identifiers are cleared now, set shared state
+            getApi().createSharedState(targetState.generateSharedState(), event);
+        }
     }
 
     /**
@@ -217,7 +284,15 @@ public class TargetExtension extends Extension {
      * @param deepLink the {@link String} deep link received from the public API - SetPreviewRestartDeeplink
      */
     void setPreviewRestartDeepLink(final String deepLink) {
-        // todo
+        targetPreviewManager = getPreviewManager();
+
+        if (targetPreviewManager == null) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.PREVIEW_MANAGER_INIT_FAILED +
+                    " For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#set-preview-restart-deeplink");
+            return;
+        }
+
+        targetPreviewManager.setRestartDeepLink(deepLink);
     }
 
     /**
@@ -297,7 +372,7 @@ public class TargetExtension extends Extension {
                 return;
             }
 
-            final String url = getTargetRequestUrl(targetState.getTargetServer(), targetState.getClientCode());
+            final String url = getTargetRequestUrl();
             final String payloadJsonString = payloadJson.toString();
             final byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);
             final Map<String, String> headers = new HashMap<>();
@@ -308,7 +383,9 @@ public class TargetExtension extends Extension {
             final NetworkRequest networkRequest = new NetworkRequest(url, HttpMethod.POST, payload, headers, timeout, timeout);
             networkService.connectAsync(networkRequest, connection -> {
                 processTargetRawResponse(connection, isContentRequest, event);
-                connection.close();
+                if (connection != null) {
+                    connection.close();
+                }
             });
         } catch (final DataReaderException e) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -368,14 +445,23 @@ public class TargetExtension extends Extension {
      *
      * @param event            the {@link Event} object
      */
-    void loadRequests(final Event event) {
-        // todo
+    void loadRequests(@NonNull final Event event) {
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+                "loadRequests - event %s type: %s source: %s ",
+                event.getName(), event.getType(), event.getSource());
+        final Map<String, Object> eventData = event.getEventData();
+        final List<TargetRequest> targetRequests = DataReader.optTypedList(TargetRequest.class, eventData,
+                TargetConstants.EventDataKeys.LOAD_REQUEST, null);
+        final TargetParameters targetParameters = TargetParameters.fromEventData(eventData);
+        final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
+        final Map<String, Object> identityData = retrieveIdentitySharedState(event);
+        batchRequests(targetRequests, targetParameters, lifecycleData, identityData, event);
     }
 
     /**
      * Sends display notifications to Target
      * <p>
-     * Reads the display tokens from the cache either {@link TargetState#getPrefetchedMbox()} or
+     * Reads the display tokens from the cache either {@link TargetState#getPrefetchedMboxes()} or
      * {@link TargetState#getLoadedMbox()} to send the display notifications.
      * The display notification is not sent if,
      * <ol>
@@ -386,14 +472,84 @@ public class TargetExtension extends Extension {
      *
      * @param event            the {@link Event} object
      */
-    void handleLocationsDisplayed(final Event event) {
-        // todo
+    void handleLocationsDisplayed(@NonNull final Event event) {
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+                "handleLocationsDisplayed - event %s type: %s source: %s ",
+                event.getName(), event.getType(), event.getSource());
+
+        final Map<String, Object> eventData = event.getEventData();
+        final List<String> mboxNames = DataReader.optStringList(eventData, TargetConstants.EventDataKeys.MBOX_NAMES, null);
+        if (TargetUtils.isNullOrEmpty(mboxNames)) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "Location displayed unsuccessful (%s) ", TargetErrors.MBOX_NAMES_NULL_OR_EMPTY);
+            return;
+        }
+
+        final String sendRequestError = prepareForTargetRequest();
+
+        if (sendRequestError != null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.DISPLAY_NOTIFICATION_SEND_FAILED,
+                    sendRequestError);
+            return;
+        }
+
+        final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
+        final TargetParameters targetParameters = TargetParameters.fromEventData(eventData);
+
+        JSONObject mboxJson;
+        int addedNotifications = 0;
+
+        for (String mboxName : mboxNames) {
+
+            //If loadedMbox contains mboxName then do not send analytics request again
+            if (StringUtils.isNullOrEmpty(mboxName) || targetState.getLoadedMbox().containsKey(mboxName)) {
+                continue;
+            }
+
+            if (targetState.getPrefetchedMboxes().containsKey(mboxName)) {
+                mboxJson = targetState.getPrefetchedMboxes().get(mboxName);
+            } else {
+                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                        TargetErrors.DISPLAY_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CACHED_MBOX_FOUND +
+                                " For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#send-an-mbox-display-notification",
+                        mboxName);
+                continue;
+            }
+
+            if (!addDisplayNotification(mboxName, mboxJson, targetParameters, lifecycleData, event.getTimestamp())) {
+                Log.debug(TargetConstants.LOG_TAG,
+                        "handleLocationsDisplayed - %s mBox not added for display notification. For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#send-an-mbox-display-notification",
+                        mboxName);
+                continue;
+            }
+
+            addedNotifications++;
+            targetResponseParser = getResponseParser();
+            dispatchAnalyticsForTargetRequest(targetResponseParser.getAnalyticsForTargetPayload(mboxJson,
+                    targetState.getSessionId()));
+        }
+
+        if (addedNotifications == 0) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,"handleLocationsDisplayed - " + TargetErrors.DISPLAY_NOTIFICATION_NOT_SENT);
+            return;
+        }
+
+        final Map<String, Object> identityData = retrieveIdentitySharedState(event);
+
+        sendTargetRequest(null, null, targetParameters,
+                lifecycleData,
+                identityData, null, connection -> {
+                    processNotificationResponse(connection, event);
+                    if (connection != null) {
+                        connection.close();
+                    }
+                });
     }
 
     /**
      * Sends a click notification to Target if click metrics are enabled for the provided location name.
      * <p>
-     * Reads the clicked token from the cached either {@link TargetState#getPrefetchedMbox()} or
+     * Reads the clicked token from the cached either {@link TargetState#getPrefetchedMboxes()} or
      * {@link TargetState#getLoadedMbox()} to send the click notification.
      * The clicked notification is not sent if,
      * <ol>
@@ -405,60 +561,101 @@ public class TargetExtension extends Extension {
      *
      * @param event            the {@link Event} object
      */
-    void handleLocationClicked(final Event event) {
-        // todo
+    void handleLocationClicked(@NonNull final Event event) {
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+                "handleLocationClicked - event %s type: %s source: %s ", event.getName(),
+                event.getType(), event.getSource());
+        final Map<String, Object> eventData = event.getEventData();
+        final String mboxName =  DataReader.optString(eventData,
+                TargetConstants.EventDataKeys.MBOX_NAME, null);
+
+        if (StringUtils.isNullOrEmpty(mboxName)) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "Location clicked unsuccessful " + TargetErrors.MBOX_NAME_NULL_OR_EMPTY);
+            return;
+        }
+
+        // Check if the mbox is already prefetched or loaded.
+        // if not, Log and bail out
+        JSONObject mboxJson;
+        if (targetState.getPrefetchedMboxes().containsKey(mboxName)) {
+            mboxJson = targetState.getPrefetchedMboxes().get(mboxName);
+        } else if (targetState.getLoadedMbox().containsKey(mboxName)) {
+            mboxJson = targetState.getLoadedMbox().get(mboxName);
+        } else {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    TargetErrors.CLICK_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CACHED_MBOX_FOUND +
+                            " For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#send-an-mbox-click-notification",
+                    mboxName);
+            return;
+        }
+
+        targetResponseParser = getResponseParser();
+        final JSONObject clickMetric = targetResponseParser.getClickMetric(mboxJson);
+
+        if (clickMetric == null) {
+            Log.warning(TargetConstants.LOG_TAG,
+                    TargetErrors.CLICK_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CLICK_METRIC_FOUND +
+                            " For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#send-an-mbox-click-notification",
+                    mboxName);
+            return;
+        }
+
+        // bail out if the target configuration is not available or if the privacy is opted-out
+        final String sendRequestError = prepareForTargetRequest();
+
+        if (sendRequestError != null) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    TargetErrors.CLICK_NOTIFICATION_SEND_FAILED  + sendRequestError);
+            return;
+        }
+
+        // gather the other required shared states
+        final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
+        final Map<String, Object> identityData = retrieveIdentitySharedState(event);
+        final TargetParameters targetParameters = TargetParameters.fromEventData(eventData);
+
+        // create and add click notification to the notification list
+        if (!addClickedNotificationToList(mboxJson, null, targetParameters, lifecycleData, event.getTimestamp())) {
+            Log.debug(TargetConstants.LOG_TAG,
+                    "handleLocationClicked - %s mBox not added for click notification. For more details refer to https://aep-sdks.gitbook.io/docs/using-mobile-extensions/adobe-target/target-api-reference#send-an-mbox-click-notification",
+                    mboxName);
+            return;
+        }
+
+        final Map<String, String> clickMetricA4TParams = targetResponseParser.getAnalyticsForTargetPayload(clickMetric);
+
+        if (TargetUtils.isNullOrEmpty(clickMetricA4TParams)) {
+            dispatchAnalyticsForTargetRequest(
+                    targetResponseParser.preprocessAnalyticsForTargetPayload(clickMetricA4TParams, targetState.getSessionId())
+            );
+        }
+
+        // send network request
+        sendTargetRequest(null, null, targetParameters,
+                lifecycleData,
+                identityData, null, connection -> processNotificationResponse(connection, event));
+
     }
 
     /**
-     * Gets the {@code TargetRequestBuilder} instance used to build the json request.
+     * Clears all the current identifiers.
+     * After clearing the identifiers, creates a shared state at version {@code eventNumber}
+     * and dispatches an {@link EventType#TARGET} {@link EventSource#REQUEST_RESET} event.
      *
-     * @return the {@link TargetRequestBuilder} instance
+     * @param event the {@link Event} which triggered this method
      */
-    private TargetRequestBuilder getRequestBuilder() {
-        if (targetRequestBuilder == null) {
-            if (deviceInfoService == null) {
-                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, Device Info services are not available");
-                return null;
-            }
-
-            targetPreviewManager = getPreviewManager();
-            targetRequestBuilder = new TargetRequestBuilder(deviceInfoService, targetPreviewManager, targetState);
-        }
-
-        return targetRequestBuilder;
+    void resetIdentity(@NonNull final Event event) {
+        resetIdentity();
+        getApi().createSharedState(targetState.generateSharedState(), event);
+        dispatchIdentityResetCompletion(event);
     }
 
     /**
-     * Gets the {@code TargetResponseParser} instance used to parse the json response.
-     *
-     * @return the {@link TargetResponseParser} instance
+     * Clears all the previously prefetched and cached mbox locations.
      */
-    private TargetResponseParser getResponseParser() {
-        if (targetResponseParser == null) {
-            targetResponseParser = new TargetResponseParser();
-        }
-
-        return targetResponseParser;
-    }
-
-    /**
-     * Gets the {@code TargetPreviewManager} instance.
-     * <p>
-     * Returns null if either of {@link Networking} or {@link UIService} is null.
-     *
-     */
-    private TargetPreviewManager getPreviewManager() {
-        if (targetPreviewManager == null) {
-            if (networkService == null) {
-                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, Network services are not available");
-                return null;
-            } else if (uiService == null) {
-                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, UI services are not available");
-                return null;
-            }
-            return new TargetPreviewManager(networkService, uiService, getApi());
-        }
-        return targetPreviewManager;
+    void clearPrefetchCache() {
+        targetState.clearPrefetchedMboxes();
     }
 
     /**
@@ -491,21 +688,20 @@ public class TargetExtension extends Extension {
      * 3. Default host created with customer's client code
      * {@code String} sessionId and {@code String} clientCode are also sent as query parameters in the Target request url.
      *
-     * @param customServer the value of "target.server" in configuration
-     * @param clientCode the value of "target.clientCode" in configuration
      * @return the server url string
      */
-    private String getTargetRequestUrl(final String customServer, final String clientCode) {
+    protected String getTargetRequestUrl() {
         // If customServer is not empty return targetRequestUrl with customServer as host
-        if (!customServer.isEmpty()) {
-            return String.format(TargetConstants.DELIVERY_API_URL_BASE, customServer, clientCode, targetState.getSessionId());
+        if (!targetState.getTargetServer().isEmpty()) {
+            return String.format(TargetConstants.DELIVERY_API_URL_BASE, targetState.getTargetServer(),
+                    targetState.getClientCode(), targetState.getSessionId());
         }
 
         final String edgeHost = targetState.getEdgeHost();
         final String host = StringUtils.isNullOrEmpty(edgeHost) ?
-                String.format(TargetConstants.API_URL_HOST_BASE, clientCode)
+                String.format(TargetConstants.API_URL_HOST_BASE, targetState.getClientCode())
                 : edgeHost;
-        return String.format(TargetConstants.DELIVERY_API_URL_BASE, host, clientCode, targetState.getSessionId());
+        return String.format(TargetConstants.DELIVERY_API_URL_BASE, host, targetState.getClientCode(), targetState.getSessionId());
     }
 
 
@@ -540,7 +736,7 @@ public class TargetExtension extends Extension {
                         "processTargetRawResponse - Received Target response with connection code: " + responseCode);
                 final String responseError = targetResponseParser.getErrorMessage(responseJson);
                 if (!StringUtils.isNullOrEmpty(responseError)) {
-                    Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE + responseError);
+                    Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE, responseError);
                 }
                 dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
                 return;
@@ -600,6 +796,7 @@ public class TargetExtension extends Extension {
                         if (responseError.contains(TargetErrors.NOTIFICATION_ERROR_TAG)) {
                             targetState.clearNotifications();
                         }
+                        Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE, responseError);
                         dispatchMboxPrefetchResult(TargetErrors.ERROR_RESPONSE + responseError, event);
                         return;
                     }
@@ -635,8 +832,8 @@ public class TargetExtension extends Extension {
                     targetState.removeDuplicateLoadedMboxes();
                     Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
                             "prefetchMboxContent - Current cached mboxes : %s, size: %d",
-                            Arrays.toString(targetState.getPrefetchedMbox().keySet().toArray()),
-                            targetState.getPrefetchedMbox().size());
+                            Arrays.toString(targetState.getPrefetchedMboxes().keySet().toArray()),
+                            targetState.getPrefetchedMboxes().size());
 
                     dispatchMboxPrefetchResult(null, event);
                 });
@@ -677,12 +874,13 @@ public class TargetExtension extends Extension {
         targetRequestBuilder.clean();
 
         final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
+        targetRequestBuilder.setLifecycleParameters(lifecycleContextData);
 
         // Valid property token, if passed in view prefetch request, takes higher precedence than configuration property token.
         final JSONObject payloadJson = targetRequestBuilder.getRequestPayload(prefetchRequests,
                 batchRequests, targetParameters, targetState.getNotifications(),
                 StringUtils.isNullOrEmpty(targetState.getPropertyToken()) ? targetState.getPropertyToken() : propertyToken,
-                identityData, lifecycleContextData);
+                identityData);
 
         if (payloadJson == null || payloadJson.length() == 0) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -694,7 +892,7 @@ public class TargetExtension extends Extension {
         final Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", TargetConstants.REQUEST_CONTENT_TYPE);
         final int timeout = targetState.getNetworkTimeout();
-        final String url = getTargetRequestUrl( targetState.getTargetServer(), targetState.getClientCode());
+        final String url = getTargetRequestUrl();
         final String payloadJsonString = payloadJson.toString();
         final byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);
         final NetworkRequest networkRequest = new NetworkRequest(url, HttpMethod.POST, payload, headers, timeout, timeout);
@@ -704,6 +902,377 @@ public class TargetExtension extends Extension {
                 url, payloadJsonString);
         networkService.connectAsync(networkRequest, networkCallback);
         return null;
+    }
+
+    /**
+     * Internal method to send a batch request.
+     * <p>
+     *
+     * @param targetBatchRequests {@code List<TargetRequest>} representing the desired mboxes to load
+     * @param targetParameters    {@link TargetParameters} object to be passed in all prefetch requests
+     * @param lifecycleData       {@code Map<String, Object>} shared state of {@code Lifecycle} extension
+     * @param identityData        {@code Map<String, Object>} shared state of {@code Identity} extension
+     * @param event          {@link Event}  which triggered this method call
+     */
+    private void batchRequests(final List<TargetRequest> targetBatchRequests,
+                               final TargetParameters targetParameters,
+                               final Map<String, Object> lifecycleData,
+                               final Map<String, Object> identityData,
+                               final Event event) {
+        if (TargetUtils.isNullOrEmpty(targetBatchRequests)) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "batchRequests - Unable to process the batch requests, Target Batch Requests are %s.",
+                    (targetBatchRequests == null ? "null" : "empty"));
+            runDefaultCallbacks(targetBatchRequests);
+            return;
+        }
+
+        final String sendRequestError = prepareForTargetRequest();
+        if (sendRequestError != null) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "batchRequests - Unable to process the batch requests, Error - %s",
+                    sendRequestError);
+            runDefaultCallbacks(targetBatchRequests);
+            return;
+        }
+
+        List<TargetRequest> requestsToSend = targetBatchRequests;
+
+        if (!inPreviewMode()) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Current cached mboxes : %s, size: %d",
+                    Arrays.toString(targetState.getPrefetchedMboxes().keySet().toArray()), targetState.getPrefetchedMboxes().size());
+            requestsToSend = processCachedTargetRequest(targetBatchRequests);
+        }
+
+        if (TargetUtils.isNullOrEmpty(requestsToSend) && targetState.getNotification().isEmpty()) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "Unable to process the batch requests, requests and notifications are empty");
+            return;
+        }
+
+        List<TargetRequest> finalRequestsToSend = requestsToSend;
+        sendTargetRequest(requestsToSend, null, targetParameters,
+                lifecycleData, identityData, null, connection -> {
+                    processTargetRequestResponse(finalRequestsToSend, connection, event);
+                    if (connection != null) {
+                        connection.close();
+                    }
+                });
+    }
+
+    /**
+     * Checks if the cached mboxs contain the data for each of the {@code TargetRequest} in the input List.
+     * <p>
+     * If a cached mbox exists, then dispatch the mbox content.
+     *
+     * @param batchRequests    an {@code List<TargetRequest>} representing the desired mboxes to load
+     * @return {@code List<TargetRequest>} that didn't hit the cache
+     */
+    List<TargetRequest> processCachedTargetRequest(final List<TargetRequest> batchRequests) {
+        List<TargetRequest> requestsToSend = new ArrayList<>();
+
+        for (TargetRequest targetRequest : batchRequests) {
+            if (!targetState.getPrefetchedMboxes().containsKey(targetRequest.getMboxName())) {
+                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "processCachedTargetRequest - (%s) (%s) ",
+                        TargetErrors.NO_CACHED_MBOX_FOUND, targetRequest.getMboxName());
+                requestsToSend.add(targetRequest);
+                continue;
+            }
+
+            targetResponseParser = getResponseParser();
+
+            if (targetResponseParser == null) {
+                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.RESPONSE_PARSER_INIT_FAILED);
+                //Pas null for a4t params and response tokens in case of default callback.
+                dispatchMboxContent(targetRequest.getDefaultContent(), null, null, null,
+                        targetRequest.getResponsePairId());
+                continue;
+            }
+
+            JSONObject cachedMboxJson = targetState.getPrefetchedMboxes().get(targetRequest.getMboxName());
+
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "processCachedTargetRequest - Cached mbox found for %s with data %s",
+                    targetRequest.getMboxName(), cachedMboxJson);
+
+            final String content = targetResponseParser.extractMboxContent(cachedMboxJson);
+            final Map<String, String> a4tParams = targetResponseParser.getAnalyticsForTargetPayload(cachedMboxJson);
+            final Map<String, String> responseTokens = targetResponseParser.getResponseTokens(cachedMboxJson);
+            final Map<String, String> clickMetricA4TParams = targetResponseParser.extractClickMetricAnalyticsPayload(
+                    cachedMboxJson);
+
+            dispatchMboxContent(StringUtils.isNullOrEmpty(content) ? targetRequest.getDefaultContent() : content,
+                    a4tParams, clickMetricA4TParams,
+                    responseTokens,
+                    targetRequest.getResponsePairId());
+        }
+
+        return requestsToSend;
+    }
+
+    /**
+     * Processes the network response for batch request.
+     *
+     * @param batchRequests {@code List<TargetRequest>} representing the desired mboxes to load
+     * @param connection    {@link HttpConnecting} instance
+     * @param event   {@link Event} which triggered this method call
+     */
+    private void processTargetRequestResponse(final List<TargetRequest> batchRequests,
+                                              final HttpConnecting connection,
+                                              final Event event) {
+        if (connection == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "processTargetRequestResponse - (%s)", TargetErrors.NO_CONNECTION);
+            runDefaultCallbacks(batchRequests);
+            return;
+        }
+
+        targetResponseParser = getResponseParser();
+        final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
+        final String responseError = targetResponseParser.getErrorMessage(responseJson);
+        final int responseCode = connection.getResponseCode();
+        connection.close();
+
+        if (responseJson == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRequestResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+            runDefaultCallbacks(batchRequests);
+            return;
+        }
+
+        if (!StringUtils.isNullOrEmpty(responseError)) {
+            if (responseError.contains(TargetErrors.NOTIFICATION_ERROR_TAG)) {
+                targetState.clearNotifications();
+            }
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE, responseError);
+            runDefaultCallbacks(batchRequests);
+            return;
+        }
+
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "processTargetRequestResponse - (%) Error (%s), Error code (%s)",
+                    TargetErrors.ERROR_RESPONSE, responseError, responseCode);
+            runDefaultCallbacks(batchRequests);
+            return;
+        }
+
+        targetState.clearNotifications();
+
+        // save the network request timestamp for computing the session id expiration
+        targetState.updateSessionTimestamp(false);
+        setTntIdInternal(targetResponseParser.getTntId(responseJson));
+        targetState.updateEdgeHost(targetResponseParser.getEdgeHost(responseJson));
+
+        getApi().createSharedState(targetState.generateSharedState(), event);
+
+        Map<String, JSONObject> batchedMboxes = targetResponseParser.extractBatchedMBoxes(responseJson);
+        if (TargetUtils.isNullOrEmpty(batchedMboxes)) {
+            runDefaultCallbacks(batchRequests);
+            return;
+        }
+
+        targetState.saveLoadedMbox(batchedMboxes);
+
+        for (TargetRequest targetRequest : batchRequests) {
+            if (!batchedMboxes.containsKey(targetRequest.getMboxName())) {
+                dispatchMboxContent(targetRequest.getDefaultContent(), null, null, null,
+                        targetRequest.getResponsePairId());
+                continue;
+            }
+
+            final JSONObject mboxJson = batchedMboxes.get(targetRequest.getMboxName());
+            final String content = targetResponseParser.extractMboxContent(mboxJson);
+            final Map<String, String> responseTokens = targetResponseParser.getResponseTokens(mboxJson);
+            final Map<String, String> clickMetricA4TParams = targetResponseParser.extractClickMetricAnalyticsPayload(mboxJson);
+
+            final Map<String, String> a4tParams = targetResponseParser.getAnalyticsForTargetPayload(mboxJson);
+
+            if (TargetUtils.isNullOrEmpty(a4tParams)) {
+                dispatchAnalyticsForTargetRequest(targetResponseParser.getAnalyticsForTargetPayload(mboxJson,
+                        targetState.getSessionId()));
+            }
+
+            dispatchMboxContent(StringUtils.isNullOrEmpty(content) ? targetRequest.getDefaultContent() : content,
+                    a4tParams, clickMetricA4TParams,
+                    responseTokens,
+                    targetRequest.getResponsePairId());
+        }
+    }
+
+    /**
+     * Adds the display notification for the given mbox to the {@link TargetState#getNotification()} list.
+     *
+     * @param mboxName         the displayed mbox name {@link String}
+     * @param mboxJson         the cached mbox {@link JSONObject}
+     * @param targetParameters {@link TargetParameters} object corresponding to the display location
+     * @param lifecycleData    the lifecycle {@code Map<String, Object} that should be added as mbox parameters
+     * @param timestamp        {@code long} timestamp associated with the notification event
+     * @return {@code boolean} indicating the success of appending the display notification to the notification list
+     */
+    private boolean addDisplayNotification(final String mboxName, final JSONObject mboxJson,
+                                           final TargetParameters targetParameters,
+                                           final Map<String, Object> lifecycleData,
+                                           final long timestamp) {
+        targetRequestBuilder = getRequestBuilder();
+
+        if (targetRequestBuilder == null) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.REQUEST_BUILDER_INIT_FAILED);
+            return false;
+        }
+
+        targetRequestBuilder.clean();
+
+        if (lifecycleData != null) {
+            final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
+            targetRequestBuilder.setLifecycleParameters(lifecycleContextData);
+        }
+
+        JSONObject displayNotificationJson = targetRequestBuilder.getDisplayNotificationJsonObject(mboxName, mboxJson,
+                targetParameters, timestamp);
+
+        if (displayNotificationJson == null) {
+            Log.debug(TargetConstants.LOG_TAG, "addDisplayNotification - " + TargetErrors.DISPLAY_NOTIFICATION_NULL_FOR_MBOX,
+                    mboxName);
+            return false;
+        }
+
+        targetState.addNotification(displayNotificationJson);
+        return true;
+    }
+
+    /**
+     * Process the network response after the notification network call.
+     *
+     * @param connection  {@link HttpConnecting} instance
+     * @param event the {@link Event} which triggered this method call
+     */
+    private void processNotificationResponse(final HttpConnecting connection, final Event event) {
+        if (connection == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "processNotificationResponse - %s", TargetErrors.NO_CONNECTION);
+            return;
+        }
+
+        targetResponseParser = getResponseParser();
+        final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
+        final String responseError = targetResponseParser.getErrorMessage(responseJson);
+        final int responseCode = connection.getResponseCode();
+        connection.close();
+
+        if (responseJson == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processNotificationResponse (%s)" + TargetErrors.NULL_RESPONSE_JSON);
+            return;
+        }
+
+        if (!StringUtils.isNullOrEmpty(responseError)) {
+            if (responseError.contains(TargetErrors.NOTIFICATION_ERROR_TAG)) {
+                targetState.clearNotifications();
+            }
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.ERROR_RESPONSE, responseError);
+            return;
+        }
+
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "processNotificationResponse" + TargetErrors.ERROR_RESPONSE, responseCode);
+            return;
+        }
+
+        targetState.clearNotifications();
+
+        // save the network request timestamp for computing the session id expiration
+        targetState.updateSessionTimestamp(false);
+        setTntIdInternal(targetResponseParser.getTntId(responseJson));
+        targetState.updateEdgeHost(targetResponseParser.getEdgeHost(responseJson));
+
+        getApi().createSharedState(targetState.generateSharedState(), event);
+    }
+
+    /**
+     * Adds the clicked notification for the given mbox to the {@link TargetState#getNotification()} list.
+     *
+     * @param mboxJson         the clicked notification {@link JSONObject} for the clicked location
+     * @param notification     the {@code Map<String, Object>} containing raw notification data
+     * @param targetParameters {@link TargetParameters} object corresponding to the clicked location
+     * @param lifecycleData    the lifecycle {@code Map<String, Object} that should be added to as the mbox parameters
+     * @param timestamp        {@code long} timestamp associated with the event, creating the clicked notification
+     * @return {@code boolean} indicating the success of appending the click notification to the notification list
+     */
+    private boolean addClickedNotificationToList(final JSONObject mboxJson,
+                                                 final Map<String, Object> notification,
+                                                 final TargetParameters targetParameters,
+                                                 final Map<String, Object> lifecycleData,
+                                                 final long timestamp) {
+        targetRequestBuilder = getRequestBuilder();
+
+        if (targetRequestBuilder == null) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.REQUEST_BUILDER_INIT_FAILED);
+            return false;
+        }
+
+        targetRequestBuilder.clean();
+
+        // set lifecycle data to that targetRequestBuilder
+        if (lifecycleData != null) {
+            final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
+            targetRequestBuilder.setLifecycleParameters(lifecycleContextData);
+        }
+
+        final JSONObject clickNotificationJson;
+
+        if (mboxJson != null) {
+            clickNotificationJson = targetRequestBuilder.getClickNotificationJsonObject(mboxJson, targetParameters,
+                    timestamp);
+        } else {
+            clickNotificationJson = targetRequestBuilder.getClickNotificationJsonObject(notification, targetParameters,
+                    timestamp);
+        }
+
+        if (clickNotificationJson == null) {
+            Log.debug(TargetConstants.LOG_TAG, "addClickedNotificationToList - %s", TargetErrors.CLICK_NOTIFICATION_NOT_SENT);
+            return false;
+        }
+
+        targetState.addNotification(clickNotificationJson);
+        return true;
+    }
+
+    /**
+     * Starts preview mode if the deeplink contains the preview query parameters.
+     * <p>
+     * It then dispatches a new event to messages to create a custom full screen message for target preview.
+     * Bail out if the Target configurations are not found or if preview is disabled in Target configuration or if {@code TargetPreviewManager} cannot be instantiated.
+     *
+     * @param event    current {@link Event} used for retrieving the config shared state
+     * @param deepLink {@link String} the deep link extracted from the {@link EventType#GENERIC_DATA} {@link EventSource#OS} event
+     * @see #getPreviewManager()
+     */
+    private void setupPreviewMode(final Event event, final String deepLink) {
+
+        final String sendRequestError = prepareForTargetRequest();
+
+        if (sendRequestError != null) {
+            Log.debug(TargetConstants.LOG_TAG, "setupPreviewMode - " + TargetErrors.TARGET_NOT_ENABLED_FOR_PREVIEW,
+                    sendRequestError);
+            return;
+        }
+
+        final Map<String, Object> configState = retrieveConfigurationSharedState(event);
+        final boolean isPreviewEnabled = DataReader.optBoolean(configState, TargetConstants.Configuration.TARGET_PREVIEW_ENABLED, true);
+        if (!isPreviewEnabled) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "setupPreviewMode - " + TargetErrors.TARGET_PREVIEW_DISABLED);
+            return;
+        }
+
+        targetPreviewManager = getPreviewManager();
+
+        if (targetPreviewManager == null) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.PREVIEW_MANAGER_INIT_FAILED);
+            return;
+        }
+
+        targetPreviewManager.enterPreviewModeWithDeepLinkParams(targetState.getClientCode(), deepLink);
     }
 
     /**
@@ -756,6 +1325,154 @@ public class TargetExtension extends Extension {
                 EventSource.RESPONSE_CONTENT)
                 .setEventData(eventData).inResponseToEvent(event).build();
         getApi().dispatch(responseEvent);
+    }
+
+    /**
+     * Dispatches the Target Response Content Event.
+     *
+     * @param content (required) the target content generated by the Target extension object.
+     * @param a4tParams (Nullable) the A4T params {@code Map<String, String>} for the Mbox. It will be null if A4T is not enabled on Target.
+     * @param clickMetricA4TParams (Nullable) the click metric A4T parameter for the Mbox.
+     * @param responseTokens (Nullable) the Response Tokens for the Mbox. It may be null if Response Tokens are not activated on Target.
+     * @param pairId  (required) the pairId of the associated TargetRequestContent event.
+     */
+    void dispatchMboxContent(final String content, final Map<String, String> a4tParams,
+                             final Map<String, String> clickMetricA4TParams,
+                             final Map<String, String> responseTokens, final String pairId) {
+        Map<String, Object> data = new HashMap<>();
+        data.put(TargetConstants.EventDataKeys.TARGET_CONTENT, content);
+
+        if (a4tParams != null) {
+            data.put(TargetConstants.EventDataKeys.ANALYTICS_PAYLOAD, a4tParams);
+        }
+
+        if (responseTokens != null) {
+            data.put(TargetConstants.EventDataKeys.RESPONSE_TOKENS, responseTokens);
+        }
+
+        if (clickMetricA4TParams != null) {
+            data.put(TargetConstants.EventDataKeys.CLICK_METRIC_ANALYTICS_PAYLOAD, clickMetricA4TParams);
+        }
+
+        if (!StringUtils.isNullOrEmpty(pairId)) {
+            data.put(TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID, pairId);
+        }
+
+        // Create Event and dispatch to EventHub
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "dispatchMboxContent - " + TARGET_EVENT_DISPATCH_MESSAGE);
+        Event responseEvent = new Event.Builder(TargetConstants.EventName.TARGET_RESPONSE_EVENT_NAME,
+                EventType.TARGET, EventSource.RESPONSE_CONTENT).setEventData(data).build();
+        getApi().dispatch(responseEvent);
+    }
+
+    /**
+     * Dispatches an Analytics Event containing the Analytics for Target (A4T) payload
+     *
+     * @param payload analytics for target (a4t) payload
+     */
+    void dispatchAnalyticsForTargetRequest(final Map<String, String> payload) {
+
+        if (payload == null || payload.isEmpty()) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "dispatchAnalyticsForTargetRequest - Failed to dispatch analytics. Payload is either null or empty");
+            return;
+        }
+
+        // Create EventData
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put(TargetConstants.EventDataKeys.CONTEXT_DATA, payload);
+        eventData.put(TargetConstants.EventDataKeys.TRACK_ACTION, TargetConstants.A4T_ACTION_NAME);
+        eventData.put(TargetConstants.EventDataKeys.TRACK_INTERNAL, true);
+
+        // Create Event and dispatch
+        Event analyticsForTargetEvent = new Event.Builder(TargetConstants.EventName.ANALYTICS_FOR_TARGET_REQUEST_EVENT_NAME, EventType.ANALYTICS,
+                EventSource.REQUEST_CONTENT)
+                .setEventData(eventData)
+                .build();
+        getApi().dispatch(analyticsForTargetEvent);
+    }
+
+    /**
+     * Dispatches an event indicating target reset request completion
+     *
+     * @param event {@link Event} the associated TargetRequestReset event
+     */
+    void dispatchIdentityResetCompletion(final Event event) {
+        Event completionEvent = new Event.Builder(TargetConstants.EventName.IDENTITY_RESET_COMPLETION_EVENT_NAME, EventType.TARGET,
+                EventSource.REQUEST_RESET)
+                .inResponseToEvent(event)
+                .build();
+        getApi().dispatch(completionEvent);
+    }
+
+    /**
+     * Dispatches a response event for an identity request
+     *
+     * @param event       {@link Event} the associated TargetRequestIdentity event
+     */
+    void dispatchIdentity(final Event event) {
+        Map<String, Object> responseEventData = new HashMap<>();
+        responseEventData.put(TargetConstants.EventDataKeys.THIRD_PARTY_ID, targetState.getThirdPartyId());
+        responseEventData.put(TargetConstants.EventDataKeys.TNT_ID, targetState.getTntId());
+        responseEventData.put(TargetConstants.EventDataKeys.SESSION_ID, targetState.getSessionId());
+        Event responseEvent = new Event.Builder(TargetConstants.EventName.IDENTITY_RESPONSE_EVENT_NAME,
+                EventType.TARGET, EventSource.RESPONSE_IDENTITY)
+                .setEventData(responseEventData)
+                .inResponseToEvent(event)
+                .build();
+        getApi().dispatch(responseEvent);
+    }
+
+    /**
+     * Gets the {@code TargetRequestBuilder} instance used to build the json request.
+     *
+     * @return the {@link TargetRequestBuilder} instance
+     */
+    private TargetRequestBuilder getRequestBuilder() {
+        if (targetRequestBuilder == null) {
+            if (deviceInfoService == null) {
+                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, Device Info services are not available");
+                return null;
+            }
+
+            targetPreviewManager = getPreviewManager();
+            targetRequestBuilder = new TargetRequestBuilder(deviceInfoService, targetPreviewManager, targetState);
+        }
+
+        return targetRequestBuilder;
+    }
+
+    /**
+     * Gets the {@code TargetPreviewManager} instance.
+     * <p>
+     * Returns null if either of {@link Networking} or {@link UIService} is null.
+     *
+     */
+    private TargetPreviewManager getPreviewManager() {
+        if (targetPreviewManager == null) {
+            if (networkService == null) {
+                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, Network services are not available");
+                return null;
+            } else if (uiService == null) {
+                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, UI services are not available");
+                return null;
+            }
+            return new TargetPreviewManager(networkService, uiService, getApi());
+        }
+        return targetPreviewManager;
+    }
+
+    /**
+     * Gets the {@code TargetResponseParser} instance used to parse the json response.
+     *
+     * @return the {@link TargetResponseParser} instance
+     */
+    private TargetResponseParser getResponseParser() {
+        if (targetResponseParser == null) {
+            targetResponseParser = new TargetResponseParser();
+        }
+
+        return targetResponseParser;
     }
 
     /**
@@ -909,6 +1626,45 @@ public class TargetExtension extends Extension {
     }
 
     /**
+     * Saves the provided session id {@code String} to the Target DataStore if it is a new value.
+     * Prior to persisting the new session id value, the session is reset and a new session is started.
+     *
+     * @param newSessionId {@link String} containing the new session id to be set
+     */
+    void setSessionId(final String newSessionId) {
+        // an empty session id will reset the current session
+        if (targetState.getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "setSessionId - Cannot update Target session id due to opted out privacy status.");
+            return;
+        }
+
+        if (StringUtils.isNullOrEmpty(newSessionId)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "setSessionId - Removing session information from the Data store, new session id value is null or empty.");
+            targetState.resetSession();
+            return;
+        }
+        // for a new session id: persist the new session id then update the session timestamp. otherwise, just update the timestamp.
+        if (!newSessionId.equals(targetState.getSessionId())) {
+            targetState.updateSessionId(newSessionId);
+        }
+
+        targetState.updateSessionTimestamp(false);
+
+    }
+
+    /**
+     * Clears identities including tntId, thirdPartyId and edgeHost.
+     */
+    private void resetIdentity() {
+        setTntIdInternal(null);
+        setThirdPartyIdInternal(null);
+        targetState.updateEdgeHost(null);
+        targetState.resetSession();
+    }
+
+    /**
      * Converts data from a lifecycle event into its form desired by Target.
      *
      * @param lifecycleData {@code Map<String, Object} shared state of Lifecycle extension
@@ -940,6 +1696,26 @@ public class TargetExtension extends Extension {
         lifecycleContextData.putAll(tempLifecycleContextData);
 
         return lifecycleContextData;
+    }
+
+    /**
+     * Runs the default callback for each of the request in the list.
+     *
+     * @param batchRequests {@code List<TargetRequest>} to return the default content
+     */
+    private void runDefaultCallbacks(final List<TargetRequest> batchRequests) {
+        if (TargetUtils.isNullOrEmpty(batchRequests)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "runDefaultCallbacks - Batch requests are (%s)",
+                    (batchRequests == null ? "null" : "empty"));
+            return;
+        }
+
+        for (TargetRequest request : batchRequests) {
+            //Pass null for a4t params and response tokens in case of default callback.
+            dispatchMboxContent(request.getDefaultContent(), null, null,
+                    null, request.getResponsePairId());
+        }
     }
 
     /**

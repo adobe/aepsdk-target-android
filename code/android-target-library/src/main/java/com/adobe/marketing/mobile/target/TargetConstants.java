@@ -147,13 +147,15 @@ final class TargetConstants {
         static final String RESPONSE_TOKENS = "responseTokens";
         static final String CLICK_METRIC_ANALYTICS_PAYLOAD = "clickmetric.analytics.payload";
         static final String TARGET_CONTENT = "content";
-        static final String TARGET_DATA_PAYLOAD = "data";
         static final String ID = "id";
         static final String TOKEN = "token";
         static final String CONTEXT = "context";
         static final String EXPERIENCE_CLOUD = "experienceCloud";
         static final String PROPERTY = "property";
         static final String ENVIRONMENT_ID = "environmentId";
+        static final String TRACK_INTERNAL   = "trackinternal";
+        static final String TRACK_ACTION     = "action";
+        static final String CONTEXT_DATA     = "contextdata";
 
         static final class Order {
             static final String ID = "id";
@@ -227,5 +229,11 @@ final class TargetConstants {
         static final String UPGRADE_EVENT           = "upgradeevent";
 
         private Lifecycle() {}
+    }
+
+    static final class PreviewKeys {
+        static final String DEEPLINK    	= "deeplink";
+
+        private PreviewKeys() {}
     }
 }

@@ -14,6 +14,8 @@ package com.adobe.marketing.mobile.target;
 
 import androidx.annotation.Nullable;
 
+import com.adobe.marketing.mobile.services.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,6 +28,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 class TargetUtils {
+    private static final String CLASS_NAME = "TargetUtils";
     private static final long MILLISECONDS_PER_SECOND = 1000L;
     private static final double SECONDS_PER_MINUTE = 60;
 
@@ -81,7 +84,7 @@ class TargetUtils {
             try {
                 map.put(name, jsonObject.getString(name));
             } catch (JSONException e) {
-                continue;
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "The value of [%s] is not a string: %s", name, e);
             }
         }
 

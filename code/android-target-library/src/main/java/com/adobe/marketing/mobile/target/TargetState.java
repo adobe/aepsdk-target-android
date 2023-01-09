@@ -10,6 +10,8 @@
  */
 package com.adobe.marketing.mobile.target;
 
+import androidx.annotation.NonNull;
+
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NamedCollection;
@@ -17,11 +19,13 @@ import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.StringUtils;
 import com.adobe.marketing.mobile.util.TimeUtils;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -169,6 +173,11 @@ class TargetState {
      * @return the session ID value as {@link String}
      */
     String getSessionId() {
+        if (StringUtils.isNullOrEmpty(sessionId)) {
+            if (dataStore != null) {
+                sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, null);
+            }
+        }
         // if there is no session id persisted in local data store or if the session id is expired
         // because there was no activity for more than certain amount of time
         // (from the last successful network request), then generate a new session id, save it in persistence storage
@@ -347,6 +356,14 @@ class TargetState {
     }
 
     /**
+     * Resets current  sessionId and the sessionTimestampInSeconds
+     */
+    void resetSession() {
+        updateSessionId("");
+        updateSessionTimestamp(true);
+    }
+
+    /**
      * Generates target extension's state data for sharing.
      *
      * @return {@code Map<String, Object>} of this extension's state data
@@ -369,6 +386,49 @@ class TargetState {
         prefetchedMbox.putAll(mboxMap);
     }
 
+    Map<String, JSONObject> getPrefetchedMboxes() {
+        return prefetchedMbox;
+    }
+
+    void clearPrefetchedMboxes() {
+        prefetchedMbox.clear();
+    }
+
+    /**
+     * Extracts the supported mbox node parameters that will be stored in loaded mboxes cache and will be
+     * used later on for click notifications.
+     *
+     * @param mBoxResponses the mbox responses list from the target response
+     */
+    void saveLoadedMbox(@NonNull final Map<String, JSONObject> mBoxResponses) {
+        for (Map.Entry<String, JSONObject> mbox : mBoxResponses.entrySet()) {
+            String mboxName = mbox.getKey();
+            JSONObject mboxNode = mbox.getValue();
+
+            if (!StringUtils.isNullOrEmpty(mboxName) && !prefetchedMbox.containsKey(mboxName) && mboxNode != null) {
+                JSONObject clearedMboxNode;
+                try {
+                    clearedMboxNode = new JSONObject(mboxNode.toString());
+                } catch (JSONException e) {
+                    continue;
+                }
+
+                // remove not accepted keys
+                Iterator<String> iterator = mboxNode.keys();
+
+                while (iterator.hasNext()) {
+                    String key = iterator.next();
+
+                    if (!LOADED_MBOX_ACCEPTED_KEYS.contains(key)) {
+                        clearedMboxNode.remove(key);
+                    }
+                }
+
+                loadedMbox.put(mboxName, clearedMboxNode);
+            }
+        }
+    }
+
     /**
      * Removes mboxes from loadedMboxes if they are also present in the prefetchedMboxes cache
      */
@@ -378,10 +438,6 @@ class TargetState {
                 loadedMbox.remove(mboxName);
             }
         }
-    }
-
-    Map<String, JSONObject> getPrefetchedMbox() {
-        return prefetchedMbox;
     }
 
     Map<String, JSONObject> getLoadedMbox() {
@@ -396,6 +452,10 @@ class TargetState {
         notifications.add(notification);
     }
 
+    List<JSONObject> getNotification() {
+        return notifications;
+    }
+
     /**
      * Verifies if current target session is expired.
      *
@@ -407,3 +467,4 @@ class TargetState {
         return (sessionTimestampInSeconds > 0) && ((currentTimeSeconds - sessionTimestampInSeconds) > getSessionTimeout());
     }
 }
+

@@ -50,7 +50,7 @@ class TargetRequestBuilder {
 	 * @param targetPreviewManager {@link TargetPreviewManager} instance
 	 */
 	TargetRequestBuilder(final DeviceInforming deviceInfoService,
-                         final TargetPreviewManager targetPreviewManager,
+						 final TargetPreviewManager targetPreviewManager,
 						 final TargetState targetState) {
 		this.deviceInfoService = deviceInfoService;
 		this.targetPreviewManager = targetPreviewManager;
@@ -84,22 +84,18 @@ class TargetRequestBuilder {
 	 *
 	 * @param prefetchArray     the list of {@link TargetPrefetch} objects with mboxes that we want to prefetch
 	 * @param executeArray      the list of {@link TargetRequest} objects with mboxes that we want to execute
-	 * @param prefetchViews a {@code boolean} enabling Target View prefetch
 	 * @param parameters        {@link TargetParameters} object provided by the customer
 	 * @param notifications     viewed mboxes that we cached
 	 * @param propertyToken a {@link String} to be passed for all requests
 	 * @param identitySharedState {@code Map<String, Object} shared state of Identity extension
-	 * @param lifecycleData {@code Map<String, String} shared state of Lifecycle extension
 	 * @return the pre-built {@link JSONObject} for target request
 	 */
 	JSONObject getRequestPayload(final List<TargetPrefetch> prefetchArray,
 								 final List<TargetRequest> executeArray,
-								 final boolean prefetchViews,
 								 final TargetParameters parameters,
 								 final List<JSONObject> notifications,
 								 final String propertyToken,
-								 final Map<String, Object> identitySharedState,
-								 final Map<String, String> lifecycleData) {
+								 final Map<String, Object> identitySharedState) {
 		try {
 			String overridePropertyToken = propertyToken;
 			String mboxATProperty = "";
@@ -112,7 +108,7 @@ class TargetRequestBuilder {
 					identitySharedState);
 
 			// add prefetch mBoxes
-			final JSONArray prefetchMboxesNode = getPrefetchMboxes(prefetchArray, parameters, lifecycleData);
+			final JSONArray prefetchMboxesNode = getPrefetchMboxes(prefetchArray, parameters);
 
 			if (prefetchMboxesNode != null && prefetchMboxesNode.length() > 0) {
 				mboxATProperty = removeATPropertyFromParameters(prefetchMboxesNode);
@@ -135,7 +131,7 @@ class TargetRequestBuilder {
 			}
 
 			// add execute mBoxes
-			final JSONArray executeMboxesNode = getExecuteMboxes(executeArray, parameters, lifecycleData);
+			final JSONArray executeMboxesNode = getExecuteMboxes(executeArray, parameters);
 
 			if (executeMboxesNode != null && executeMboxesNode.length() > 0) {
 				mboxATProperty = removeATPropertyFromParameters(executeMboxesNode);
@@ -243,6 +239,220 @@ class TargetRequestBuilder {
 	}
 
 	/**
+	 * Creates the display notification payload
+	 *
+	 * @param mboxName mbox name
+	 * @param cachedMboxJson the cached mbox
+	 * @param parameters {@link TargetParameters} object associated with the notification
+	 * @param timestamp {@code long} timestamp associated with the event
+	 * @return the {@link JSONObject} payload for notification
+	 */
+	JSONObject getDisplayNotificationJsonObject(final String mboxName, final JSONObject cachedMboxJson,
+												final TargetParameters parameters, final long timestamp) {
+		try {
+			JSONObject notificationNode = new JSONObject();
+			notificationNode.put(TargetJson.Notification.ID, UUID.randomUUID().toString());
+			notificationNode.put(TargetJson.Notification.TIMESTAMP, timestamp);
+			notificationNode.put(TargetJson.Metric.TYPE, TargetJson.MetricType.DISPLAY);
+			setTargetParametersJson(notificationNode, parameters);
+
+			JSONObject mboxNode = new JSONObject();
+			mboxNode.put(TargetJson.Mbox.NAME, mboxName);
+
+			if (cachedMboxJson == null) {
+				return null;
+			}
+
+			final String mboxState = cachedMboxJson.optString(TargetJson.Mbox.STATE, "");
+
+			if (!mboxState.isEmpty()) {
+				mboxNode.put(TargetJson.Mbox.STATE, mboxState);
+			}
+
+			notificationNode.put(TargetJson.Notification.MBOX, mboxNode);
+
+			//Gather display event tokens
+			JSONArray optionsArray = cachedMboxJson.optJSONArray(TargetJson.OPTIONS);
+
+			if (optionsArray != null) {
+
+				JSONArray tokens = new JSONArray();
+
+				for (int i = 0; i < optionsArray.length(); i++) {
+					JSONObject option = optionsArray.optJSONObject(i);
+
+					if (option == null || StringUtils.isNullOrEmpty(option.optString(TargetJson.Metric.EVENT_TOKEN, ""))) {
+						continue;
+					}
+
+					final String optionEventToken = option.optString(TargetJson.Metric.EVENT_TOKEN, "");
+					tokens.put(optionEventToken);
+				}
+
+				if (tokens.length() == 0) {
+					Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+							TargetErrors.DISPLAY_NOTIFICATION_TOKEN_EMPTY);
+					return null;
+				}
+
+				notificationNode.put(TargetJson.Notification.TOKENS, tokens);
+			}
+
+			return notificationNode;
+		} catch (JSONException exception) {
+			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.DISPLAY_NOTIFICATION_CREATE_FAILED, exception);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Creates the clicked mbox json object based on the cached mbox json node.
+	 * It will contain the following params: mbox, parameters, order, product, clickToken , hit and timestamp.
+	 * mbox order and product parameters of them might be missing if they are not provided from the public API.
+	 *
+	 * @param cachedMboxJson an {@link JSONObject} mbox node cached after prefetch/load request
+	 * @param parameters {@link TargetParameters} corresponding to the clicked location
+	 * @param timestamp {@code long} timestamp associated with the event
+	 * @return mbox node for the click notification
+	 */
+	JSONObject getClickNotificationJsonObject(final JSONObject cachedMboxJson,
+											  final TargetParameters parameters,
+											  final long timestamp) {
+		try {
+			JSONObject notificationNode = new JSONObject();
+			notificationNode.put(TargetJson.Notification.ID, UUID.randomUUID().toString());
+			notificationNode.put(TargetJson.Notification.TIMESTAMP, timestamp);
+			notificationNode.put(TargetJson.Metric.TYPE, TargetJson.MetricType.CLICK);
+			setTargetParametersJson(notificationNode, parameters);
+
+			if (cachedMboxJson == null) {
+				return notificationNode;
+			}
+
+			String mboxName = cachedMboxJson.getString(TargetJson.Mbox.NAME);
+
+			JSONObject mboxNode = new JSONObject();
+			mboxNode.put(TargetJson.Mbox.NAME, mboxName);
+
+			notificationNode.put(TargetJson.Notification.MBOX, mboxNode);
+
+			final JSONArray metrics = cachedMboxJson.getJSONArray(TargetJson.METRICS);
+
+			JSONArray tokens = new JSONArray();
+
+			for (int i = 0; i < metrics.length(); i++) {
+				JSONObject metric = metrics.optJSONObject(i);
+
+				if (metric == null || !TargetJson.MetricType.CLICK.equals(metric.optString(TargetJson.Metric.TYPE, ""))
+						|| metric.optString(TargetJson.Metric.EVENT_TOKEN, "").isEmpty()) {
+					continue;
+				}
+
+				final String metricToken = metric.optString(TargetJson.Metric.EVENT_TOKEN, "");
+				tokens.put(metricToken);
+			}
+
+			if (tokens.length() == 0) {
+				throw new JSONException(TargetErrors.TOKEN_LIST_EMPTY_OR_NULL);
+			}
+
+			notificationNode.put(TargetJson.Notification.TOKENS, tokens);
+
+			return notificationNode;
+		} catch (JSONException exception) {
+			Log.warning(TargetConstants.LOG_TAG, TargetErrors.CLICK_NOTIFICATION_CREATE_FAILED,
+					cachedMboxJson.toString());
+		}
+
+		return null;
+	}
+
+	/**
+	 * Creates the clicked mbox json object based on the provided notification map.
+	 * <p>
+	 * This method will return null, if mbox name or click token is not provided in the notification map.
+	 *
+	 * @param notification {@code Map<String, Object>} containing notification data.
+	 * @param targetParameters {@link TargetParameters} to be attached to the clicked location request.
+	 * @param timestamp {@code long} timestamp associated with the event.
+	 * @return mbox node for the click notification.
+	 */
+	JSONObject getClickNotificationJsonObject(final Map<String, Object> notification,
+											  final TargetParameters targetParameters,
+											  final long timestamp) {
+		try {
+			JSONObject notificationNode = new JSONObject();
+
+			if (notification == null || notification.isEmpty()) {
+				return notificationNode;
+			}
+
+			JSONArray tokens = new JSONArray();
+			final List<String> notificationTokens = DataReader.getStringList(notification, TargetJson.Notification.TOKENS);
+
+			// verify notification token is present
+			if (TargetUtils.isNullOrEmpty(notificationTokens)) {
+				return null;
+			}
+
+			tokens.put(notificationTokens.get(0));
+			notificationNode.put(TargetJson.Notification.TOKENS, tokens);
+
+			// verify mbox name is not null or empty
+			final String mboxName = (String)notification.get(TargetJson.Mbox.NAME);
+
+			if (mboxName == null || mboxName.isEmpty()) {
+				return null;
+			}
+
+			JSONObject mboxNode = new JSONObject();
+			mboxNode.put(TargetJson.Mbox.NAME, mboxName);
+			notificationNode.put(TargetJson.Notification.MBOX, mboxNode);
+
+			String notificationId = (String)notification.get(TargetJson.Notification.ID);
+			notificationNode.put(TargetJson.Notification.ID,
+					!StringUtils.isNullOrEmpty(notificationId) ? notificationId : UUID.randomUUID().toString());
+
+			final long notificationTimestamp = DataReader.getLong(notification, TargetJson.Notification.TIMESTAMP);
+			notificationNode.put(TargetJson.Notification.TIMESTAMP, notificationTimestamp > 0 ? notificationTimestamp : timestamp);
+
+			notificationNode.put(TargetJson.Metric.TYPE, TargetJson.MetricType.CLICK);
+
+			// Add notification parameters.
+			final Map<String, String> parameters = DataReader.getStringMap(notification, TargetJson.PARAMETERS);
+			final Map<String, String> profileParameters = DataReader.getStringMap(notification, TargetJson.PROFILE_PARAMETERS);
+			final Map<String, Object> order = DataReader.getTypedMap(Object.class, notification, TargetJson.ORDER);
+			final Map<String, String> product = DataReader.getStringMap(notification, TargetJson.PRODUCT);
+
+			final TargetParameters notificationParameters = new TargetParameters.Builder()
+					.parameters(parameters)
+					.profileParameters(profileParameters)
+					.order(TargetOrder.fromEventData(order))
+					.product(TargetProduct.fromEventData(product))
+					.build();
+			setTargetParametersJson(notificationNode, TargetParameters.merge(new ArrayList<TargetParameters>() {
+				{
+					add(notificationParameters);
+					add(targetParameters);
+				}
+			}));
+			return notificationNode;
+		} catch (JSONException exception) {
+			Log.warning(TargetConstants.LOG_TAG, TargetErrors.CLICK_NOTIFICATION_CREATE_FAILED,
+					notification.toString());
+		} catch (ClassCastException exception) {
+			Log.warning(TargetConstants.LOG_TAG, TargetErrors.CLICK_NOTIFICATION_CREATE_FAILED,
+					"Provided notification map has invalid keys.");
+		} catch (DataReaderException exception) {
+			Log.warning(TargetConstants.LOG_TAG, TargetErrors.CLICK_NOTIFICATION_CREATE_FAILED,
+					"Provided notification map has invalid values.");
+		}
+
+		return null;
+	}
+
+	/**
 	 * Gets the default {@code JSONObject} attached to every Target API request.
 	 *
 	 * @param id {@code Map<String, Object>} containing the identifiers for the visitor.
@@ -333,12 +543,10 @@ class TargetRequestBuilder {
 	 *
 	 * @param targetRequestList the {@code List<TargetRequest>} of batch request
 	 * @param globalParameters global {@link TargetParameters} to be merged with per-mbox parameters
-	 * @param lifecycleData {@code Map<String, String>} shared state of lifecycle extension
 	 * @return the {@code JSONArray} generated from the input {@code targetRequestList}
 	 */
 	private JSONArray getExecuteMboxes(final List<TargetRequest> targetRequestList,
-									   final TargetParameters globalParameters,
-									   final Map<String, String> lifecycleData) {
+									   final TargetParameters globalParameters) {
 		if (targetRequestList == null) {
 			return null;
 		}
@@ -349,7 +557,7 @@ class TargetRequestBuilder {
 		for (TargetRequest currentMbox : targetRequestList) {
 			try {
 				mBoxArrayNode.put(createMboxJsonObject(currentMbox.getMboxName(),
-						currentMbox.getTargetParameters(), index, globalParameters, lifecycleData));
+						currentMbox.getTargetParameters(), index, globalParameters));
 				index++;
 			} catch (final JSONException exception) {
 				Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -395,7 +603,7 @@ class TargetRequestBuilder {
 
 		if (orientation != 0) {
 			screenJson.put(TargetJson.Context.SCREEN_ORIENTATION, orientation == 1
-						   ? TargetJson.Context.ORIENTATION_PORTRAIT : TargetJson.Context.ORIENTATION_LANDSCAPE);
+					? TargetJson.Context.ORIENTATION_PORTRAIT : TargetJson.Context.ORIENTATION_LANDSCAPE);
 		}
 
 		return screenJson;
@@ -435,7 +643,7 @@ class TargetRequestBuilder {
 
 		if (deviceName != null) {
 			platformJson.put(TargetJson.Context.DEVICE_NAME,
-							 (deviceManufacturer != null ? deviceManufacturer + " " : "") + deviceName);
+					(deviceManufacturer != null ? deviceManufacturer + " " : "") + deviceName);
 		}
 
 		final DeviceInforming.DeviceType deviceType = deviceInfoService.getDeviceType();
@@ -486,7 +694,7 @@ class TargetRequestBuilder {
 				newVisitorIDNode.put(TargetJson.CustomerIds.ID, visitorID.getId());
 				newVisitorIDNode.put(TargetJson.CustomerIds.INTEGRATION_CODE, visitorID.getIdType());
 				newVisitorIDNode.put(TargetJson.CustomerIds.AUTHENTICATION_STATE,
-									 getAuthenticationStateToString(visitorID.getAuthenticationState()));
+						getAuthenticationStateToString(visitorID.getAuthenticationState()));
 				customerIDsArrayNode.put(newVisitorIDNode);
 			}
 		} catch (final JSONException exception) {
@@ -521,12 +729,11 @@ class TargetRequestBuilder {
 	 *
 	 * @param prefetchList the {@code List<TargetPrefetch>} of prefetch
 	 * @param globalParameters global {@link TargetParameters} to be merged with per-mbox parameters
-	 * @param lifecycleData {@code Map<String, String>} shared state of lifecycle extension
+	 * @param  {@code Map<String, String>} shared state of lifecycle extension
 	 * @return the {@code JSONArray} generated from the input {@code prefetchList}
 	 */
 	private JSONArray getPrefetchMboxes(final List<TargetPrefetch> prefetchList,
-										final TargetParameters globalParameters,
-										final Map<String, String> lifecycleData) {
+										final TargetParameters globalParameters) {
 		if (prefetchList == null) {
 			return null;
 		}
@@ -537,7 +744,7 @@ class TargetRequestBuilder {
 		for (final TargetPrefetch currentMbox : prefetchList) {
 			try {
 				prefetchMboxesArrayNode.put(createMboxJsonObject(currentMbox.getMboxName(),
-						currentMbox.getTargetParameters(), index, globalParameters, lifecycleData));
+						currentMbox.getTargetParameters(), index, globalParameters));
 				index++;
 			} catch (final JSONException exception) {
 				Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -558,15 +765,13 @@ class TargetRequestBuilder {
 	 * @param targetParameters {@link TargetParameters} per-mbox target parameters
 	 * @param index        the index
 	 * @param globalParameters global {@link TargetParameters} to be merged with per-mbox parameters
-	 * @param lifecycleData {@code Map<String, String>} shared state of lifecycle extension
 	 * @return {@link JSONObject} contains all the information provided for the mbox
 	 * @throws JSONException json exception when it fails to add node to the json object
 	 */
 	private JSONObject createMboxJsonObject(final String mboxName,
 											final TargetParameters targetParameters,
 											final int index,
-											final TargetParameters globalParameters,
-											final Map<String, String> lifecycleData) throws JSONException {
+											final TargetParameters globalParameters) throws JSONException {
 		final JSONObject mboxNode = new JSONObject();
 
 		mboxNode.put(TargetJson.Mbox.INDEX, index);
@@ -576,14 +781,13 @@ class TargetRequestBuilder {
 		final List<TargetParameters> targetParametersList = Arrays.asList(targetParameters, globalParameters);
 		final TargetParameters parameters = TargetParameters.merge(targetParametersList);
 
-		setTargetParametersJson(mboxNode, parameters, lifecycleData);
+		setTargetParametersJson(mboxNode, parameters);
 
 		return mboxNode;
 	}
 
 	private void setTargetParametersJson(final JSONObject jsonNode,
-										 final TargetParameters parameters,
-										 final Map<String, String> lifecycleData) throws JSONException {
+										 final TargetParameters parameters) throws JSONException {
 		if (parameters == null) {
 			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
 					"setTargetParametersJson - Unable to set the target parameters, TargetParamters are null");
@@ -591,7 +795,7 @@ class TargetRequestBuilder {
 		}
 
 		// set mbox parameters
-		final JSONObject mboxParametersNode = getMboxParameters(parameters.getParameters(), lifecycleData);
+		final JSONObject mboxParametersNode = getMboxParameters(parameters.getParameters());
 
 		if (mboxParametersNode.length() > 0) {
 			jsonNode.put(TargetJson.PARAMETERS, mboxParametersNode);
@@ -623,11 +827,9 @@ class TargetRequestBuilder {
 	 * Creates the mbox parameters {@code JSONObject} with the provided data.
 	 *
 	 * @param mboxParameters the mbox parameters provided by the user
-	 * @param lifecycleData {@code Map<String, String>} shared state of lifecycle extension
 	 * @return {@link JSONObject} contains mbox data
 	 */
-	private JSONObject getMboxParameters(final Map<String, String> mboxParameters,
-										 final Map<String, String> lifecycleData) {
+	private JSONObject getMboxParameters(final Map<String, String> mboxParameters) {
 		final HashMap<String, String> mboxParametersCopy = new HashMap<>(mboxParameters);
 
 		if (mboxParametersCopy.containsKey(TargetConstants.MBOX_AT_PROPERTY_KEY)) {
@@ -661,7 +863,8 @@ class TargetRequestBuilder {
 	 * @return {@link JSONObject} contains order data
 	 */
 	private JSONObject getOrderParameters(final TargetOrder order) {
-		if (order == null) {
+		if (order == null || StringUtils.isNullOrEmpty(order.getId()) || order.getTotal() == 0
+				|| TargetUtils.isNullOrEmpty(order.getPurchasedProductIds())) {
 			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getOrderParameters - Unable to get the order parameters, TargetOrder is null");
 			return null;
 		}
@@ -669,25 +872,16 @@ class TargetRequestBuilder {
 		final JSONObject orderJson = new JSONObject();
 
 		try {
-			if (order.getId() != null && !order.getId().isEmpty()) {
-				orderJson.put(TargetJson.Order.ID, order.getId());
-			}
+			orderJson.put(TargetJson.Order.ID, order.getId());
 
-			if (order.getTotal() != 0) {
-				orderJson.put(TargetJson.Order.TOTAL, order.getTotal());
-			}
+			orderJson.put(TargetJson.Order.TOTAL, order.getTotal());
 
 			final List<String> productIds = order.getPurchasedProductIds();
-
-			if (productIds != null && !productIds.isEmpty()) {
-				final JSONArray productIdsJson = new JSONArray();
-
-				for (String productId : productIds) {
-					productIdsJson.put(productId);
-				}
-
-				orderJson.put(TargetJson.Order.PURCHASED_PRODUCT_IDS, productIdsJson);
+			final JSONArray productIdsJson = new JSONArray();
+			for (String productId : productIds) {
+				productIdsJson.put(productId);
 			}
+			orderJson.put(TargetJson.Order.PURCHASED_PRODUCT_IDS, productIdsJson);
 
 			return orderJson;
 		} catch (final JSONException ex) {
@@ -704,7 +898,7 @@ class TargetRequestBuilder {
 	 * @return {@link JSONObject} contains product data
 	 */
 	private JSONObject getProductParameters(final TargetProduct product) {
-		if (product == null) {
+		if (product == null || StringUtils.isNullOrEmpty(product.getId()) || StringUtils.isNullOrEmpty(product.getCategoryId())) {
 			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
 					"getProductParameters - Unable to get the product parameters, TargetProduct is null");
 			return null;
@@ -713,13 +907,8 @@ class TargetRequestBuilder {
 		final JSONObject productNode = new JSONObject();
 
 		try {
-			if (!StringUtils.isNullOrEmpty(product.getId())) {
-				productNode.put(TargetJson.Product.ID, product.getId());
-			}
-
-			if (!StringUtils.isNullOrEmpty(product.getCategoryId())) {
-				productNode.put(TargetJson.Product.CATEGORY_ID, product.getCategoryId());
-			}
+			productNode.put(TargetJson.Product.ID, product.getId());
+			productNode.put(TargetJson.Product.CATEGORY_ID, product.getCategoryId());
 		} catch (final JSONException exception) {
 			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
 					"getProductParameters - Failed to append product parameters to the target request json (%s)",
@@ -775,7 +964,7 @@ class TargetRequestBuilder {
 		// Bail out early if previewManager instance is null
 		if (targetPreviewManager == null) {
 			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-					  "getPreviewParameters - Unable to get the preview parameters, target preview manager is null");
+					"getPreviewParameters - Unable to get the preview parameters, target preview manager is null");
 			return null;
 		}
 
@@ -784,10 +973,11 @@ class TargetRequestBuilder {
 				return new JSONObject(targetPreviewManager.getPreviewParameters());
 			} catch (final JSONException e) {
 				Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-							"getPreviewParameters - Could not compile the target preview params with the Target request (%s)", e.getMessage());
+						"getPreviewParameters - Could not compile the target preview params with the Target request (%s)", e.getMessage());
 			}
 		}
 
 		return null;
 	}
 }
+
