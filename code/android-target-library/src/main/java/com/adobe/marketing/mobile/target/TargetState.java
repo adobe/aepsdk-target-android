@@ -300,7 +300,7 @@ class TargetState {
      *
      * @param updatedTntId {@link String} containing new tntId that needs to be set.
      */
-    void setTntId(final String updatedTntId) {
+    void updateTntId(final String updatedTntId) {
         tntId = updatedTntId;
 
         if (dataStore != null) {
@@ -325,7 +325,7 @@ class TargetState {
      *
      * @param updatedThirdPartyId {@link String} containing new thirdPartyId that needs to be set.
      */
-    void setThirdPartyId(final String updatedThirdPartyId) {
+    void updateThirdPartyId(final String updatedThirdPartyId) {
         thirdPartyId = updatedThirdPartyId;
         if (dataStore != null) {
             if (StringUtils.isNullOrEmpty(thirdPartyId)) {

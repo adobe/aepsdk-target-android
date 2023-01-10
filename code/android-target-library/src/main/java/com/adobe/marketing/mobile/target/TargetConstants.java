@@ -126,6 +126,7 @@ final class TargetConstants {
         static final String RESPONSE_PAIR_ID = "responsepairid";
         static final String EXECUTE = "execute";
         static final String PREFETCH = "prefetch";
+        static final String AT_PROPERTY = "at_property";
         static final String LOAD_REQUEST = "request";
         static final String PREFETCH_ERROR = "prefetcherror";
         static final String PREFETCH_RESULT = "prefetchresult";
@@ -142,6 +143,7 @@ final class TargetConstants {
         static final String RESPONSE_DATA = "responsedata";
         static final String TARGET_RESPONSE_EVENT_ID = "responseEventId";
         static final String TARGET_RESPONSE_PAIR_ID = "responsePairId";
+        static final String TARGET_DATA_PAYLOAD = "data";
         static final String A4T_SESSION_ID = "a.target.sessionId"; // For A4T requests event data.
         static final String ANALYTICS_PAYLOAD = "analytics.payload";
         static final String RESPONSE_TOKENS = "responseTokens";
