@@ -329,10 +329,16 @@ class TargetState {
         thirdPartyId = updatedThirdPartyId;
         if (dataStore != null) {
             if (StringUtils.isNullOrEmpty(thirdPartyId)) {
+                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "setThirdPartyId - Removed thirdPartyId from the data store, provided thirdPartyId value is null or empty.");
                 dataStore.remove(TargetConstants.DataStoreKeys.THIRD_PARTY_ID);
             } else {
+                Log.debug(TargetConstants.LOG_TAG, "setThirdPartyId - Persisted new thirdPartyId (%s) in the data store.", thirdPartyId);
                 dataStore.setString(TargetConstants.DataStoreKeys.THIRD_PARTY_ID, thirdPartyId);
             }
+        } else {
+            Log.debug(TargetConstants.LOG_TAG, "setTntIsetThirdPartyIddInternal - " + TargetErrors.TARGET_THIRD_PARTY_ID_NOT_PERSISTED,
+                    "Data store is not available.");
         }
     }
 

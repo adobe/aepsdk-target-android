@@ -93,9 +93,9 @@ public class TargetExtension extends Extension {
     private final UIService uiService;
 
     private final TargetState targetState;
-    private TargetResponseParser targetResponseParser;
-    private TargetRequestBuilder targetRequestBuilder = null;
-    private TargetPreviewManager targetPreviewManager = null;
+    private final TargetResponseParser targetResponseParser;
+    private final TargetRequestBuilder targetRequestBuilder;
+    private final TargetPreviewManager targetPreviewManager;
 
     /**
      * Constructor for {@code TargetExtension}.
@@ -113,6 +113,9 @@ public class TargetExtension extends Extension {
         uiService = ServiceProvider.getInstance().getUIService();
 
         targetState = new TargetState(dataStore);
+        targetResponseParser = new TargetResponseParser();
+        targetPreviewManager = getPreviewManager();
+        targetRequestBuilder = getRequestBuilder();
     }
 
     /**
@@ -162,7 +165,7 @@ public class TargetExtension extends Extension {
     void handleTargetRequestContentEvent(@NonNull final Event event) {
         if (TargetUtils.isNullOrEmpty(event.getEventData())) {
             Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleTargetRequestContentEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
+                    "handleTargetRequestContentEvent - Failed to process Target request content event, event data is null/ empty.");
             return;
         }
 
@@ -202,7 +205,7 @@ public class TargetExtension extends Extension {
     void handleTargetRequestResetEvent(@NonNull final Event event) {
         if (TargetUtils.isNullOrEmpty(event.getEventData())) {
             Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleTargetRequestResetEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
+                    "handleTargetRequestResetEvent - Failed to process Target request content event, event data is null/ empty.");
             return;
         }
 
@@ -219,8 +222,7 @@ public class TargetExtension extends Extension {
 
     void handleTargetRequestIdentityEvent(@NonNull final Event event) {
         if (TargetUtils.isNullOrEmpty(event.getEventData())) {
-            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleTargetRequestIdentityEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
+            dispatchIdentity(event);
             return;
         }
 
@@ -237,41 +239,35 @@ public class TargetExtension extends Extension {
         } else if (eventData.containsKey(TargetConstants.EventDataKeys.SESSION_ID)) {
             final String sessionId = DataReader.optString(eventData, TargetConstants.EventDataKeys.SESSION_ID, null);
             setSessionId(sessionId);
-        } else {
-            dispatchIdentity(event);
         }
     }
 
     void handleGenericDataOSEvent(@NonNull final Event event) {
         if (TargetUtils.isNullOrEmpty(event.getEventData())) {
             Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleTargetRequestIdentityEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
+                    "handleTargetRequestIdentityEvent - Failed to process Target request content event, event data is null/ empty.");
             return;
         }
-        String deepLink = DataReader.optString(event.getEventData(), TargetConstants.PreviewKeys.DEEPLINK, null);
+        final String deepLink = DataReader.optString(event.getEventData(), TargetConstants.PreviewKeys.DEEPLINK, null);
 
         if (!StringUtils.isNullOrEmpty(deepLink)) {
             setupPreviewMode(event, deepLink);
         }
     }
 
-    void handleConfigurationResponseContentEvent( @NonNull Event event) {
+    void handleConfigurationResponseContentEvent(@NonNull final Event event) {
         if (TargetUtils.isNullOrEmpty(event.getEventData())) {
             Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleConfigurationResponseContentEvent - Failed to process Target request content event, event is null or event data is null/ empty.");
+                    "handleConfigurationResponseContentEvent - Failed to process Configuration response content event, event data is null/ empty.");
             return;
         }
 
-        Log.trace(TargetConstants.LOG_TAG, "handleConfigurationResponse - event %s type: %s source: %s ", event.getName(),
+        Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "handleConfigurationResponse - event %s type: %s source: %s ", event.getName(),
                 event.getType(), event.getSource());
 
         if (targetState.getMobilePrivacyStatus() == MobilePrivacyStatus.OPT_OUT) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "handleConfigurationResponse - Clearing saved identities");
             resetIdentity();
-
-            // clear identifiers stored in request builder
-            if (targetRequestBuilder != null) {
-                targetRequestBuilder.clean();
-            }
 
             // identifiers are cleared now, set shared state
             getApi().createSharedState(targetState.generateSharedState(), event);
@@ -284,8 +280,6 @@ public class TargetExtension extends Extension {
      * @param deepLink the {@link String} deep link received from the public API - SetPreviewRestartDeeplink
      */
     void setPreviewRestartDeepLink(final String deepLink) {
-        targetPreviewManager = getPreviewManager();
-
         if (targetPreviewManager == null) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.PREVIEW_MANAGER_INIT_FAILED +
                     " For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#setpreviewrestartdeeplink");
@@ -323,6 +317,12 @@ public class TargetExtension extends Extension {
                 return;
             }
 
+            if (targetRequestBuilder == null) {
+                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "handleRawRequest - (%s)", TargetErrors.REQUEST_BUILDER_INIT_FAILED);
+                dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
+                return;
+            }
+
             String propertyToken = targetState.getPropertyToken();
             if (StringUtils.isNullOrEmpty(propertyToken)) {
                 final Map<String, Object> property = DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.PROPERTY);
@@ -335,14 +335,6 @@ public class TargetExtension extends Extension {
             if (environmentId == 0) {
                 environmentId = DataReader.getLong(eventData, TargetConstants.EventDataKeys.ENVIRONMENT_ID);
             }
-
-            targetRequestBuilder = getRequestBuilder();
-            if (targetRequestBuilder == null) {
-                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "handleRawRequest - (%s)", TargetErrors.REQUEST_BUILDER_INIT_FAILED);
-                dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
-                return;
-            }
-            targetRequestBuilder.clean();
 
             final String sendRequestError = prepareForTargetRequest();
             if (sendRequestError != null) {
@@ -412,32 +404,35 @@ public class TargetExtension extends Extension {
         }
 
         final Map<String, Object> eventData = event.getEventData();
-        final List<TargetPrefetch> targetPrefetchRequests = DataReader.optTypedList(TargetPrefetch.class,
-                eventData,
-                TargetConstants.EventDataKeys.PREFETCH,
-                null);
-        if (TargetUtils.isNullOrEmpty(targetPrefetchRequests)) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleMboxPrefetch - Unable to prefetch mbox content, Error %s",
-                    TargetErrors.NO_PREFETCH_REQUESTS);
-            dispatchMboxPrefetchResult(TargetErrors.NO_PREFETCH_REQUESTS, event);
-            return;
-        }
+        try {
+            final List<TargetPrefetch> targetPrefetchRequests = new ArrayList<>();
+            final List<Map<String, Object>> flattenedPrefetchRequests = (List<Map<String, Object>>) eventData.get(TargetConstants.EventDataKeys.PREFETCH);
+            if (TargetUtils.isNullOrEmpty(flattenedPrefetchRequests)) {
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "handleMboxPrefetch - Unable to prefetch mbox content, Error %s",
+                        TargetErrors.NO_PREFETCH_REQUESTS);
+                return;
+            }
+            for (Map<String, Object> prefetch: flattenedPrefetchRequests) {
+                TargetPrefetch targetPrefetch = TargetPrefetch.fromEventData(prefetch);
+                if (targetPrefetch != null) {
+                    targetPrefetchRequests.add(targetPrefetch);
+                }
+            }
 
-        final String sendRequestError = prepareForTargetRequest();
-        if (sendRequestError != null) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleMboxPrefetch - Unable to prefetch mbox content, Error %s",
-                    sendRequestError);
-            dispatchMboxPrefetchResult(sendRequestError, event);
-            return;
-        }
+            final Map<String, Object>  targetParametersMap = DataReader.optTypedMap(Object.class,
+                    eventData, TargetConstants.EventDataKeys.TARGET_PARAMETERS, null);
+            final TargetParameters targetParameters = TargetParameters.fromEventData(targetParametersMap);
+            final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
+            final Map<String, Object> identityData = retrieveIdentitySharedState(event);
 
-        final TargetParameters targetParameters = TargetParameters.fromEventData(eventData);
-        final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
-        final Map<String, Object> identityData = retrieveIdentitySharedState(event);
-        prefetchMboxContent(targetPrefetchRequests, targetParameters, lifecycleData, identityData,
-                event);
+            prefetchMboxContent(targetPrefetchRequests, targetParameters, lifecycleData, identityData,
+                    event);
+
+        } catch (ClassCastException e) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleMboxPrefetch -  Failed to get TargetExtension Prefetch list from event data, %s", e);
+        }
     }
 
     /**
@@ -450,12 +445,33 @@ public class TargetExtension extends Extension {
                 "loadRequests - event %s type: %s source: %s ",
                 event.getName(), event.getType(), event.getSource());
         final Map<String, Object> eventData = event.getEventData();
-        final List<TargetRequest> targetRequests = DataReader.optTypedList(TargetRequest.class, eventData,
-                TargetConstants.EventDataKeys.LOAD_REQUEST, null);
-        final TargetParameters targetParameters = TargetParameters.fromEventData(eventData);
-        final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
-        final Map<String, Object> identityData = retrieveIdentitySharedState(event);
-        batchRequests(targetRequests, targetParameters, lifecycleData, identityData, event);
+        try {
+            final List<TargetRequest> targetRequests = new ArrayList<>();
+            final List<Map<String, Object>> flattenedLocationRequests = (List<Map<String, Object>>) eventData.get(TargetConstants.EventDataKeys.PREFETCH);
+            if (TargetUtils.isNullOrEmpty(flattenedLocationRequests)) {
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "loadRequests -Failed to retrieve Target location content (%s)", TargetErrors.NO_TARGET_REQUESTS);
+                return;
+            }
+            for (Map<String, Object> prefetch: flattenedLocationRequests) {
+                TargetRequest targetRequest = TargetRequest.fromEventData(prefetch);
+                if (targetRequest != null) {
+                    targetRequests.add(targetRequest);
+                }
+            }
+
+            final Map<String, Object>  targetParametersMap = DataReader.optTypedMap(Object.class,
+                    eventData, TargetConstants.EventDataKeys.TARGET_PARAMETERS, null);
+            final TargetParameters targetParameters = TargetParameters.fromEventData(targetParametersMap);
+            final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
+            final Map<String, Object> identityData = retrieveIdentitySharedState(event);
+
+            batchRequests(targetRequests, targetParameters, lifecycleData, identityData, event);
+
+        } catch (ClassCastException e) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleMboxPrefetch -  Failed to get Target Request list from event data, %s", e);
+        }
     }
 
     /**
@@ -492,9 +508,11 @@ public class TargetExtension extends Extension {
             return;
         }
 
+        final Map<String, Object>  targetParametersMap = DataReader.optTypedMap(Object.class,
+                eventData, TargetConstants.EventDataKeys.TARGET_PARAMETERS, null);
+        final TargetParameters targetParameters = TargetParameters.fromEventData(targetParametersMap);
         final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
-        final TargetParameters targetParameters = TargetParameters.fromEventData(eventData);
-        targetResponseParser = getResponseParser();
+        final Map<String, Object> identityData = retrieveIdentitySharedState(event);
 
         int addedNotifications = 0;
         for (String mboxName : mboxNames) {
@@ -533,15 +551,10 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        final Map<String, Object> identityData = retrieveIdentitySharedState(event);
-
         sendTargetRequest(null, null, targetParameters,
                 lifecycleData,
                 identityData, null, connection -> {
                     processNotificationResponse(connection, event);
-                    if (connection != null) {
-                        connection.close();
-                    }
                 });
     }
 
@@ -596,7 +609,6 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        targetResponseParser = getResponseParser();
         final JSONObject clickMetric = targetResponseParser.getClickMetric(mboxJson);
         if (clickMetric == null) {
             Log.warning(TargetConstants.LOG_TAG,
@@ -607,9 +619,11 @@ public class TargetExtension extends Extension {
         }
 
         // gather the other required shared states
+        final Map<String, Object>  targetParametersMap = DataReader.optTypedMap(Object.class,
+                eventData, TargetConstants.EventDataKeys.TARGET_PARAMETERS, null);
+        final TargetParameters targetParameters = TargetParameters.fromEventData(targetParametersMap);
         final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
         final Map<String, Object> identityData = retrieveIdentitySharedState(event);
-        final TargetParameters targetParameters = TargetParameters.fromEventData(eventData);
 
         // create and add click notification to the notification list
         if (!addClickedNotificationToList(mboxJson, null, targetParameters, lifecycleData, event.getTimestamp())) {
@@ -717,7 +731,6 @@ public class TargetExtension extends Extension {
         }
 
         try {
-            targetResponseParser = getResponseParser();
             final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
             if (responseJson == null) {
                 Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
@@ -764,6 +777,23 @@ public class TargetExtension extends Extension {
                                      final Map<String, Object> lifecycleData,
                                      final Map<String, Object> identityData,
                                      final Event event) {
+        if (TargetUtils.isNullOrEmpty(targetPrefetchRequests)) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleMboxPrefetch - Unable to prefetch mbox content, Error %s",
+                    TargetErrors.NO_PREFETCH_REQUESTS);
+            dispatchMboxPrefetchResult(TargetErrors.NO_PREFETCH_REQUESTS, event);
+            return;
+        }
+
+        final String sendRequestError = prepareForTargetRequest();
+        if (sendRequestError != null) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                    "handleMboxPrefetch - Unable to prefetch mbox content, Error %s",
+                    sendRequestError);
+            dispatchMboxPrefetchResult(sendRequestError, event);
+            return;
+        }
+
         final String error = sendTargetRequest(null, targetPrefetchRequests, targetParameters,
                 lifecycleData, identityData, null, connection -> {
 
@@ -775,7 +805,6 @@ public class TargetExtension extends Extension {
                         return;
                     }
 
-                    targetResponseParser = getResponseParser();
                     final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
                     final String responseError = targetResponseParser.getErrorMessage(responseJson);
                     final int responseCode = connection.getResponseCode();
@@ -861,12 +890,10 @@ public class TargetExtension extends Extension {
             return TargetErrors.NETWORK_SERVICE_UNAVAILABLE;
         }
 
-        targetRequestBuilder = getRequestBuilder();
         if (targetRequestBuilder == null) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.REQUEST_BUILDER_INIT_FAILED);
             return TargetErrors.REQUEST_BUILDER_INIT_FAILED;
         }
-        targetRequestBuilder.clean();
 
         final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
 
@@ -945,13 +972,17 @@ public class TargetExtension extends Extension {
         }
 
         final List<TargetRequest> finalRequestsToSend = requestsToSend;
-        sendTargetRequest(requestsToSend, null, targetParameters,
+        final String error = sendTargetRequest(requestsToSend, null, targetParameters,
                 lifecycleData, identityData, null, connection -> {
                     processTargetRequestResponse(finalRequestsToSend, connection, event);
                     if (connection != null) {
                         connection.close();
                     }
-        });
+                });
+        if (!StringUtils.isNullOrEmpty(error)) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "batchRequests - " + TargetErrors.NO_CONNECTION);
+            runDefaultCallbacks(requestsToSend);
+        }
     }
 
     /**
@@ -971,16 +1002,6 @@ public class TargetExtension extends Extension {
                         "processCachedTargetRequest - (%s) (%s) ",
                         TargetErrors.NO_CACHED_MBOX_FOUND, targetRequest.getMboxName());
                 requestsToSend.add(targetRequest);
-                continue;
-            }
-
-            targetResponseParser = getResponseParser();
-
-            if (targetResponseParser == null) {
-                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.RESPONSE_PARSER_INIT_FAILED);
-                //Pas null for a4t params and response tokens in case of default callback.
-                dispatchMboxContent(targetRequest.getDefaultContent(), null, null, null,
-                        targetRequest.getResponsePairId());
                 continue;
             }
 
@@ -1022,7 +1043,6 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        targetResponseParser = getResponseParser();
         final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
         final String responseError = targetResponseParser.getErrorMessage(responseJson);
         final int responseCode = connection.getResponseCode();
@@ -1108,14 +1128,10 @@ public class TargetExtension extends Extension {
                                            final TargetParameters targetParameters,
                                            final Map<String, Object> lifecycleData,
                                            final long timestamp) {
-        targetRequestBuilder = getRequestBuilder();
-
         if (targetRequestBuilder == null) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.REQUEST_BUILDER_INIT_FAILED);
             return false;
         }
-
-        targetRequestBuilder.clean();
 
         final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
         final JSONObject displayNotificationJson = targetRequestBuilder.getDisplayNotificationJsonObject(mboxName, mboxJson,
@@ -1144,7 +1160,6 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        targetResponseParser = getResponseParser();
         final JSONObject responseJson = targetResponseParser.parseResponseToJson(connection);
         final String responseError = targetResponseParser.getErrorMessage(responseJson);
         final int responseCode = connection.getResponseCode();
@@ -1194,14 +1209,10 @@ public class TargetExtension extends Extension {
                                                  final TargetParameters targetParameters,
                                                  final Map<String, Object> lifecycleData,
                                                  final long timestamp) {
-        targetRequestBuilder = getRequestBuilder();
-
         if (targetRequestBuilder == null) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.REQUEST_BUILDER_INIT_FAILED);
             return false;
         }
-
-        targetRequestBuilder.clean();
 
         // set lifecycle data to that targetRequestBuilder
         final Map<String, String> lifecycleContextData = getLifecycleDataForTarget(lifecycleData);
@@ -1235,7 +1246,6 @@ public class TargetExtension extends Extension {
      * @see #getPreviewManager()
      */
     private void setupPreviewMode(final Event event, final String deepLink) {
-
         final String sendRequestError = prepareForTargetRequest();
         if (sendRequestError != null) {
             Log.debug(TargetConstants.LOG_TAG, "setupPreviewMode - " + TargetErrors.TARGET_NOT_ENABLED_FOR_PREVIEW,
@@ -1250,7 +1260,6 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        targetPreviewManager = getPreviewManager();
         if (targetPreviewManager == null) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.PREVIEW_MANAGER_INIT_FAILED);
             return;
@@ -1413,17 +1422,12 @@ public class TargetExtension extends Extension {
      * @return the {@link TargetRequestBuilder} instance
      */
     private TargetRequestBuilder getRequestBuilder() {
-        if (targetRequestBuilder == null) {
-            if (deviceInfoService == null) {
-                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, Device Info services are not available");
-                return null;
-            }
-
-            targetPreviewManager = getPreviewManager();
-            targetRequestBuilder = new TargetRequestBuilder(deviceInfoService, targetPreviewManager, targetState);
+        if (deviceInfoService == null) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.REQUEST_BUILDER_INIT_FAILED + " Device Info services are not available");
+            return null;
         }
 
-        return targetRequestBuilder;
+        return new TargetRequestBuilder(deviceInfoService, targetPreviewManager, targetState);
     }
 
     /**
@@ -1433,30 +1437,14 @@ public class TargetExtension extends Extension {
      *
      */
     private TargetPreviewManager getPreviewManager() {
-        if (targetPreviewManager == null) {
-            if (networkService == null) {
-                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, Network services are not available");
-                return null;
-            } else if (uiService == null) {
-                Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, UI services are not available");
-                return null;
-            }
-            return new TargetPreviewManager(networkService, uiService, getApi());
+        if (networkService == null) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, Network services are not available");
+            return null;
+        } else if (uiService == null) {
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, UI services are not available");
+            return null;
         }
-        return targetPreviewManager;
-    }
-
-    /**
-     * Gets the {@code TargetResponseParser} instance used to parse the json response.
-     *
-     * @return the {@link TargetResponseParser} instance
-     */
-    private TargetResponseParser getResponseParser() {
-        if (targetResponseParser == null) {
-            targetResponseParser = new TargetResponseParser();
-        }
-
-        return targetResponseParser;
+        return new TargetPreviewManager(networkService, uiService, getApi());
     }
 
     /**
@@ -1465,8 +1453,6 @@ public class TargetExtension extends Extension {
      * @return {@code boolean} indicating if the target extension is in preview mode
      */
     private boolean inPreviewMode() {
-        targetPreviewManager = getPreviewManager();
-
         if (targetPreviewManager != null) {
             final String previewParams = targetPreviewManager.getPreviewParameters();
 

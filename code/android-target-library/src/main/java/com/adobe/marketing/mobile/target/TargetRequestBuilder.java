@@ -38,10 +38,7 @@ class TargetRequestBuilder {
 	private static final String CLASS_NAME = "TargetRequestBuilder";
 	private final DeviceInforming deviceInfoService;
 	private final TargetPreviewManager targetPreviewManager;
-
-	private long environmentId;
-	private String tntId;
-	private String thirdPartyId;
+	private final TargetState targetState;
 
 	/**
 	 * Constructor for TargetRequestBuilder.
@@ -53,19 +50,7 @@ class TargetRequestBuilder {
 						 final TargetState targetState) {
 		this.deviceInfoService = deviceInfoService;
 		this.targetPreviewManager = targetPreviewManager;
-
-		environmentId = targetState.getEnvironmentId();
-		tntId = targetState.getTntId();
-		thirdPartyId = targetState.getThirdPartyId();
-	}
-
-	/**
-	 * Clean all the local variables.
-	 */
-	void clean() {
-		this.environmentId = 0;
-		this.thirdPartyId = null;
-		this.tntId = null;
+		this.targetState = targetState;
 	}
 
 	/**
@@ -95,7 +80,7 @@ class TargetRequestBuilder {
 			final JSONObject defaultParamJson = getDefaultJsonObject(null,
 					null,
 					null,
-					environmentId,
+					targetState.getEnvironmentId(),
 					identitySharedState);
 
 			// add prefetch mBoxes
@@ -475,12 +460,12 @@ class TargetRequestBuilder {
 			} else {
 				idNode = new JSONObject();
 
-				if (!StringUtils.isNullOrEmpty(tntId)) {
-					idNode.put(TargetJson.ID_TNT_ID, tntId);
+				if (!StringUtils.isNullOrEmpty(targetState.getTntId())) {
+					idNode.put(TargetJson.ID_TNT_ID, targetState.getTntId());
 				}
 
-				if (!StringUtils.isNullOrEmpty(thirdPartyId)) {
-					idNode.put(TargetJson.ID_THIRD_PARTY_ID, thirdPartyId);
+				if (!StringUtils.isNullOrEmpty(targetState.getThirdPartyId())) {
+					idNode.put(TargetJson.ID_THIRD_PARTY_ID, targetState.getThirdPartyId());
 				}
 
 				final String visitorMarketingCloudId = DataReader.optString(identityData, TargetConstants.Identity.VISITOR_ID_MID, "");
