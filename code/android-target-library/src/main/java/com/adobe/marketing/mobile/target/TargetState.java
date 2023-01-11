@@ -151,10 +151,6 @@ class TargetState {
         return DataReader.optInt(storedConfigurationSharedState, TargetConstants.Configuration.TARGET_NETWORK_TIMEOUT, TargetConstants.DEFAULT_NETWORK_TIMEOUT);
     }
 
-    List<JSONObject> getNotifications() {
-        return notifications;
-    }
-
     /**
      * Get the sessionId either from memory or from the datastore if session is not expired.
      *
@@ -464,7 +460,7 @@ class TargetState {
         notifications.add(notification);
     }
 
-    List<JSONObject> getNotification() {
+    List<JSONObject> getNotifications() {
         return notifications;
     }
 

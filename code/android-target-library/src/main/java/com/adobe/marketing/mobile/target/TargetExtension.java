@@ -535,7 +535,7 @@ public class TargetExtension extends Extension {
                     targetState.getSessionId()));
         }
 
-        if (targetState.getNotification().isEmpty()) {
+        if (targetState.getNotifications().isEmpty()) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,"handleLocationsDisplayed - " + TargetErrors.DISPLAY_NOTIFICATION_NOT_SENT);
             return;
         }
@@ -957,7 +957,7 @@ public class TargetExtension extends Extension {
             requestsToSend = processCachedTargetRequest(targetBatchRequests, event);
         }
 
-        if (TargetUtils.isNullOrEmpty(requestsToSend) && targetState.getNotification().isEmpty()) {
+        if (TargetUtils.isNullOrEmpty(requestsToSend) && targetState.getNotifications().isEmpty()) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Unable to process the batch requests, requests and notifications are empty");
             return;
@@ -1108,7 +1108,7 @@ public class TargetExtension extends Extension {
     }
 
     /**
-     * Adds the display notification for the given mbox to the {@link TargetState#getNotification()} list.
+     * Adds the display notification for the given mbox to the {@link TargetState#getNotifications()} list.
      *
      * @param mboxName         the displayed mbox name {@link String}
      * @param mboxJson         the cached mbox {@link JSONObject}
@@ -1188,7 +1188,7 @@ public class TargetExtension extends Extension {
     }
 
     /**
-     * Adds the clicked notification for the given mbox to the {@link TargetState#getNotification()} list.
+     * Adds the clicked notification for the given mbox to the {@link TargetState#getNotifications()} list.
      *
      * @param mboxJson         the clicked notification {@link JSONObject} for the clicked location
      * @param targetParameters {@link TargetParameters} object corresponding to the clicked location

@@ -16,14 +16,12 @@ import com.adobe.marketing.mobile.VisitorID;
 import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
-import com.adobe.marketing.mobile.util.DataReaderException;
 import com.adobe.marketing.mobile.util.StringUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -73,9 +71,6 @@ class TargetRequestBuilder {
 								 final Map<String, Object> identitySharedState,
 								 final Map<String, String> lifecycleData) {
 		try {
-			String overridePropertyToken = propertyToken;
-			String mboxATProperty = "";
-
 			// add default parameters
 			final JSONObject defaultParamJson = getDefaultJsonObject(null,
 					null,
@@ -87,8 +82,6 @@ class TargetRequestBuilder {
 			final JSONArray prefetchMboxesNode = getPrefetchMboxes(prefetchArray, parameters, lifecycleData);
 
 			if (prefetchMboxesNode != null && prefetchMboxesNode.length() > 0) {
-				mboxATProperty = removeATPropertyFromParameters(prefetchMboxesNode);
-
 				final JSONObject prefetchJson = new JSONObject();
 				prefetchJson.put(TargetJson.MBOXES, prefetchMboxesNode);
 				defaultParamJson.put(TargetJson.PREFETCH, prefetchJson);
@@ -96,37 +89,22 @@ class TargetRequestBuilder {
 
 			// add notification mBoxes
 			if (notifications != null && !notifications.isEmpty()) {
-				final JSONArray notificationArray = new JSONArray();
-
-				for (JSONObject eachNotification : notifications) {
-					notificationArray.put(eachNotification);
-				}
-
-				mboxATProperty = removeATPropertyFromParameters(notificationArray);
-				defaultParamJson.put(TargetJson.NOTIFICATIONS, notificationArray);
+				defaultParamJson.put(TargetJson.NOTIFICATIONS, new JSONArray(notifications));
 			}
 
 			// add execute mBoxes
 			final JSONArray executeMboxesNode = getExecuteMboxes(executeArray, parameters, lifecycleData);
 
 			if (executeMboxesNode != null && executeMboxesNode.length() > 0) {
-				mboxATProperty = removeATPropertyFromParameters(executeMboxesNode);
-
 				final JSONObject executeJson = new JSONObject();
 				executeJson.put(TargetJson.MBOXES, executeMboxesNode);
 				defaultParamJson.put(TargetJson.EXECUTE, executeJson);
 			}
 
-
-			// Give preference to property token passed from view prefetch request or configuration, over mbox at_property.
-			if (StringUtils.isNullOrEmpty(overridePropertyToken)) {
-				overridePropertyToken = mboxATProperty;
-			}
-
 			// Add property token
-			if (!StringUtils.isNullOrEmpty(overridePropertyToken)) {
+			if (!StringUtils.isNullOrEmpty(propertyToken)) {
 				final JSONObject tokenJson = new JSONObject();
-				tokenJson.put(TargetJson.TOKEN, overridePropertyToken);
+				tokenJson.put(TargetJson.TOKEN, propertyToken);
 				defaultParamJson.put(TargetJson.PROPERTY, tokenJson);
 			}
 
@@ -343,92 +321,6 @@ class TargetRequestBuilder {
 		} catch (final JSONException exception) {
 			Log.warning(TargetConstants.LOG_TAG, TargetErrors.CLICK_NOTIFICATION_CREATE_FAILED,
 					cachedMboxJson.toString());
-		}
-
-		return null;
-	}
-
-	/**
-	 * Creates the clicked mbox json object based on the provided notification map.
-	 * <p>
-	 * This method will return null, if mbox name or click token is not provided in the notification map.
-	 *
-	 * @param notification {@code Map<String, Object>} containing notification data.
-	 * @param targetParameters {@link TargetParameters} to be attached to the clicked location request.
-	 * @param timestamp {@code long} timestamp associated with the event.
-	 * @param lifecycleData {@code Map<String, String>} shared state of lifecycle extension
-	 * @return mbox node for the click notification.
-	 */
-	JSONObject getClickNotificationJsonObject(final Map<String, Object> notification,
-											  final TargetParameters targetParameters,
-											  final long timestamp,
-											  final Map<String, String> lifecycleData) {
-		try {
-			final JSONObject notificationNode = new JSONObject();
-
-			if (notification == null || notification.isEmpty()) {
-				return notificationNode;
-			}
-
-			final JSONArray tokens = new JSONArray();
-			final List<String> notificationTokens = DataReader.getStringList(notification, TargetJson.Notification.TOKENS);
-
-			// verify notification token is present
-			if (TargetUtils.isNullOrEmpty(notificationTokens)) {
-				return null;
-			}
-
-			tokens.put(notificationTokens.get(0));
-			notificationNode.put(TargetJson.Notification.TOKENS, tokens);
-
-			// verify mbox name is not null or empty
-			final String mboxName = (String)notification.get(TargetJson.Mbox.NAME);
-
-			if (mboxName == null || mboxName.isEmpty()) {
-				return null;
-			}
-
-			final JSONObject mboxNode = new JSONObject();
-			mboxNode.put(TargetJson.Mbox.NAME, mboxName);
-			notificationNode.put(TargetJson.Notification.MBOX, mboxNode);
-
-			final String notificationId = (String)notification.get(TargetJson.Notification.ID);
-			notificationNode.put(TargetJson.Notification.ID,
-					!StringUtils.isNullOrEmpty(notificationId) ? notificationId : UUID.randomUUID().toString());
-
-			final long notificationTimestamp = DataReader.getLong(notification, TargetJson.Notification.TIMESTAMP);
-			notificationNode.put(TargetJson.Notification.TIMESTAMP, notificationTimestamp > 0 ? notificationTimestamp : timestamp);
-
-			notificationNode.put(TargetJson.Metric.TYPE, TargetJson.MetricType.CLICK);
-
-			// Add notification parameters.
-			final Map<String, String> parameters = DataReader.getStringMap(notification, TargetJson.PARAMETERS);
-			final Map<String, String> profileParameters = DataReader.getStringMap(notification, TargetJson.PROFILE_PARAMETERS);
-			final Map<String, Object> order = DataReader.getTypedMap(Object.class, notification, TargetJson.ORDER);
-			final Map<String, String> product = DataReader.getStringMap(notification, TargetJson.PRODUCT);
-
-			final TargetParameters notificationParameters = new TargetParameters.Builder()
-					.parameters(parameters)
-					.profileParameters(profileParameters)
-					.order(TargetOrder.fromEventData(order))
-					.product(TargetProduct.fromEventData(product))
-					.build();
-			setTargetParametersJson(notificationNode, TargetParameters.merge(new ArrayList<TargetParameters>() {
-				{
-					add(notificationParameters);
-					add(targetParameters);
-				}
-			}), lifecycleData);
-			return notificationNode;
-		} catch (final JSONException exception) {
-			Log.warning(TargetConstants.LOG_TAG, TargetErrors.CLICK_NOTIFICATION_CREATE_FAILED,
-					notification.toString());
-		} catch (final ClassCastException exception) {
-			Log.warning(TargetConstants.LOG_TAG, TargetErrors.CLICK_NOTIFICATION_CREATE_FAILED,
-					"Provided notification map has invalid keys.");
-		} catch (final DataReaderException exception) {
-			Log.warning(TargetConstants.LOG_TAG, TargetErrors.CLICK_NOTIFICATION_CREATE_FAILED,
-					"Provided notification map has invalid values.");
 		}
 
 		return null;
@@ -822,8 +714,9 @@ class TargetRequestBuilder {
 										 final Map<String, String> lifecycleData) {
 		final HashMap<String, String> mboxParametersCopy = new HashMap<>(mboxParameters);
 
+		// Remove at_property from mbox parameters which is no longer supported in v1 delivery API
 		if (mboxParametersCopy.containsKey(TargetConstants.MBOX_AT_PROPERTY_KEY)) {
-			if (StringUtils.isNullOrEmpty(mboxParametersCopy.get(TargetConstants.MBOX_AT_PROPERTY_KEY))) {
+			if (!StringUtils.isNullOrEmpty(mboxParametersCopy.get(TargetConstants.MBOX_AT_PROPERTY_KEY))) {
 				mboxParametersCopy.remove(TargetConstants.MBOX_AT_PROPERTY_KEY);
 			}
 		}
@@ -867,10 +760,7 @@ class TargetRequestBuilder {
 			orderJson.put(TargetJson.Order.TOTAL, order.getTotal());
 
 			final List<String> productIds = order.getPurchasedProductIds();
-			final JSONArray productIdsJson = new JSONArray();
-			for (String productId : productIds) {
-				productIdsJson.put(productId);
-			}
+			final JSONArray productIdsJson = new JSONArray(productIds);
 			orderJson.put(TargetJson.Order.PURCHASED_PRODUCT_IDS, productIdsJson);
 
 			return orderJson;
@@ -907,41 +797,6 @@ class TargetRequestBuilder {
 		}
 
 		return productNode;
-	}
-
-	/**
-	 * Remove at_property from mbox parameters which is no longer supported in v1 delivery API
-	 * @param mboxArray {@code JSONArray} which needs to be cleaned
-	 *
-	 * @return {@link String} containing the at_property passed in mbox parameters
-	 */
-	private String removeATPropertyFromParameters(final JSONArray mboxArray) {
-		String atProperty = "";
-
-		if (mboxArray == null) {
-			return atProperty;
-		}
-
-		for (int i = 0; i < mboxArray.length(); i++) {
-			final JSONObject mboxJson = mboxArray.optJSONObject(i);
-			final JSONObject mboxParametersNode = mboxJson.optJSONObject(TargetJson.PARAMETERS);
-
-			if (mboxParametersNode == null || mboxParametersNode.length() == 0) {
-				continue;
-			}
-
-			if (StringUtils.isNullOrEmpty(atProperty)) {
-				atProperty = mboxParametersNode.optString(TargetJson.Mbox.AT_PROPERTY, "");
-			}
-
-			mboxParametersNode.remove(TargetJson.Mbox.AT_PROPERTY);
-
-			if (mboxParametersNode.length() == 0) {
-				mboxJson.remove(TargetJson.PARAMETERS);
-			}
-		}
-
-		return atProperty;
 	}
 
 	/**
