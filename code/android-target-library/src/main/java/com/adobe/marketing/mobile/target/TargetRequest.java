@@ -139,7 +139,7 @@ public class TargetRequest {
         final Map<String, Object> requestMap = new HashMap<>();
         requestMap.put(TargetConstants.EventDataKeys.MBOX_NAME, this.mboxName);
         requestMap.put(TargetConstants.EventDataKeys.DEFAULT_CONTENT, this.defaultContent);
-        requestMap.put(TargetConstants.EventDataKeys.RESPONSE_PAIR_ID, this.responsePairId);
+        requestMap.put(TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID, this.responsePairId);
         if (this.targetParameters != null) {
             requestMap.put(TargetConstants.EventDataKeys.TARGET_PARAMETERS, this.targetParameters.toEventData());
         }
@@ -165,7 +165,7 @@ public class TargetRequest {
             final String mboxName = DataReader.getString(data, TargetConstants.EventDataKeys.MBOX_NAME);
             final Map<String, Object> targetParameters = DataReader.getTypedMap(Object.class, data, TargetConstants.EventDataKeys.TARGET_PARAMETERS);
             final String defaultContent = DataReader.getString(data, TargetConstants.EventDataKeys.DEFAULT_CONTENT);
-            final String responsePairId = DataReader.getString(data, TargetConstants.EventDataKeys.RESPONSE_PAIR_ID);
+            final String responsePairId = DataReader.getString(data, TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID);
 
             TargetRequest targetRequest = new TargetRequest(mboxName, TargetParameters.fromEventData(targetParameters), defaultContent, (AdobeCallback) null);
             targetRequest.setResponsePairId(responsePairId);

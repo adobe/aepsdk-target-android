@@ -275,8 +275,7 @@ public class TargetExtension extends Extension {
      */
     void setPreviewRestartDeepLink(final String deepLink) {
         if (targetPreviewManager == null) {
-            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.PREVIEW_MANAGER_INIT_FAILED +
-                    " For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#setpreviewrestartdeeplink");
+            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.PREVIEW_MANAGER_INIT_FAILED);
             return;
         }
 
@@ -517,16 +516,14 @@ public class TargetExtension extends Extension {
                 mboxJson = targetState.getPrefetchedMbox().get(mboxName);
             } else {
                 Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                        TargetErrors.DISPLAY_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CACHED_MBOX_FOUND +
-                                " For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#displayedlocations",
+                        TargetErrors.DISPLAY_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CACHED_MBOX_FOUND,
                         mboxName);
                 continue;
             }
 
             if (!addDisplayNotification(mboxName, mboxJson, targetParameters, lifecycleData, event.getTimestamp())) {
                 Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                        "handleLocationsDisplayed - %s mBox not added for display notification." +
-                                "For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#displayedlocations",
+                        "handleLocationsDisplayed - %s mBox not added for display notification.",
                         mboxName);
                 continue;
             }
@@ -598,8 +595,7 @@ public class TargetExtension extends Extension {
             mboxJson = targetState.getLoadedMbox().get(mboxName);
         } else {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                    TargetErrors.CLICK_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CACHED_MBOX_FOUND +
-                            " For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#clickedlocation",
+                    TargetErrors.CLICK_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CACHED_MBOX_FOUND,
                     mboxName);
             return;
         }
@@ -607,8 +603,7 @@ public class TargetExtension extends Extension {
         final JSONObject clickMetric = targetResponseParser.getClickMetric(mboxJson);
         if (clickMetric == null) {
             Log.warning(TargetConstants.LOG_TAG,
-                    TargetErrors.CLICK_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CLICK_METRIC_FOUND +
-                            " For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#clickedlocation",
+                    TargetErrors.CLICK_NOTIFICATION_SEND_FAILED + TargetErrors.NO_CLICK_METRIC_FOUND,
                     mboxName);
             return;
         }
@@ -623,8 +618,7 @@ public class TargetExtension extends Extension {
         // create and add click notification to the notification list
         if (!addClickedNotificationToList(mboxJson, targetParameters, lifecycleData, event.getTimestamp())) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleLocationClicked - %s mBox not added for click notification. " +
-                            "For more details refer to https://developer.adobe.com/client-sdks/documentation/adobe-target/api-reference/#clickedlocation",
+                    "handleLocationClicked - %s mBox not added for click notification",
                     mboxName);
             return;
         }
@@ -1297,7 +1291,7 @@ public class TargetExtension extends Extension {
         eventData.put(TargetConstants.EventDataKeys.PREFETCH_RESULT, error == null);
         // Create Event and dispatch to EventHub
         Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "dispatchMboxContent - " + TARGET_EVENT_DISPATCH_MESSAGE);
-        final Event responseEvent = new Event.Builder(TargetConstants.EventName.TARGET_RESPONSE_EVENT_NAME,
+        final Event responseEvent = new Event.Builder(TargetConstants.EventName.PREFETCH_RESPONSE,
                 EventType.TARGET,
                 EventSource.RESPONSE_CONTENT)
                 .setEventData(eventData).inResponseToEvent(event).build();
@@ -1325,15 +1319,15 @@ public class TargetExtension extends Extension {
 
         final Map<String, Object> dataPayload = new HashMap<>();
         if (a4tParams != null) {
-            dataPayload.put(TargetConstants.EventDataKeys.ANALYTICS_PAYLOAD, a4tParams);
+            dataPayload.put(TargetConstants.TargetResponse.ANALYTICS_PAYLOAD, a4tParams);
         }
 
         if (responseTokens != null) {
-            dataPayload.put(TargetConstants.EventDataKeys.RESPONSE_TOKENS, responseTokens);
+            dataPayload.put(TargetConstants.TargetResponse.RESPONSE_TOKENS, responseTokens);
         }
 
         if (clickMetricA4TParams != null) {
-            dataPayload.put(TargetConstants.EventDataKeys.CLICK_METRIC_ANALYTICS_PAYLOAD, clickMetricA4TParams);
+            dataPayload.put(TargetConstants.TargetResponse.CLICK_METRIC_ANALYTICS_PAYLOAD, clickMetricA4TParams);
         }
         data.put(TargetConstants.EventDataKeys.TARGET_DATA_PAYLOAD, dataPayload);
 
@@ -1344,7 +1338,7 @@ public class TargetExtension extends Extension {
 
         // Create Event and dispatch to EventHub
         Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "dispatchMboxContent - " + TARGET_EVENT_DISPATCH_MESSAGE);
-        final Event responseEvent = new Event.Builder(TargetConstants.EventName.TARGET_RESPONSE_EVENT_NAME,
+        final Event responseEvent = new Event.Builder(TargetConstants.EventName.TARGET_REQUEST_RESPONSE,
                 EventType.TARGET, EventSource.RESPONSE_CONTENT).setEventData(data).build();
         getApi().dispatch(responseEvent);
     }
@@ -1399,7 +1393,7 @@ public class TargetExtension extends Extension {
         responseEventData.put(TargetConstants.EventDataKeys.THIRD_PARTY_ID, targetState.getThirdPartyId());
         responseEventData.put(TargetConstants.EventDataKeys.TNT_ID, targetState.getTntId());
         responseEventData.put(TargetConstants.EventDataKeys.SESSION_ID, targetState.getSessionId());
-        final Event responseEvent = new Event.Builder(TargetConstants.EventName.IDENTITY_RESPONSE_EVENT_NAME,
+        final Event responseEvent = new Event.Builder(TargetConstants.EventName.IDENTITY_RESPONSE,
                 EventType.TARGET, EventSource.RESPONSE_IDENTITY)
                 .setEventData(responseEventData)
                 .inResponseToEvent(event)

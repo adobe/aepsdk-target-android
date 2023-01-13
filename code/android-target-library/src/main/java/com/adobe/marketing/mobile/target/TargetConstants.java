@@ -91,6 +91,14 @@ final class TargetConstants {
         private ContextDataKeys() {}
     }
 
+    static class TargetResponse {
+        static final String ANALYTICS_PAYLOAD = "analytics.payload";
+        static final String RESPONSE_TOKENS = "responseTokens";
+        static final String CLICK_METRIC_ANALYTICS_PAYLOAD = "clickmetric.analytics.payload";
+
+        private TargetResponse() {}
+    }
+
 
     static final String DATA_STORE_KEY = "ADOBEMOBILE_TARGET";
 
@@ -105,25 +113,25 @@ final class TargetConstants {
     }
 
     static final class EventName {
-        static final String IDENTITY_RESPONSE_EVENT_NAME = "TargetIdentity";
+        static final String IDENTITY_RESPONSE = "TargetResponseIdentity";
         static final String ANALYTICS_FOR_TARGET_REQUEST_EVENT_NAME = "AnalyticsForTargetRequest";
         static final String IDENTITY_RESET_COMPLETION_EVENT_NAME = "TargetReset";
-        static final String TARGET_RESPONSE_EVENT_NAME = "TargetResponse";
+        static final String PREFETCH_RESPONSE = "TargetPrefetchResponse";
+        static final String TARGET_REQUEST_RESPONSE = "TargetRequestResponse";
         static final String TARGET_RAW_RESPONSE_EVENT_NAME = "TargetRawResponse";
 
         private EventName() {}
     }
 
     static final class EventDataKeys {
-        static final String MBOX_NAME = "mboxname";
-        static final String MBOX_NAMES = "mboxnames";
+        static final String MBOX_NAME = "name";
+        static final String MBOX_NAMES = "names";
         static final String TARGET_PARAMETERS = "targetparams";
-        static final String MBOX_PARAMETERS = "mboxparameters";
-        static final String PROFILE_PARAMETERS = "profileparameters";
-        static final String ORDER_PARAMETERS = "orderparameters";
-        static final String PRODUCT_PARAMETERS = "productparameters";
-        static final String DEFAULT_CONTENT = "defaultcontent";
-        static final String RESPONSE_PAIR_ID = "responsepairid";
+        static final String MBOX_PARAMETERS = "parameters";
+        static final String PROFILE_PARAMETERS = "profileParameters";
+        static final String ORDER_PARAMETERS = "order";
+        static final String PRODUCT_PARAMETERS = "product";
+        static final String DEFAULT_CONTENT = "defaultContent";
         static final String EXECUTE = "execute";
         static final String PREFETCH = "prefetch";
         static final String AT_PROPERTY = "at_property";
@@ -145,9 +153,6 @@ final class TargetConstants {
         static final String TARGET_RESPONSE_PAIR_ID = "responsePairId";
         static final String TARGET_DATA_PAYLOAD = "data";
         static final String A4T_SESSION_ID = "a.target.sessionId"; // For A4T requests event data.
-        static final String ANALYTICS_PAYLOAD = "analytics.payload";
-        static final String RESPONSE_TOKENS = "responseTokens";
-        static final String CLICK_METRIC_ANALYTICS_PAYLOAD = "clickmetric.analytics.payload";
         static final String TARGET_CONTENT = "content";
         static final String ID = "id";
         static final String TOKEN = "token";

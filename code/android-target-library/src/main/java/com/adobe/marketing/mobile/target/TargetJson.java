@@ -15,7 +15,7 @@ package com.adobe.marketing.mobile.target;
 import java.util.Arrays;
 import java.util.List;
 
-class TargetJson {
+final class TargetJson {
 	static final String MESSAGE = "message";
 	static final String ID = "id";
 	static final String ID_TNT_ID = "tntId";
@@ -41,8 +41,6 @@ class TargetJson {
 	static final String ORDER = "order";
 	static final String NOTIFICATIONS = "notifications";
 	static final String MBOXES = "mboxes";
-	static final String VIEW = "view";
-	static final String VIEWS = "views";
 	static final String EDGE_HOST = "edgeHost";
 	static final String TOKEN = "token";
 	static final String PROPERTY = "property";
@@ -95,7 +93,6 @@ class TargetJson {
 		static final String NAME = "name";
 		static final String STATE = "state";
 		static final String INDEX = "index";
-		static final String AT_PROPERTY = "at_property";
 
 		private Mbox() {}
 	}

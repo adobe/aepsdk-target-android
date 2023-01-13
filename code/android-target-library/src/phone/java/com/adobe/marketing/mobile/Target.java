@@ -45,7 +45,7 @@ public class Target {
     static final String EXTENSION_VERSION = "2.0.0";
 
     static final class EventName {
-        static final String PREFETCH_CONTENT = "TargetPrefetchContent";
+        static final String PREFETCH_REQUEST = "TargetPrefetchRequest";
         static final String LOAD_REQUEST = "TargetLoadRequest";
         static final String LOCATIONS_DISPLAYED = "TargetLocationsDisplayed";
         static final String LOCATION_CLICKED = "TargetLocationClicked";
@@ -82,8 +82,8 @@ public class Target {
     }
 
     static final class EventDataKeys {
-        static final String MBOX_NAME = "mboxname";
-        static final String MBOX_NAMES = "mboxnames";
+        static final String MBOX_NAME = "name";
+        static final String MBOX_NAMES = "names";
         static final String TARGET_PARAMETERS = "targetparams";
         static final String EXECUTE = "execute";
         static final String PREFETCH = "prefetch";
@@ -212,7 +212,7 @@ public class Target {
             eventData.put(EventDataKeys.TARGET_PARAMETERS, parameters.toEventData());
         }
 
-        final Event event = new Event.Builder(EventName.PREFETCH_CONTENT, EventType.TARGET, EventSource.REQUEST_CONTENT)
+        final Event event = new Event.Builder(EventName.PREFETCH_REQUEST, EventType.TARGET, EventSource.REQUEST_CONTENT)
                 .setEventData(eventData).build();
 
         MobileCore.dispatchEventWithResponseCallback(event, DEFAULT_TIMEOUT_MS, new AdobeCallbackWithError<Event>() {
@@ -797,68 +797,60 @@ public class Target {
     private static void registerResponseContentEventListener() {
         // Only register the listener once
         if (!isResponseListenerRegistered) {
-            MobileCore.registerEventListener(EventType.TARGET, EventSource.RESPONSE_CONTENT, new AdobeCallbackWithError<Event>() {
-                @Override
-                public void fail(final AdobeError adobeError) {
-                    fail(adobeError);
+            MobileCore.registerEventListener(EventType.TARGET, EventSource.RESPONSE_CONTENT, event -> {
+                if (!event.getName().equals(EventName.TARGET_REQUEST_RESPONSE)) {
+                    return;
                 }
 
-                @Override
-                public void call(final Event event) {
-                    if (!event.getName().equals(EventName.TARGET_REQUEST_RESPONSE)) {
-                        return;
-                    }
+                final Map<String, Object> eventData = event.getEventData();
+                if (eventData == null || eventData.isEmpty()) {
+                    Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, response event data is null or empty.");
+                    return;
+                }
 
-                    final Map<String, Object> eventData = event.getEventData();
-                    if (eventData == null || eventData.isEmpty()) {
-                       fail(AdobeError.UNEXPECTED_ERROR);
-                        return;
-                    }
+                String id = null;
+                try {
+                    id = DataReader.getString(eventData, EventDataKeys.TARGET_RESPONSE_EVENT_ID);
+                } catch (final DataReaderException e) {
+                    Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is invalid (%s).", e.getLocalizedMessage());
+                }
+                if (StringUtils.isNullOrEmpty(id)) {
+                    Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is not available.");
+                    return;
+                }
 
-                    String id = null;
-                    try {
-                        id = DataReader.getString(eventData, EventDataKeys.TARGET_RESPONSE_EVENT_ID);
-                    } catch (final DataReaderException e) {
-                        Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is invalid (%s).", e.getLocalizedMessage());
-                    }
-                    if (StringUtils.isNullOrEmpty(id)) {
-                        Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is not available.");
-                        return;
-                    }
+                String responsePairId = null;
+                try {
+                    responsePairId = DataReader.getString(eventData, EventDataKeys.TARGET_RESPONSE_PAIR_ID);
+                } catch (final DataReaderException e) {
+                    Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is invalid (%s).", e.getLocalizedMessage());
+                }
+                if (StringUtils.isNullOrEmpty(responsePairId)) {
+                    Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is not available.");
+                    return;
+                }
 
-                    String responsePairId = null;
-                    try {
-                        responsePairId = DataReader.getString(eventData, EventDataKeys.TARGET_RESPONSE_PAIR_ID);
-                    } catch (final DataReaderException e) {
-                        Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is invalid (%s).", e.getLocalizedMessage());
-                    }
-                    if (StringUtils.isNullOrEmpty(responsePairId)) {
-                        Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is not available.");
-                        return;
-                    }
+                final String requestSearchId = id+"-"+responsePairId;
+                final TargetRequest request = pendingTargetRequestsMap.get(requestSearchId);
+                if (request == null) {
+                    Log.warning(LOG_TAG, CLASS_NAME,  "Missing target request for (%s)", requestSearchId);
+                    return;
+                }
 
-                    final String requestSearchId = id+"-"+responsePairId;
-                    final TargetRequest request = pendingTargetRequestsMap.get(requestSearchId);
-                    if (request == null) {
-                        Log.warning(LOG_TAG, CLASS_NAME,  "Missing target request for (%s)", requestSearchId);
-                        return;
-                    }
+                final AdobeCallback<String> callback = request.getContentCallback();
+                final AdobeTargetDetailedCallback contentWithDataCallback = request.getContentWithDataCallback();
 
-                    final AdobeCallback<String> callback = request.getContentCallback();
-                    final AdobeTargetDetailedCallback contentWithDataCallback = request.getContentWithDataCallback();
-
-                    if (contentWithDataCallback != null) {
-                        final Map<String, Object> mboxPayloadMap = createMboxPayloadMap(DataReader.optTypedMap(Object.class,
-                                eventData, EventDataKeys.TARGET_DATA_PAYLOAD, null), request);
-                        final String content = DataReader.optString(eventData,
-                                EventDataKeys.TARGET_CONTENT,
-                                request.getDefaultContent());
-                        contentWithDataCallback.call(content, mboxPayloadMap);
-                    } else if (callback != null) {
-                        callback.call(DataReader.optString(eventData,
-                                EventDataKeys.TARGET_CONTENT,
-                                request.getDefaultContent()));
-                    }
+                if (contentWithDataCallback != null) {
+                    final Map<String, Object> mboxPayloadMap = createMboxPayloadMap(DataReader.optTypedMap(Object.class,
+                            eventData, EventDataKeys.TARGET_DATA_PAYLOAD, null), request);
+                    final String content = DataReader.optString(eventData,
+                            EventDataKeys.TARGET_CONTENT,
+                            request.getDefaultContent());
+                    contentWithDataCallback.call(content, mboxPayloadMap);
+                } else if (callback != null) {
+                    callback.call(DataReader.optString(eventData,
+                            EventDataKeys.TARGET_CONTENT,
+                            request.getDefaultContent()));
                 }
             });
             isResponseListenerRegistered = true;

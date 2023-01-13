@@ -160,19 +160,19 @@ public class TargetParametersTests {
                 .build();
         final Map<String, Object> targetParametersMap = targetParameters.toEventData();
         assertNotNull(targetParametersMap);
-        assertEquals(MBOX_PARAMETERS_HAPPY_PATH, targetParametersMap.get("mboxparameters"));
-        assertEquals(PROFILE_PARAMETERS_HAPPY_PATH, targetParametersMap.get("profileparameters"));
-        assertEquals(ORDER_PARAMETERS_HAPPY_PATH_MAP, targetParametersMap.get("orderparameters"));
-        assertEquals(PRODUCT_PARAMETERS_HAPPY_PATH_MAP, targetParametersMap.get("productparameters"));
+        assertEquals(MBOX_PARAMETERS_HAPPY_PATH, targetParametersMap.get("parameters"));
+        assertEquals(PROFILE_PARAMETERS_HAPPY_PATH, targetParametersMap.get("profileParameters"));
+        assertEquals(ORDER_PARAMETERS_HAPPY_PATH_MAP, targetParametersMap.get("order"));
+        assertEquals(PRODUCT_PARAMETERS_HAPPY_PATH_MAP, targetParametersMap.get("product"));
     }
 
     @Test
     public void testFromEventData_happy() {
         final Map<String, Object> targetParametersMap = new HashMap<>();
-        targetParametersMap.put("mboxparameters", MBOX_PARAMETERS_HAPPY_PATH);
-        targetParametersMap.put("profileparameters", PROFILE_PARAMETERS_HAPPY_PATH);
-        targetParametersMap.put("orderparameters", ORDER_PARAMETERS_HAPPY_PATH_MAP);
-        targetParametersMap.put("productparameters", PRODUCT_PARAMETERS_HAPPY_PATH_MAP);
+        targetParametersMap.put("parameters", MBOX_PARAMETERS_HAPPY_PATH);
+        targetParametersMap.put("profileParameters", PROFILE_PARAMETERS_HAPPY_PATH);
+        targetParametersMap.put("order", ORDER_PARAMETERS_HAPPY_PATH_MAP);
+        targetParametersMap.put("product", PRODUCT_PARAMETERS_HAPPY_PATH_MAP);
 
         final TargetParameters targetParameters = TargetParameters.fromEventData(targetParametersMap);
         assertNotNull(targetParameters);

@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TargetPrefetchTests {
-    protected final String MBOX_NAME_HAPPY_PATH = "mboxName";
+    protected final String MBOX_NAME_HAPPY_PATH = "name";
 
     protected final Map<String, String> MBOX_PARAMETERS_HAPPY_PATH = new HashMap<String, String>() {
         {
@@ -75,10 +75,10 @@ public class TargetPrefetchTests {
 
     protected final Map<String, Object> TARGET_PARAMETERS_HAPPY_PATH_MAP = new HashMap<String, Object>() {
         {
-            put("mboxparameters", MBOX_PARAMETERS_HAPPY_PATH);
-            put("profileparameters", PROFILE_PARAMETERS_HAPPY_PATH);
-            put("orderparameters", ORDER_PARAMETERS_HAPPY_PATH_MAP);
-            put("productparameters", PRODUCT_PARAMETERS_HAPPY_PATH_MAP);
+            put("parameters", MBOX_PARAMETERS_HAPPY_PATH);
+            put("profileParameters", PROFILE_PARAMETERS_HAPPY_PATH);
+            put("order", ORDER_PARAMETERS_HAPPY_PATH_MAP);
+            put("product", PRODUCT_PARAMETERS_HAPPY_PATH_MAP);
         }
     };
 
@@ -96,14 +96,14 @@ public class TargetPrefetchTests {
 
         final Map<String, Object> targetPrefetchMap = targetPrefetch.toEventData();
         assertNotNull(targetPrefetchMap);
-        assertEquals(MBOX_NAME_HAPPY_PATH, targetPrefetchMap.get("mboxname"));
+        assertEquals(MBOX_NAME_HAPPY_PATH, targetPrefetchMap.get("name"));
         assertEquals(TARGET_PARAMETERS_HAPPY_PATH_MAP, targetPrefetchMap.get("targetparams"));
     }
 
     @Test
     public void testFromEventData_validTargetRequest() {
         final Map<String, Object> targetPrefetchMap = new HashMap<>();
-        targetPrefetchMap.put("mboxname", MBOX_NAME_HAPPY_PATH);
+        targetPrefetchMap.put("name", MBOX_NAME_HAPPY_PATH);
         targetPrefetchMap.put("targetparams", TARGET_PARAMETERS_HAPPY_PATH_MAP);
 
         final TargetPrefetch targetPrefetch = TargetPrefetch.fromEventData(targetPrefetchMap);

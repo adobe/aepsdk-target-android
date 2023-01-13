@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TargetRequestTests {
-    protected final String MBOX_NAME_HAPPY_PATH = "mboxName";
+    protected final String MBOX_NAME_HAPPY_PATH = "name";
 
     private final String RESPONSE_PAIR_ID_HAPPY_PATH = "responsePairId";
 
@@ -82,10 +82,10 @@ public class TargetRequestTests {
 
     protected final Map<String, Object> TARGET_PARAMETERS_HAPPY_PATH_MAP = new HashMap<String, Object>() {
         {
-            put("mboxparameters", MBOX_PARAMETERS_HAPPY_PATH);
-            put("profileparameters", PROFILE_PARAMETERS_HAPPY_PATH);
-            put("orderparameters", ORDER_PARAMETERS_HAPPY_PATH_MAP);
-            put("productparameters", PRODUCT_PARAMETERS_HAPPY_PATH_MAP);
+            put("parameters", MBOX_PARAMETERS_HAPPY_PATH);
+            put("profileParameters", PROFILE_PARAMETERS_HAPPY_PATH);
+            put("order", ORDER_PARAMETERS_HAPPY_PATH_MAP);
+            put("product", PRODUCT_PARAMETERS_HAPPY_PATH_MAP);
         }
     };
 
@@ -131,19 +131,19 @@ public class TargetRequestTests {
 
         final Map<String, Object> targetRequestMap = targetRequest.toEventData();
         assertNotNull(targetRequestMap);
-        assertEquals(MBOX_NAME_HAPPY_PATH, targetRequestMap.get("mboxname"));
+        assertEquals(MBOX_NAME_HAPPY_PATH, targetRequestMap.get("name"));
         assertEquals(TARGET_PARAMETERS_HAPPY_PATH_MAP, targetRequestMap.get("targetparams"));
-        assertEquals(DEFAULT_CONTENT_HAPPY_PATH, targetRequestMap.get("defaultcontent"));
-        assertEquals(RESPONSE_PAIR_ID_HAPPY_PATH, targetRequestMap.get("responsepairid"));
+        assertEquals(DEFAULT_CONTENT_HAPPY_PATH, targetRequestMap.get("defaultContent"));
+        assertEquals(RESPONSE_PAIR_ID_HAPPY_PATH, targetRequestMap.get("responsePairId"));
     }
 
     @Test
     public void testFromEventData_validTargetRequest() {
         final Map<String, Object> targetRequestMap = new HashMap<>();
-        targetRequestMap.put("mboxname", MBOX_NAME_HAPPY_PATH);
+        targetRequestMap.put("name", MBOX_NAME_HAPPY_PATH);
         targetRequestMap.put("targetparams", TARGET_PARAMETERS_HAPPY_PATH_MAP);
-        targetRequestMap.put("defaultcontent", DEFAULT_CONTENT_HAPPY_PATH);
-        targetRequestMap.put("responsepairid", RESPONSE_PAIR_ID_HAPPY_PATH);
+        targetRequestMap.put("defaultContent", DEFAULT_CONTENT_HAPPY_PATH);
+        targetRequestMap.put("responsePairId", RESPONSE_PAIR_ID_HAPPY_PATH);
 
         final TargetRequest targetRequest = TargetRequest.fromEventData(targetRequestMap);
         assertNotNull(targetRequest);
