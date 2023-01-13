@@ -164,7 +164,7 @@ public class TargetExtension extends Extension {
 
     void handleTargetRequestContentEvent(@NonNull final Event event) {
         if (TargetUtils.isNullOrEmpty(event.getEventData())) {
-            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "handleTargetRequestContentEvent - Failed to process Target request content event, event data is null/ empty.");
             return;
         }
@@ -176,13 +176,53 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        if (DataReader.optTypedList(TargetPrefetch.class, eventData, TargetConstants.EventDataKeys.PREFETCH, null) != null) {
-            handleMboxPrefetch(event);
+        if (eventData.containsKey(TargetConstants.EventDataKeys.PREFETCH)) {
+            final List<Map<String, Object>> flattenedPrefetchRequests;
+            try {
+                flattenedPrefetchRequests = (List<Map<String, Object>>) eventData.get(TargetConstants.EventDataKeys.PREFETCH);
+            } catch (final ClassCastException e) {
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "handleTargetRequestContentEvent -  Failed to get TargetExtension Prefetch list from event data, %s", e);
+                return;
+            }
+            if (TargetUtils.isNullOrEmpty(flattenedPrefetchRequests)) {
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "handleTargetRequestContentEvent -Failed to retrieve Target Prefetch list (%s)", TargetErrors.NO_PREFETCH_REQUESTS);
+                return;
+            }
+            final List<TargetPrefetch> targetPrefetchRequests = new ArrayList<>();
+            for (Map<String, Object> prefetch : flattenedPrefetchRequests) {
+                final TargetPrefetch targetPrefetch = TargetPrefetch.fromEventData(prefetch);
+                if (targetPrefetch != null) {
+                    targetPrefetchRequests.add(targetPrefetch);
+                }
+            }
+            handleMboxPrefetch(targetPrefetchRequests, event);
             return;
         }
 
-        if (DataReader.optTypedList(TargetRequest.class, eventData, TargetConstants.EventDataKeys.LOAD_REQUEST, null) != null) {
-            loadRequests(event);
+        if (eventData.containsKey(TargetConstants.EventDataKeys.LOAD_REQUEST)) {
+            final List<Map<String, Object>> flattenedLocationRequests;
+            try {
+                flattenedLocationRequests = (List<Map<String, Object>>) eventData.get(TargetConstants.EventDataKeys.LOAD_REQUEST);
+            } catch (final ClassCastException e) {
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "handleTargetRequestContentEvent -  Failed to get Target Request list from event data, %s", e);
+                return;
+            }
+            if (TargetUtils.isNullOrEmpty(flattenedLocationRequests)) {
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "handleTargetRequestContentEvent -Failed to retrieve Target location content (%s)", TargetErrors.NO_TARGET_REQUESTS);
+                return;
+            }
+            final List<TargetRequest> targetRequests = new ArrayList<>();
+            for (Map<String, Object> request : flattenedLocationRequests) {
+                final TargetRequest targetRequest = TargetRequest.fromEventData(request);
+                if (targetRequest != null) {
+                    targetRequests.add(targetRequest);
+                }
+            }
+            loadRequests(targetRequests, event);
             return;
         }
 
@@ -204,7 +244,7 @@ public class TargetExtension extends Extension {
 
     void handleTargetRequestResetEvent(@NonNull final Event event) {
         if (TargetUtils.isNullOrEmpty(event.getEventData())) {
-            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "handleTargetRequestResetEvent - Failed to process Target request content event, event data is null/ empty.");
             return;
         }
@@ -221,12 +261,11 @@ public class TargetExtension extends Extension {
     }
 
     void handleTargetRequestIdentityEvent(@NonNull final Event event) {
-        if (TargetUtils.isNullOrEmpty(event.getEventData())) {
+        final Map<String, Object> eventData = event.getEventData();
+        if (TargetUtils.isNullOrEmpty(eventData)) {
             dispatchIdentity(event);
             return;
         }
-
-        final Map<String, Object> eventData = event.getEventData();
 
         if (eventData.containsKey(TargetConstants.EventDataKeys.THIRD_PARTY_ID)) {
             final String thirdPartyId = DataReader.optString(eventData, TargetConstants.EventDataKeys.THIRD_PARTY_ID, null);
@@ -244,7 +283,7 @@ public class TargetExtension extends Extension {
 
     void handleGenericDataOSEvent(@NonNull final Event event) {
         if (TargetUtils.isNullOrEmpty(event.getEventData())) {
-            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "handleGenericDataOSEvent - Failed to process Generic os event, event data is null/ empty.");
             return;
         }
@@ -380,9 +419,10 @@ public class TargetExtension extends Extension {
      * Prefetch multiple Target mboxes in a single network call.
      * The content will be cached locally and returned immediately if any prefetched mbox is requested though a loadRequest call.
      *
+     * @param targetPrefetchRequests an {@code List<TargetPrefetch>} representing the desired mboxes to prefetch
      * @param event                  the {@link Event} object
      */
-    void handleMboxPrefetch(@NonNull final Event event) {
+    void handleMboxPrefetch(@NonNull final List<TargetPrefetch> targetPrefetchRequests, @NonNull final Event event) {
         Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
                 "handleMboxPrefetch - Prefetched mbox event details - event %s type: %s source: %s ",
                 event.getName(), event.getType(), event.getSource());
@@ -394,74 +434,35 @@ public class TargetExtension extends Extension {
         }
 
         final Map<String, Object> eventData = event.getEventData();
-        try {
-            final List<TargetPrefetch> targetPrefetchRequests = new ArrayList<>();
-            final List<Map<String, Object>> flattenedPrefetchRequests = (List<Map<String, Object>>) eventData.get(TargetConstants.EventDataKeys.PREFETCH);
-            if (TargetUtils.isNullOrEmpty(flattenedPrefetchRequests)) {
-                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                        "handleMboxPrefetch - Unable to prefetch mbox content, Error %s",
-                        TargetErrors.NO_PREFETCH_REQUESTS);
-                return;
-            }
-            for (Map<String, Object> prefetch: flattenedPrefetchRequests) {
-                TargetPrefetch targetPrefetch = TargetPrefetch.fromEventData(prefetch);
-                if (targetPrefetch != null) {
-                    targetPrefetchRequests.add(targetPrefetch);
-                }
-            }
+        final Map<String, Object> targetParametersMap = DataReader.optTypedMap(Object.class,
+                eventData, TargetConstants.EventDataKeys.TARGET_PARAMETERS, null);
+        final TargetParameters targetParameters = TargetParameters.fromEventData(targetParametersMap);
+        final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
+        final Map<String, Object> identityData = retrieveIdentitySharedState(event);
 
-            final Map<String, Object>  targetParametersMap = DataReader.optTypedMap(Object.class,
-                    eventData, TargetConstants.EventDataKeys.TARGET_PARAMETERS, null);
-            final TargetParameters targetParameters = TargetParameters.fromEventData(targetParametersMap);
-            final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
-            final Map<String, Object> identityData = retrieveIdentitySharedState(event);
-
-            prefetchMboxContent(targetPrefetchRequests, targetParameters, lifecycleData, identityData,
-                    event);
-
-        } catch (ClassCastException e) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleMboxPrefetch -  Failed to get TargetExtension Prefetch list from event data, %s", e);
-        }
+        prefetchMboxContent(targetPrefetchRequests, targetParameters, lifecycleData, identityData,
+                event);
     }
 
     /**
      * Request multiple Target mboxes in a single network call.
      *
+     * @param targetRequests   an {@code List<TargetRequest>} representing the desired mboxes to load
      * @param event            the {@link Event} object
      */
-    void loadRequests(@NonNull final Event event) {
+    void loadRequests(@NonNull final List<TargetRequest> targetRequests, @NonNull final Event event) {
         Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
                 "loadRequests - event %s type: %s source: %s ",
                 event.getName(), event.getType(), event.getSource());
         final Map<String, Object> eventData = event.getEventData();
-        try {
-            final List<TargetRequest> targetRequests = new ArrayList<>();
-            final List<Map<String, Object>> flattenedLocationRequests = (List<Map<String, Object>>) eventData.get(TargetConstants.EventDataKeys.PREFETCH);
-            if (TargetUtils.isNullOrEmpty(flattenedLocationRequests)) {
-                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                        "loadRequests -Failed to retrieve Target location content (%s)", TargetErrors.NO_TARGET_REQUESTS);
-                return;
-            }
-            for (Map<String, Object> prefetch: flattenedLocationRequests) {
-                TargetRequest targetRequest = TargetRequest.fromEventData(prefetch);
-                if (targetRequest != null) {
-                    targetRequests.add(targetRequest);
-                }
-            }
 
-            final Map<String, Object>  targetParametersMap = DataReader.optTypedMap(Object.class,
-                    eventData, TargetConstants.EventDataKeys.TARGET_PARAMETERS, null);
-            final TargetParameters targetParameters = TargetParameters.fromEventData(targetParametersMap);
-            final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
-            final Map<String, Object> identityData = retrieveIdentitySharedState(event);
+        final Map<String, Object> targetParametersMap = DataReader.optTypedMap(Object.class,
+                eventData, TargetConstants.EventDataKeys.TARGET_PARAMETERS, null);
+        final TargetParameters targetParameters = TargetParameters.fromEventData(targetParametersMap);
+        final Map<String, Object> lifecycleData = retrieveLifecycleSharedState(event);
+        final Map<String, Object> identityData = retrieveIdentitySharedState(event);
 
-            batchRequests(targetRequests, targetParameters, lifecycleData, identityData, event);
-
-        } catch (ClassCastException e) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleMboxPrefetch -  Failed to get Target Request list from event data, %s", e);
-        }
+        batchRequests(targetRequests, targetParameters, lifecycleData, identityData, event);
     }
 
     /**
@@ -493,7 +494,7 @@ public class TargetExtension extends Extension {
         final Map<String, Object> eventData = event.getEventData();
         final List<String> mboxNames = DataReader.optStringList(eventData, TargetConstants.EventDataKeys.MBOX_NAMES, null);
         if (TargetUtils.isNullOrEmpty(mboxNames)) {
-            Log.error(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     "Location displayed unsuccessful (%s) ", TargetErrors.MBOX_NAMES_NULL_OR_EMPTY);
             return;
         }
@@ -588,7 +589,7 @@ public class TargetExtension extends Extension {
 
         // Check if the mbox is already prefetched or loaded.
         // if not, Log and bail out
-        JSONObject mboxJson;
+        final JSONObject mboxJson;
         if (targetState.getPrefetchedMbox().containsKey(mboxName)) {
             mboxJson = targetState.getPrefetchedMbox().get(mboxName);
         } else if (targetState.getLoadedMbox().containsKey(mboxName)) {
@@ -646,7 +647,6 @@ public class TargetExtension extends Extension {
     void resetIdentity(@NonNull final Event event) {
         resetIdentity();
         getApi().createSharedState(targetState.generateSharedState(), event);
-        dispatchIdentityResetCompletion(event);
     }
 
     /**
@@ -943,12 +943,14 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        List<TargetRequest> requestsToSend = targetBatchRequests;
+        final List<TargetRequest> requestsToSend;
 
         if (!inPreviewMode()) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Current cached mboxes : %s, size: %d",
                     Arrays.toString(targetState.getPrefetchedMbox().keySet().toArray()), targetState.getPrefetchedMbox().size());
             requestsToSend = processCachedTargetRequest(targetBatchRequests, event);
+        } else {
+            requestsToSend = targetBatchRequests;
         }
 
         if (TargetUtils.isNullOrEmpty(requestsToSend) && targetState.getNotifications().isEmpty()) {
@@ -957,13 +959,9 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        final List<TargetRequest> finalRequestsToSend = requestsToSend;
         final String error = sendTargetRequest(requestsToSend, null, targetParameters,
                 lifecycleData, identityData, event, connection -> {
-                    processTargetRequestResponse(finalRequestsToSend, connection, event);
-                    if (connection != null) {
-                        connection.close();
-                    }
+                    processTargetRequestResponse(requestsToSend, connection, event);
                 });
         if (!StringUtils.isNullOrEmpty(error)) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "batchRequests - " + TargetErrors.NO_CONNECTION);
@@ -1231,9 +1229,7 @@ public class TargetExtension extends Extension {
             return;
         }
 
-        final Map<String, Object> configState = retrieveConfigurationSharedState(event);
-        final boolean isPreviewEnabled = DataReader.optBoolean(configState, TargetConstants.Configuration.TARGET_PREVIEW_ENABLED, true);
-        if (!isPreviewEnabled) {
+        if (!targetState.isPreviewEnabled()) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "setupPreviewMode - " + TargetErrors.TARGET_PREVIEW_DISABLED);
             return;
         }
@@ -1368,19 +1364,6 @@ public class TargetExtension extends Extension {
                 .setEventData(eventData)
                 .build();
         getApi().dispatch(analyticsForTargetEvent);
-    }
-
-    /**
-     * Dispatches an event indicating target reset request completion
-     *
-     * @param event {@link Event} the associated TargetRequestReset event
-     */
-    void dispatchIdentityResetCompletion(final Event event) {
-        final Event completionEvent = new Event.Builder(TargetConstants.EventName.IDENTITY_RESET_COMPLETION_EVENT_NAME, EventType.TARGET,
-                EventSource.REQUEST_RESET)
-                .inResponseToEvent(event)
-                .build();
-        getApi().dispatch(completionEvent);
     }
 
     /**

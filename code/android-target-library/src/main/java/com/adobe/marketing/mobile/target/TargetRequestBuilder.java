@@ -716,9 +716,7 @@ class TargetRequestBuilder {
 
 		// Remove at_property from mbox parameters which is no longer supported in v1 delivery API
 		if (mboxParametersCopy.containsKey(TargetConstants.MBOX_AT_PROPERTY_KEY)) {
-			if (!StringUtils.isNullOrEmpty(mboxParametersCopy.get(TargetConstants.MBOX_AT_PROPERTY_KEY))) {
-				mboxParametersCopy.remove(TargetConstants.MBOX_AT_PROPERTY_KEY);
-			}
+			mboxParametersCopy.remove(TargetConstants.MBOX_AT_PROPERTY_KEY);
 		}
 
 		final JSONObject mboxParametersJson = new JSONObject(mboxParametersCopy);

@@ -74,17 +74,21 @@ class TargetUtils {
             return null;
         }
 
-        Iterator<String> keyItr = jsonObject.keys();
-        Map<String, String> map = new HashMap<>();
+        final Iterator<String> keyItr = jsonObject.keys();
+        final Map<String, String> map = new HashMap<>();
 
         while (keyItr.hasNext()) {
-            String name = keyItr.next();
+            final String name = keyItr.next();
 
             try {
                 map.put(name, jsonObject.getString(name));
-            } catch (JSONException e) {
+            } catch (final JSONException e) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "The value of [%s] is not a string: %s", name, e);
             }
+        }
+
+        if(isNullOrEmpty(map)) {
+            return null;
         }
 
         return map;

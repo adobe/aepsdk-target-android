@@ -169,11 +169,6 @@ class TargetState {
      * @return the session ID value as {@link String}
      */
     String getSessionId() {
-        if (StringUtils.isNullOrEmpty(sessionId)) {
-            if (dataStore != null) {
-                sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, null);
-            }
-        }
         // if there is no session id persisted in local data store or if the session id is expired
         // because there was no activity for more than certain amount of time
         // (from the last successful network request), then generate a new session id, save it in persistence storage
@@ -186,6 +181,10 @@ class TargetState {
 
             // update session id timestamp when the new session id is generated
             updateSessionTimestamp(false);
+        } else {
+            if (StringUtils.isNullOrEmpty(sessionId) && dataStore != null) {
+                sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, null);
+            }
         }
 
         return sessionId;
@@ -201,16 +200,14 @@ class TargetState {
      * @return the edgeHost {@link String} value
      */
     String getEdgeHost() {
-        if (StringUtils.isNullOrEmpty(edgeHost)) {
-            if (dataStore != null) {
-                edgeHost = dataStore.getString(TargetConstants.DataStoreKeys.EDGE_HOST, null);
-            }
-        }
-
         // If the session expired reset the edge host
         if (isSessionExpired()) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getEdgeHost - Resetting edge host to null as session id expired.");
             updateEdgeHost(null);
+        } else {
+            if (StringUtils.isNullOrEmpty(edgeHost) && dataStore != null) {
+                edgeHost = dataStore.getString(TargetConstants.DataStoreKeys.EDGE_HOST, null);
+            }
         }
         return edgeHost;
     }
@@ -240,6 +237,15 @@ class TargetState {
      */
     Map<String, Object> getStoredConfigurationSharedState() {
         return storedConfigurationSharedState;
+    }
+
+    /**
+     * Returns Target Preview enabled status
+     * @return {@code boolean} {@link TargetConstants.Configuration#TARGET_PREVIEW_ENABLED} value
+     * from the last known Configuration state if present, true otherwise
+     */
+    boolean isPreviewEnabled() {
+        return DataReader.optBoolean(storedConfigurationSharedState, TargetConstants.Configuration.TARGET_PREVIEW_ENABLED, true);
     }
 
     /**
