@@ -218,7 +218,7 @@ dependencies {
 
     // Adobe Mobile SDK Core
     // implementation "com.adobe.marketing.mobile:core:${rootProject.mavenCoreVersion}"
-    implementation 'com.github.adobe.aepsdk-core-android:core:v2.0.0-alpha.4'
+    implementation 'com.adobe.marketing.mobile:core:2.0.0-SNAPSHOT'
 
     testImplementation "androidx.test.ext:junit:${rootProject.ext.junitVersion}"
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.9'

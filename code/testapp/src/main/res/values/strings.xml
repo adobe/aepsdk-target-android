@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">TargetTestApp</string>
+    <string name="set_tntId">Set Tnt Id</string>
+    <string name="get_tntId">Get Tnt Id</string>
+    <string name="set_sessionId">Set Session Id</string>
+    <string name="get_sessionId">Get Session Id</string>
+    <string name="set_thirdPartyId">Set Third Party Id</string>
+    <string name="get_thirdPartyId">Get Third Party Id</string>
+    <string name="execute_raw_request">Execute Raw Request</string>
+    <string name="send_raw_notifications">Send Raw Notifications</string>
+</resources>
