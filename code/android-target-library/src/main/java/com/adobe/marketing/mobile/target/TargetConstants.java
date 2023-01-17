@@ -238,9 +238,17 @@ final class TargetConstants {
         private Lifecycle() {}
     }
 
-    static final class PreviewKeys {
-        static final String DEEPLINK    	= "deeplink";
-
+    static class PreviewKeys {
+        // Target preview Constants
+        static final String PREVIEW_MESSAGE_ID                     = "target-preview-message-id";
+        static final String PREVIEW_PARAMETERS                     = "at_preview_params";
+        static final String PREVIEW_TOKEN                        = "at_preview_token";
+        static final String PREVIEW_ENDPOINT                     = "at_preview_endpoint";
+        static final String DEFAULT_TARGET_PREVIEW_ENDPOINT        = "hal.testandtarget.omniture.com";
+        static final String DEEPLINK        = "deeplink";
+        static final String DEEPLINK_SCHEME = "adbinapp";
+        static final String DEEPLINK_SCHEME_PATH_CANCEL = "cancel";
+        static final String DEEPLINK_SCHEME_PATH_CONFIRM = "confirm";
         private PreviewKeys() {}
     }
 }
