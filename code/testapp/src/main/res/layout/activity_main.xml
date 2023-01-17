@@ -258,5 +258,17 @@
                     android:layout_marginBottom="5dp"
                     android:onClick="resetTarget"
                     android:text="reset target" />
+
+                <Button
+                    android:id="@+id/clearPrefetch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/resetExperiencesLabel"
+                    android:layout_marginStart="37dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="5dp"
+                    android:layout_toEndOf="@+id/resetTarget"
+                    android:onClick="clearPrefetch"
+                    android:text="Clear Prefetch" />
         </RelativeLayout>
 </ScrollView>

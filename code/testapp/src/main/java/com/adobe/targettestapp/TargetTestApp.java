@@ -33,6 +33,7 @@ public class TargetTestApp extends Application {
 		MobileCore.setApplication(this);
 		MobileCore.setLogLevel(LoggingMode.VERBOSE);
 		MobileCore.registerExtensions(Arrays.asList(Target.EXTENSION, Identity.EXTENSION, Lifecycle.EXTENSION), null);
+		// Set the environmentFileID here obtained from Data Collection UI
 		MobileCore.configureWithAppID("");
 	}
 

@@ -47,13 +47,14 @@ public class MainActivity extends AppCompatActivity {
 	private static String thirdPartyId = "";
 	private static final List<Map<String, String>> notificationTokens = new ArrayList<>();
 
+	// Change these Mboxes to your preferences for testing
+	// Enable click metrics for MBOX3
 	private final String MBOX1 = "aep-loc-1", MBOX2 = "aep-loc-2", MBOX3 = "aep-loc-x";
 	private final String DEFAULT1 = "DefaultValue1", DEFAULT2 = "DefaultValue2", DEFAULT3 = "DefaultValueX";
 
 	private static final Map<String, String> mboxParameters = new HashMap<String, String>() {
 		{
 			put("mbox_parameter_key", "mbox_parameter_value");
-			put("at_property", "mbox_parameter_property"); // this will be overridden by the property set via updateConfiguration
 		}
 	};
 
@@ -63,26 +64,11 @@ public class MainActivity extends AppCompatActivity {
 		}
 	};
 
-	private static final Map<String, Object> orderParameters;
-	private static final Map<String, String> productParameters;
-
-	static {
-		orderParameters = new HashMap<>();
-		orderParameters.put("id", "SomeOrderID");
-		orderParameters.put("total", 4445.12);
-	}
-
-	static {
-		productParameters = new HashMap<>();
-		productParameters.put("id", "764334");
-		productParameters.put("categoryId", "Online");
-	}
-
-	private static final TargetProduct targetProduct = new TargetProduct(productParameters.get("id"),
-			productParameters.get("categoryId"));
-	private static final TargetOrder targetOrder = new TargetOrder((String) orderParameters.get("id"),
-			(double) orderParameters.get("total"),
-			(List<String>) orderParameters.get("purchasedProductIds"));
+	private static final TargetProduct targetProduct = new TargetProduct("764334", "Footwear");
+	private static final TargetOrder targetOrder = new TargetOrder("223d24411", 445.12,
+			new ArrayList<String>() {{
+				add("ppId1");
+			}});
 	private static final TargetParameters targetParameters = new TargetParameters.Builder().product(targetProduct).order(
 		targetOrder).parameters(mboxParameters).profileParameters(profileParameters).build();
 
@@ -95,9 +81,9 @@ public class MainActivity extends AppCompatActivity {
 
 		// first run, initialize the activity
 		if (savedInstanceState == null) {
-			runOnUiThread(() -> prefetchStatusTextView.setText("Prefetch status"));
+			prefetchStatusTextView.setText("Prefetch status");
 		} else {
-			runOnUiThread(() -> prefetchStatusTextView.setText(savedInstanceState.getString("prefetchText")));
+			prefetchStatusTextView.setText(savedInstanceState.getString("prefetchText"));
 		}
 	}
 
@@ -124,17 +110,17 @@ public class MainActivity extends AppCompatActivity {
 		final CountDownLatch latch = new CountDownLatch(3);
 		final String[] callbackData = new String[3];
 
-		AdobeCallback<String> adobeCallback = (AdobeCallback<String>) data -> {
+		AdobeCallback<String> adobeCallback = data -> {
 			callbackData[0] = data;
 			latch.countDown();
 		};
 
-		AdobeCallback<String> adobeCallback2 = (AdobeCallback<String>) data -> {
+		AdobeCallback<String> adobeCallback2 = data -> {
 			callbackData[1] = data;
 			latch.countDown();
 		};
 
-		AdobeCallback<String> adobeCallback3 = (AdobeCallback<String>) data -> {
+		AdobeCallback<String> adobeCallback3 = data -> {
 			callbackData[2] = data;
 			latch.countDown();
 		};
@@ -198,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
 
 			@Override
 			public void fail(AdobeError error) {
-				System.out.println(String.format("Error in fetching mbox content and data for (%s)", MBOX1));
+				System.out.println(String.format("Error in fetching content for mbox (%s), error : (%s) ", MBOX1, error.getErrorName()));
 			}
 		};
 
@@ -212,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
 
 			@Override
 			public void fail(AdobeError error) {
-				System.out.println(String.format("Error in fetching mbox content and data for (%s)", MBOX3));
+				System.out.println(String.format("Error in fetching content for mbox (%s), error : (%s) ", MBOX2, error.getErrorName()));
 			}
 		};
 
@@ -226,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
 
 			@Override
 			public void fail(AdobeError error) {
-				System.out.println(String.format("Error in fetching mbox content and data for (%s)", MBOX3));
+				System.out.println(String.format("Error in fetching content for mbox (%s), error : (%s) ", MBOX3, error.getErrorName()));
 			}
 		};
 
@@ -251,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
 						MBOX1);
 			} else {
 				mboxList.add(MBOX1);
-				System.out.println(String.format("Mbox payload received for Mbox (%s) is (%s)", MBOX1, mboxPayload.toString()));
+				System.out.println(String.format("Mbox payload received for Mbox (%s) is (%s)", MBOX1, mboxPayload));
 			}
 		}
 
@@ -263,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
 						MBOX2);
 			} else {
 				mboxList.add(MBOX2);
-				System.out.println(String.format("Mbox payload received for Mbox (%s) is (%s)", MBOX2, mboxPayload.toString()));
+				System.out.println(String.format("Mbox payload received for Mbox (%s) is (%s)", MBOX2, mboxPayload));
 			}
 		}
 
@@ -276,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
 			} else {
 				System.out.println("testingClickMbox retrieve location content successful, content is: " + mboxPayload.getContent());
 				mboxList.add(MBOX3);
-				System.out.println(String.format("Mbox payload received for Mbox (%s) is (%s)", MBOX3, mboxPayload.toString()));
+				System.out.println(String.format("Mbox payload received for Mbox (%s) is (%s)", MBOX3, mboxPayload));
 			}
 		}
 	}
@@ -287,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		}
 
-		// click metrics are enabled for MBOX3 / testingClickMbox, Activity Name: Swarna Click Test - testingProperty, Property: testingProperty
+		// click metrics are enabled for MBOX3
 		if (mboxList.contains(MBOX3)) {
 			Target.locationClicked(MBOX3, targetParameters);
 		}
@@ -301,7 +287,7 @@ public class MainActivity extends AppCompatActivity {
 
 		Target.locationsDisplayed(mboxList, targetParameters);
 	}
-
+	
 	public void prefetchRequests(View view) throws Exception {
 		final CountDownLatch latch = new CountDownLatch(1);
 		final String prefetchStatus[] = new String[1];
@@ -407,10 +393,14 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	public void resetTarget(View view) {
+		Target.resetExperience();
+	}
+
+	public void clearPrefetch(View view) {
 		final TextView prefetchStatusTextView = findViewById(R.id.prefetchStatus);
 		Target.resetExperience();
 		Target.clearPrefetchCache();
-		runOnUiThread(() -> prefetchStatusTextView.setText("Prefetch cache cleared"));
+		prefetchStatusTextView.setText("Prefetch cache cleared");
 		contentPrefetched = false;
 		mboxList.clear();
 	}
@@ -421,7 +411,7 @@ public class MainActivity extends AppCompatActivity {
 		final Map<String, Object> executeMbox1 = new HashMap<String, Object>() {
 			{
 				put("index", 0);
-				put("name", "testmbox1");
+				put("name", MBOX1);
 				put("parameters", new HashMap<String, String>() {
 					{
 						put("mbox_parameter_key1", "mbox_parameter_value1");
@@ -433,7 +423,7 @@ public class MainActivity extends AppCompatActivity {
 		final Map<String, Object> executeMbox2 = new HashMap<String, Object>() {
 			{
 				put("index", 1);
-				put("name", "testmbox2");
+				put("name", MBOX2);
 				put("parameters", new HashMap<String, String>() {
 					{
 						put("mbox_parameter_key2", "mbox_parameter_value2");
@@ -451,6 +441,11 @@ public class MainActivity extends AppCompatActivity {
 				put("execute", new HashMap<String, Object>() {
 					{
 						put("mboxes", executeMboxes);
+					}
+				});
+				put("property", new HashMap<String, Object>(){
+					{
+						put("token", "");
 					}
 				});
 			}
