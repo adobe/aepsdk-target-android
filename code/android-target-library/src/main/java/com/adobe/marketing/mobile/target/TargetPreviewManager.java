@@ -1,9 +1,5 @@
-
-
-
-
 /*
-  Copyright 2022 Adobe. All rights reserved.
+  Copyright 2023 Adobe. All rights reserved.
   This file is licensed to you under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License. You may obtain a copy
   of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -120,12 +116,12 @@ public class TargetPreviewManager {
     protected void enterPreviewModeWithDeepLinkParams(final String clientCode, final String deepLink) {
 
         if (networkService == null) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "enterPreviewModeWithDeepLinkParams, Unable to enter preview mode, networkServices is not available.");
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "enterPreviewModeWithDeepLinkParams - Unable to enter preview mode, NetworkServices is not available.");
             return;
         }
 
         if (uiService == null) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "enterPreviewModeWithDeepLinkParams, Unable to enter preview mode,  UIService is not available.");
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "enterPreviewModeWithDeepLinkParams - Unable to enter preview mode, UIService is not available.");
             return;
         }
 
@@ -142,7 +138,7 @@ public class TargetPreviewManager {
         URI url;
         try {
             url = URI.create(deepLink);
-        } catch (final Exception e) {
+        } catch (final IllegalArgumentException e) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     String.format("enterPreviewModeWithDeepLinkParams - Unable to enter preview mode, Invalid deep link provided, %s. Error (%s)",
                             deepLink, e.getMessage()));
@@ -150,15 +146,14 @@ public class TargetPreviewManager {
         }
 
         // bail out on no preview parameters found in deepLink
-        String query = url.getRawQuery();
-        Map<String, String> queryParams = TargetUtils.extractQueryParameters(query);
+        final String query = url.getRawQuery();
+        final Map<String, String> queryParams = TargetUtils.extractQueryParameters(query);
 
-        if (queryParams == null || queryParams.isEmpty()) {
+        if (TargetUtils.isNullOrEmpty(queryParams)) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                     String.format("enterPreviewModeWithDeepLinkParams - Unable to enter preview mode. Cannot retrieve preview token from provided deeplink : %s", deepLink));
             return;
         }
-
 
         // setup for preview
         if (setupTargetPreviewParameters(queryParams)) {
@@ -189,14 +184,14 @@ public class TargetPreviewManager {
 
         try {
             url = URI.create(stringUrl);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "previewConfirmedWithUrl - Invalid URL obtained from Target Preview Message %s",
                     stringUrl);
             return;
         }
 
         // bail out if the url scheme is wrong
-        String scheme = url.getScheme();
+        final String scheme = url.getScheme();
 
         if (!TargetConstants.PreviewKeys.DEEPLINK_SCHEME.equals(scheme)) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -205,7 +200,7 @@ public class TargetPreviewManager {
         }
 
         // if the deepLink scheme path represents cancel,
-        String host = url.getHost();
+        final String host = url.getHost();
 
         if (TargetConstants.PreviewKeys.DEEPLINK_SCHEME_PATH_CANCEL.equals(host)) {
             resetTargetPreviewProperties();
@@ -213,21 +208,21 @@ public class TargetPreviewManager {
         } else if (TargetConstants.PreviewKeys.DEEPLINK_SCHEME_PATH_CONFIRM.equals(host)) {
             String query = url.getRawQuery();
 
-            Map<String, String> queryParams = TargetUtils.extractQueryParameters(query);
+            final Map<String, String> queryParams = TargetUtils.extractQueryParameters(query);
 
-            if (queryParams == null || queryParams.isEmpty()) {
+            if (TargetUtils.isNullOrEmpty(queryParams)) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, String.format("previewConfirmedWithUrl - Target Preview URL does not have preview query parameter : URL : %s", query));
                 return;
             }
 
-            String previewParameters = queryParams.get(TargetConstants.PreviewKeys.PREVIEW_PARAMETERS);
+            final String previewParameters = queryParams.get(TargetConstants.PreviewKeys.PREVIEW_PARAMETERS);
 
             try {
                 if (!StringUtils.isNullOrEmpty(previewParameters)) {
                     this.previewParams = URLDecoder.decode(previewParameters, "UTF-8");
                 }
 
-            } catch (UnsupportedEncodingException e) {
+            } catch (final UnsupportedEncodingException e) {
                 Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to URL decode the preview parameters, Error %s", e);
             }
 
@@ -257,11 +252,11 @@ public class TargetPreviewManager {
         }
 
         fetchingWebView = true;
-        String targetUrl = getUrlForTargetPreviewRequest();
+        final String targetUrl = getUrlForTargetPreviewRequest();
         Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "fetchWebView - Sending preview request to url %s", targetUrl);
 
         // prepare the request headers
-        Map<String, String> requestHeaders = new HashMap<>();
+        final Map<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put(NetworkingConstants.Headers.ACCEPT, NetworkingConstants.HeaderValues.ACCEPT_TEXT_HTML);
         requestHeaders.put(NetworkingConstants.Headers.CONTENT_TYPE,NetworkingConstants.HeaderValues.CONTENT_TYPE_URL_ENCODED);
 
@@ -275,7 +270,7 @@ public class TargetPreviewManager {
 
 
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                String serverResponse = StreamUtils.readAsString(connection.getInputStream());
+                final String serverResponse = StreamUtils.readAsString(connection.getInputStream());
                 if (!StringUtils.isNullOrEmpty(serverResponse)) {
                     webViewHtml = serverResponse;
                     Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Successfully fetched webview for preview mode, response body %s",
@@ -395,9 +390,9 @@ public class TargetPreviewManager {
      */
     private void createAndShowMessage() {
 
-        TargetPreviewFullscreenDelegate previewFullscreenListener = new TargetPreviewFullscreenDelegate(this);
+        final TargetPreviewFullscreenDelegate previewFullscreenListener = new TargetPreviewFullscreenDelegate(this);
         final MessageSettings messageSettings = new MessageSettings();
-        // ACS fullscreen messages are displayed at 100% scale
+        // Target fullscreen messages are displayed at 100% scale
         messageSettings.setHeight(FILL_DEVICE_DISPLAY);
         messageSettings.setWidth(FILL_DEVICE_DISPLAY);
         messageSettings.setParent(this);
@@ -407,7 +402,7 @@ public class TargetPreviewManager {
         messageSettings.setDismissAnimation(MessageSettings.MessageAnimation.NONE);
         messageSettings.setBackdropColor("#FFFFFF"); // html code for white
         messageSettings.setBackdropOpacity(1);
-        FullscreenMessage message = uiService.createFullscreenMessage(webViewHtml, previewFullscreenListener, false , messageSettings);
+        final FullscreenMessage message = uiService.createFullscreenMessage(webViewHtml, previewFullscreenListener, false , messageSettings);
 
         if (message != null) {
             message.show();

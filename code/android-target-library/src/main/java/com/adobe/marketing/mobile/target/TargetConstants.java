@@ -240,7 +240,6 @@ final class TargetConstants {
 
     static class PreviewKeys {
         // Target preview Constants
-        static final String PREVIEW_MESSAGE_ID                     = "target-preview-message-id";
         static final String PREVIEW_PARAMETERS                     = "at_preview_params";
         static final String PREVIEW_TOKEN                        = "at_preview_token";
         static final String PREVIEW_ENDPOINT                     = "at_preview_endpoint";

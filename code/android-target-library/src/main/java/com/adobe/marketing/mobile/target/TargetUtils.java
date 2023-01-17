@@ -98,7 +98,7 @@ class TargetUtils {
         if (StringUtils.isNullOrEmpty(queryString)) {
             return null;
         }
-        final Map<String, String> parameters = new HashMap<String, String>();
+        final Map<String, String> parameters = new HashMap<>();
         final String[] paramArray = queryString.split("&");
 
         for (String currentParam : paramArray) {
