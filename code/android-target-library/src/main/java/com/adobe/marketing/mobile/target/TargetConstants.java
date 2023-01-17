@@ -14,9 +14,8 @@ package com.adobe.marketing.mobile.target;
 
 import java.util.HashMap;
 
-public final class TargetConstants {
-    public static final String LOG_TAG = "Target";
-    public static final String EXTENSION_VERSION = "2.0.0";
+final class TargetConstants {
+    static final String LOG_TAG = "Target";
     static final String EXTENSION_NAME = "com.adobe.target";
     static final String FRIENDLY_NAME = "Target";
 
@@ -25,6 +24,7 @@ public final class TargetConstants {
     static final String DELIVERY_API_URL_BASE = "https://%s/rest/v1/delivery/?client=%s&sessionId=%s";
     static final String REQUEST_CONTENT_TYPE  	= "application/json";
     static final String MBOX_AT_PROPERTY_KEY  		= "at_property";
+    static final String A4T_ACTION_NAME = "AnalyticsForTarget";
 
     static final int DEFAULT_NETWORK_TIMEOUT = 2;
     static final int DEFAULT_TARGET_SESSION_TIMEOUT_SEC = 30 * 60; // 30 mins
@@ -91,6 +91,14 @@ public final class TargetConstants {
         private ContextDataKeys() {}
     }
 
+    static class TargetResponse {
+        static final String ANALYTICS_PAYLOAD = "analytics.payload";
+        static final String RESPONSE_TOKENS = "responseTokens";
+        static final String CLICK_METRIC_ANALYTICS_PAYLOAD = "clickmetric.analytics.payload";
+
+        private TargetResponse() {}
+    }
+
 
     static final String DATA_STORE_KEY = "ADOBEMOBILE_TARGET";
 
@@ -104,90 +112,57 @@ public final class TargetConstants {
         private DataStoreKeys() {}
     }
 
-    public static final class EventName {
-        public static final String PREFETCH_CONTENT = "TargetPrefetchContent";
-        public static final String LOAD_REQUEST = "TargetLoadRequest";
-        public static final String LOCATIONS_DISPLAYED = "TargetLocationsDisplayed";
-        public static final String LOCATION_CLICKED = "TargetLocationClicked";
-        public static final String TARGET_REQUEST_RESPONSE = "TargetRequestResponse";
-        public static final String GET_THIRD_PARTY_ID = "TargetGetThirdPartyIdentifier";
-        public static final String SET_THIRD_PARTY_ID = "TargetSetThirdPartyIdentifier";
-        public static final String GET_TNT_ID = "TargetGetTnTIdentifier";
-        public static final String SET_TNT_ID = "TargetSetTnTIdentifier";
-        public static final String GET_SESSION_ID = "TargetGetSessionIdentifier";
-        public static final String SET_SESSION_ID = "TargetSetSessionIdentifier";
-        public static final String REQUEST_RESET = "TargetRequestReset";
-        public static final String CLEAR_PREFETCH_CACHE = "TargetClearPrefetchCache";
-        public static final String SET_PREVIEW_DEEPLINK = "TargetSetPreviewRestartDeeplink";
-        public static final String TARGET_RAW_REQUEST = "TargetRawRequest";
-        public static final String TARGET_RAW_NOTIFICATIONS = "TargetRawNotifications";
-        public static final String IDENTITY_RESPONSE_EVENT_NAME = "TargetIdentity";
-        public static final String ANALYTICS_FOR_TARGET_REQUEST_EVENT_NAME = "AnalyticsForTargetRequest";
-        public static final String IDENTITY_RESET_COMPLETION_EVENT_NAME = "TargetReset";
-        public static final String TARGET_RESPONSE_EVENT_NAME = "TargetResponse";
-        public static final String TARGET_RAW_RESPONSE_EVENT_NAME = "TargetRawResponse";
-        public static final String TARGET_VIEW_PREFETCH_RESPONSE_EVENT_NAME = "TargetViewPrefetchResponse";
-        public static final String TARGET_PREVIEW_LIFECYCLE_EVENT_NAME = "TargetPreviewLifecycle";
+    static final class EventName {
+        static final String IDENTITY_RESPONSE = "TargetResponseIdentity";
+        static final String ANALYTICS_FOR_TARGET_REQUEST_EVENT_NAME = "AnalyticsForTargetRequest";
+        static final String IDENTITY_RESET_COMPLETION_EVENT_NAME = "TargetReset";
+        static final String PREFETCH_RESPONSE = "TargetPrefetchResponse";
+        static final String TARGET_REQUEST_RESPONSE = "TargetRequestResponse";
+        static final String TARGET_RAW_RESPONSE_EVENT_NAME = "TargetRawResponse";
 
         private EventName() {}
     }
 
-    public static final class EventType {
-        public static final String TARGET = "com.adobe.eventType.target";
-
-        private EventType() {}
-    }
-
-
-    public static final class EventSource {
-        public static final String REQUEST_CONTENT = "com.adobe.eventSource.requestContent";
-        public static final String RESPONSE_CONTENT = "com.adobe.eventSource.responseContent";
-        public static final String REQUEST_IDENTITY = "com.adobe.eventSource.requestIdentity";
-        public static final String REQUEST_RESET = "com.adobe.eventSource.requestReset";
-        
-        private EventSource() {}
-    }
-
-    public static final class EventDataKeys {
-        public static final String MBOX_NAME = "mboxname";
-        public static final String MBOX_NAMES = "mboxnames";
-        public static final String TARGET_PARAMETERS = "targetparams";
-        static final String MBOX_PARAMETERS = "mboxparameters";
-        static final String PROFILE_PARAMETERS = "profileparameters";
-        static final String ORDER_PARAMETERS = "orderparameters";
-        static final String PRODUCT_PARAMETERS = "productparameters";
-        static final String DEFAULT_CONTENT = "defaultcontent";
-        static final String RESPONSE_PAIR_ID = "responsepairid";
-        public static final String EXECUTE = "execute";
-        public static final String PREFETCH = "prefetch";
-        public static final String LOAD_REQUEST = "request";
-        public static final String PREFETCH_ERROR = "prefetcherror";
+    static final class EventDataKeys {
+        static final String MBOX_NAME = "name";
+        static final String MBOX_NAMES = "names";
+        static final String TARGET_PARAMETERS = "targetparams";
+        static final String MBOX_PARAMETERS = "parameters";
+        static final String PROFILE_PARAMETERS = "profileParameters";
+        static final String ORDER_PARAMETERS = "order";
+        static final String PRODUCT_PARAMETERS = "product";
+        static final String DEFAULT_CONTENT = "defaultContent";
+        static final String EXECUTE = "execute";
+        static final String PREFETCH = "prefetch";
+        static final String AT_PROPERTY = "at_property";
+        static final String LOAD_REQUEST = "request";
+        static final String PREFETCH_ERROR = "prefetcherror";
         static final String PREFETCH_RESULT = "prefetchresult";
-        public static final String IS_LOCATION_DISPLAYED = "islocationdisplayed";
-        public static final String IS_LOCATION_CLICKED = "islocationclicked";
-        public static final String THIRD_PARTY_ID = "thirdpartyid";
-        public static final String TNT_ID         = "tntid";
-        public static final String SESSION_ID = "sessionid";
-        public static final String RESET_EXPERIENCE = "resetexperience";
-        public static final String CLEAR_PREFETCH_CACHE = "clearcache";
-        public static final String PREVIEW_RESTART_DEEP_LINK = "restartdeeplink";
-        public static final String IS_RAW_EVENT = "israwevent";
-        public static final String NOTIFICATIONS = "notifications";
-        public static final String RESPONSE_DATA = "responsedata";
-        public static final String TARGET_RESPONSE_EVENT_ID = "responseEventId";
-        public static final String TARGET_RESPONSE_PAIR_ID = "responsePairId";
+        static final String IS_LOCATION_DISPLAYED = "islocationdisplayed";
+        static final String IS_LOCATION_CLICKED = "islocationclicked";
+        static final String THIRD_PARTY_ID = "thirdpartyid";
+        static final String TNT_ID         = "tntid";
+        static final String SESSION_ID = "sessionid";
+        static final String RESET_EXPERIENCE = "resetexperience";
+        static final String CLEAR_PREFETCH_CACHE = "clearcache";
+        static final String PREVIEW_RESTART_DEEP_LINK = "restartdeeplink";
+        static final String IS_RAW_EVENT = "israwevent";
+        static final String NOTIFICATIONS = "notifications";
+        static final String RESPONSE_DATA = "responsedata";
+        static final String TARGET_RESPONSE_EVENT_ID = "responseEventId";
+        static final String TARGET_RESPONSE_PAIR_ID = "responsePairId";
+        static final String TARGET_DATA_PAYLOAD = "data";
         static final String A4T_SESSION_ID = "a.target.sessionId"; // For A4T requests event data.
-        public static final String ANALYTICS_PAYLOAD = "analytics.payload";
-        public static final String RESPONSE_TOKENS = "responseTokens";
-        public static final String CLICK_METRIC_ANALYTICS_PAYLOAD = "clickmetric.analytics.payload";
-        public static final String TARGET_CONTENT = "content";
-        public static final String TARGET_DATA_PAYLOAD = "data";
+        static final String TARGET_CONTENT = "content";
         static final String ID = "id";
         static final String TOKEN = "token";
         static final String CONTEXT = "context";
         static final String EXPERIENCE_CLOUD = "experienceCloud";
         static final String PROPERTY = "property";
         static final String ENVIRONMENT_ID = "environmentId";
+        static final String TRACK_INTERNAL   = "trackinternal";
+        static final String TRACK_ACTION     = "action";
+        static final String CONTEXT_DATA     = "contextdata";
 
         static final class Order {
             static final String ID = "id";
@@ -261,5 +236,11 @@ public final class TargetConstants {
         static final String UPGRADE_EVENT           = "upgradeevent";
 
         private Lifecycle() {}
+    }
+
+    static final class PreviewKeys {
+        static final String DEEPLINK    	= "deeplink";
+
+        private PreviewKeys() {}
     }
 }

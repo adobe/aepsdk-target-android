@@ -106,7 +106,7 @@ public class TargetTests {
             final AdobeCallbackWithError<Event> callbackWithError = callbackCaptor.getValue();
 
             assertNotNull(event);
-            assertEquals("TargetPrefetchContent", event.getName());
+            assertEquals("TargetPrefetchRequest", event.getName());
             assertEquals("com.adobe.eventType.target", event.getType());
             assertEquals("com.adobe.eventSource.requestContent", event.getSource());
 
@@ -115,13 +115,13 @@ public class TargetTests {
             assertNotNull(prefetchData);
             final Map<String, Object> prefetchMbox1 = prefetchData.get(0);
             assertNotNull(prefetchMbox1);
-            assertEquals("mbox1", prefetchMbox1.get("mboxname"));
+            assertEquals("mbox1", prefetchMbox1.get("name"));
             final Map<String, Object> prefetchMbox2 = prefetchData.get(1);
             assertNotNull(prefetchMbox2);
-            assertEquals("mbox2", prefetchMbox2.get("mboxname"));
+            assertEquals("mbox2", prefetchMbox2.get("name"));
             final Map<String, Object> targetParams = (Map<String, Object>) eventData.get("targetparams");
             assertNotNull(targetParams);
-            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("mboxparameters");
+            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("parameters");
             assertNotNull(mboxParameters);
             assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
 
@@ -289,19 +289,19 @@ public class TargetTests {
             assertNotNull(requestData);
             final Map<String, Object> requestMbox1 = requestData.get(0);
             assertNotNull(requestMbox1);
-            assertEquals("mbox1", requestMbox1.get("mboxname"));
-            assertEquals("defaultContent1", requestMbox1.get("defaultcontent"));
-            assertNotNull(requestMbox1.get("responsepairid"));
+            assertEquals("mbox1", requestMbox1.get("name"));
+            assertEquals("defaultContent1", requestMbox1.get("defaultContent"));
+            assertNotNull(requestMbox1.get("responsePairId"));
             assertNull(requestMbox1.get("targetparams"));
             final Map<String, Object> requestMbox2 = requestData.get(1);
             assertNotNull(requestMbox2);
-            assertEquals("mbox2", requestMbox2.get("mboxname"));
-            assertEquals("defaultContent2", requestMbox2.get("defaultcontent"));
-            assertNotNull(requestMbox2.get("responsepairid"));
+            assertEquals("mbox2", requestMbox2.get("name"));
+            assertEquals("defaultContent2", requestMbox2.get("defaultContent"));
+            assertNotNull(requestMbox2.get("responsePairId"));
             assertNull(requestMbox2.get("targetparams"));
             final Map<String, Object> targetParams = (Map<String, Object>) eventData.get("targetparams");
             assertNotNull(targetParams);
-            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("mboxparameters");
+            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("parameters");
             assertNotNull(mboxParameters);
             assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
         }
@@ -469,13 +469,13 @@ public class TargetTests {
 
             final Map<String, Object> eventData = event.getEventData();
             assertEquals(true, eventData.get("islocationdisplayed"));
-            final List<String> mboxesList = (List<String>) eventData.get("mboxnames");
+            final List<String> mboxesList = (List<String>) eventData.get("names");
             assertEquals(2, mboxesList.size());
             assertEquals("mbox1", mboxesList.get(0));
             assertEquals("mbox2", mboxesList.get(1));
             final Map<String, Object> targetParams = (Map<String, Object>) eventData.get("targetparams");
             assertNotNull(targetParams);
-            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("mboxparameters");
+            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("parameters");
             assertNotNull(mboxParameters);
             assertEquals(1, mboxParameters.size());
             assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));
@@ -543,12 +543,12 @@ public class TargetTests {
 
             final Map<String, Object> eventData = event.getEventData();
             assertEquals(true, eventData.get("islocationclicked"));
-            final String mboxName = (String) eventData.get("mboxname");
+            final String mboxName = (String) eventData.get("name");
             assertNotNull(mboxName);
             assertEquals("mbox1", mboxName);
             final Map<String, Object> targetParams = (Map<String, Object>) eventData.get("targetparams");
             assertNotNull(targetParams);
-            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("mboxparameters");
+            final Map<String, String> mboxParameters = (Map<String, String>) targetParams.get("parameters");
             assertNotNull(mboxParameters);
             assertEquals(1, mboxParameters.size());
             assertEquals("mbox_parameter_value", mboxParameters.get("mbox_parameter_key"));

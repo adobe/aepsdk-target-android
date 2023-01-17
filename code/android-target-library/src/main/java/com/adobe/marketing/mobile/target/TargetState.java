@@ -10,6 +10,8 @@
  */
 package com.adobe.marketing.mobile.target;
 
+import androidx.annotation.NonNull;
+
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NamedCollection;
@@ -17,10 +19,13 @@ import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.StringUtils;
 import com.adobe.marketing.mobile.util.TimeUtils;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,9 +35,9 @@ class TargetState {
     private static final String CLASS_NAME = "TargetState";
 
     private final NamedCollection dataStore;
-    private Map<String, JSONObject> prefetchedMbox = new HashMap<>();
-    private Map<String, JSONObject> loadedMbox = new HashMap<>();
-    private List<JSONObject> notifications = new ArrayList<>();
+    private final Map<String, JSONObject> prefetchedMbox = new HashMap<>();
+    private final Map<String, JSONObject> loadedMbox = new HashMap<>();
+    private final List<JSONObject> notifications = new ArrayList<>();
 
     private Map<String, Object> storedConfigurationSharedState = null;
     private String tntId = "";
@@ -40,6 +45,9 @@ class TargetState {
     private String edgeHost = "";
     private String sessionId = "";
     private long sessionTimestampInSeconds = 0L;
+
+    private static final List<String> LOADED_MBOX_ACCEPTED_KEYS = Arrays.asList(TargetJson.Mbox.NAME,
+            TargetJson.METRICS);
 
     TargetState(final NamedCollection dataStore) {
         this.dataStore = dataStore;
@@ -143,10 +151,6 @@ class TargetState {
         return DataReader.optInt(storedConfigurationSharedState, TargetConstants.Configuration.TARGET_NETWORK_TIMEOUT, TargetConstants.DEFAULT_NETWORK_TIMEOUT);
     }
 
-    List<JSONObject> getNotifications() {
-        return notifications;
-    }
-
     /**
      * Get the sessionId either from memory or from the datastore if session is not expired.
      *
@@ -177,6 +181,10 @@ class TargetState {
 
             // update session id timestamp when the new session id is generated
             updateSessionTimestamp(false);
+        } else {
+            if (StringUtils.isNullOrEmpty(sessionId) && dataStore != null) {
+                sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, null);
+            }
         }
 
         return sessionId;
@@ -196,6 +204,10 @@ class TargetState {
         if (isSessionExpired()) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getEdgeHost - Resetting edge host to null as session id expired.");
             updateEdgeHost(null);
+        } else {
+            if (StringUtils.isNullOrEmpty(edgeHost) && dataStore != null) {
+                edgeHost = dataStore.getString(TargetConstants.DataStoreKeys.EDGE_HOST, null);
+            }
         }
         return edgeHost;
     }
@@ -225,6 +237,15 @@ class TargetState {
      */
     Map<String, Object> getStoredConfigurationSharedState() {
         return storedConfigurationSharedState;
+    }
+
+    /**
+     * Returns Target Preview enabled status
+     * @return {@code boolean} {@link TargetConstants.Configuration#TARGET_PREVIEW_ENABLED} value
+     * from the last known Configuration state if present, true otherwise
+     */
+    boolean isPreviewEnabled() {
+        return DataReader.optBoolean(storedConfigurationSharedState, TargetConstants.Configuration.TARGET_PREVIEW_ENABLED, true);
     }
 
     /**
@@ -281,7 +302,7 @@ class TargetState {
      *
      * @param updatedTntId {@link String} containing new tntId that needs to be set.
      */
-    void setTntId(final String updatedTntId) {
+    void updateTntId(final String updatedTntId) {
         tntId = updatedTntId;
 
         if (dataStore != null) {
@@ -306,14 +327,20 @@ class TargetState {
      *
      * @param updatedThirdPartyId {@link String} containing new thirdPartyId that needs to be set.
      */
-    void setThirdPartyId(final String updatedThirdPartyId) {
+    void updateThirdPartyId(final String updatedThirdPartyId) {
         thirdPartyId = updatedThirdPartyId;
         if (dataStore != null) {
             if (StringUtils.isNullOrEmpty(thirdPartyId)) {
+                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+                        "setThirdPartyId - Removed thirdPartyId from the data store, provided thirdPartyId value is null or empty.");
                 dataStore.remove(TargetConstants.DataStoreKeys.THIRD_PARTY_ID);
             } else {
+                Log.debug(TargetConstants.LOG_TAG, "setThirdPartyId - Persisted new thirdPartyId (%s) in the data store.", thirdPartyId);
                 dataStore.setString(TargetConstants.DataStoreKeys.THIRD_PARTY_ID, thirdPartyId);
             }
+        } else {
+            Log.debug(TargetConstants.LOG_TAG, "setTntIsetThirdPartyIddInternal - " + TargetErrors.TARGET_THIRD_PARTY_ID_NOT_PERSISTED,
+                    "Data store is not available.");
         }
     }
 
@@ -343,6 +370,14 @@ class TargetState {
     }
 
     /**
+     * Resets current  sessionId and the sessionTimestampInSeconds
+     */
+    void resetSession() {
+        updateSessionId("");
+        updateSessionTimestamp(true);
+    }
+
+    /**
      * Generates target extension's state data for sharing.
      *
      * @return {@code Map<String, Object>} of this extension's state data
@@ -365,6 +400,49 @@ class TargetState {
         prefetchedMbox.putAll(mboxMap);
     }
 
+    Map<String, JSONObject> getPrefetchedMbox() {
+        return prefetchedMbox;
+    }
+
+    void clearPrefetchedMboxes() {
+        prefetchedMbox.clear();
+    }
+
+    /**
+     * Extracts the supported mbox node parameters that will be stored in loaded mboxes cache and will be
+     * used later on for click notifications.
+     *
+     * @param mBoxResponses the mbox responses list from the target response
+     */
+    void saveLoadedMbox(@NonNull final Map<String, JSONObject> mBoxResponses) {
+        for (Map.Entry<String, JSONObject> mbox : mBoxResponses.entrySet()) {
+            final String mboxName = mbox.getKey();
+            final JSONObject mboxNode = mbox.getValue();
+
+            if (!StringUtils.isNullOrEmpty(mboxName) && !prefetchedMbox.containsKey(mboxName) && mboxNode != null) {
+                final JSONObject clearedMboxNode;
+                try {
+                    clearedMboxNode = new JSONObject(mboxNode.toString());
+                } catch (JSONException e) {
+                    continue;
+                }
+
+                // remove not accepted keys
+                final Iterator<String> iterator = mboxNode.keys();
+
+                while (iterator.hasNext()) {
+                    final String key = iterator.next();
+
+                    if (!LOADED_MBOX_ACCEPTED_KEYS.contains(key)) {
+                        clearedMboxNode.remove(key);
+                    }
+                }
+
+                loadedMbox.put(mboxName, clearedMboxNode);
+            }
+        }
+    }
+
     /**
      * Removes mboxes from loadedMboxes if they are also present in the prefetchedMboxes cache
      */
@@ -374,10 +452,6 @@ class TargetState {
                 loadedMbox.remove(mboxName);
             }
         }
-    }
-
-    Map<String, JSONObject> getPrefetchedMbox() {
-        return prefetchedMbox;
     }
 
     Map<String, JSONObject> getLoadedMbox() {
@@ -392,6 +466,10 @@ class TargetState {
         notifications.add(notification);
     }
 
+    List<JSONObject> getNotifications() {
+        return notifications;
+    }
+
     /**
      * Verifies if current target session is expired.
      *
@@ -403,3 +481,4 @@ class TargetState {
         return (sessionTimestampInSeconds > 0) && ((currentTimeSeconds - sessionTimestampInSeconds) > getSessionTimeout());
     }
 }
+

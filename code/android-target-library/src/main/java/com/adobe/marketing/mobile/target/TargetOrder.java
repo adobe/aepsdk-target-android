@@ -15,6 +15,7 @@ package com.adobe.marketing.mobile.target;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
+import com.adobe.marketing.mobile.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -102,7 +103,7 @@ public class TargetOrder {
 
         try {
             final String id = DataReader.getString(data, TargetConstants.EventDataKeys.Order.ID);
-            if (TargetUtils.isNullOrEmpty(id)) {
+            if (StringUtils.isNullOrEmpty(id)) {
                 Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Cannot create TargetOrder object, provided data Map doesn't contain valid order ID.");
                 return null;
             }

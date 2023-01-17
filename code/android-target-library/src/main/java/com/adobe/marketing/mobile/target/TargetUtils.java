@@ -12,12 +12,22 @@
 
 package com.adobe.marketing.mobile.target;
 
+import androidx.annotation.Nullable;
+
+import com.adobe.marketing.mobile.services.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TimeZone;
 
-public class TargetUtils {
+class TargetUtils {
+    private static final String CLASS_NAME = "TargetUtils";
     private static final long MILLISECONDS_PER_SECOND = 1000L;
     private static final double SECONDS_PER_MINUTE = 60;
 
@@ -37,18 +47,8 @@ public class TargetUtils {
      * @param map input {@code Map<?, ?>} to be tested.
      * @return {@code boolean} result indicating whether the provided {@code map} is null or empty.
      */
-    public static boolean isNullOrEmpty(final Map<?, ?> map) {
+    static boolean isNullOrEmpty(final Map<?, ?> map) {
         return map == null || map.isEmpty();
-    }
-
-    /**
-     * Checks if the given {@code String} is null or empty.
-     *
-     * @param str input {@link String} to be tested.
-     * @return {@code boolean} result indicating whether the provided {@code str} is null or empty.
-     */
-    public static boolean isNullOrEmpty(final String str) {
-        return str == null || str.isEmpty();
     }
 
     /**
@@ -62,4 +62,35 @@ public class TargetUtils {
         return tz.getOffset(now.getTime()) / (double) MILLISECONDS_PER_SECOND / SECONDS_PER_MINUTE;
     }
 
+    /**
+     * Returns a {@code Map<String, String>} instance from a {@code JSONObject} instance if valid, null otherwise
+     *
+     * @param jsonObject {@link JSONObject} instance to be converted
+     * @return {@code Map<String, String} if given object has valid format, null otherwise
+     */
+    @Nullable
+    static Map<String, String> toStringMap(@Nullable final JSONObject jsonObject) {
+        if (jsonObject == null) {
+            return null;
+        }
+
+        final Iterator<String> keyItr = jsonObject.keys();
+        final Map<String, String> map = new HashMap<>();
+
+        while (keyItr.hasNext()) {
+            final String name = keyItr.next();
+
+            try {
+                map.put(name, jsonObject.getString(name));
+            } catch (final JSONException e) {
+                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "The value of [%s] is not a string: %s", name, e);
+            }
+        }
+
+        if(isNullOrEmpty(map)) {
+            return null;
+        }
+
+        return map;
+    }
 }

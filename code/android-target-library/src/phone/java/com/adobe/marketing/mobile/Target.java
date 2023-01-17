@@ -14,14 +14,13 @@ package com.adobe.marketing.mobile;
 
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.target.AdobeTargetDetailedCallback;
-import com.adobe.marketing.mobile.target.TargetConstants;
 import com.adobe.marketing.mobile.target.TargetExtension;
 import com.adobe.marketing.mobile.target.TargetParameters;
 import com.adobe.marketing.mobile.target.TargetPrefetch;
 import com.adobe.marketing.mobile.target.TargetRequest;
-import com.adobe.marketing.mobile.target.TargetUtils;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
+import com.adobe.marketing.mobile.util.StringUtils;
 
 import android.net.Uri;
 
@@ -40,7 +39,78 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Target {
     public static final Class<? extends Extension> EXTENSION = TargetExtension.class;
+
+    static final String LOG_TAG = "Target";
     private static final String CLASS_NAME = "Target";
+    static final String EXTENSION_VERSION = "2.0.0";
+
+    static final class EventName {
+        static final String PREFETCH_REQUEST = "TargetPrefetchRequest";
+        static final String LOAD_REQUEST = "TargetLoadRequest";
+        static final String LOCATIONS_DISPLAYED = "TargetLocationsDisplayed";
+        static final String LOCATION_CLICKED = "TargetLocationClicked";
+        static final String TARGET_REQUEST_RESPONSE = "TargetRequestResponse";
+        static final String GET_THIRD_PARTY_ID = "TargetGetThirdPartyIdentifier";
+        static final String SET_THIRD_PARTY_ID = "TargetSetThirdPartyIdentifier";
+        static final String GET_TNT_ID = "TargetGetTnTIdentifier";
+        static final String SET_TNT_ID = "TargetSetTnTIdentifier";
+        static final String GET_SESSION_ID = "TargetGetSessionIdentifier";
+        static final String SET_SESSION_ID = "TargetSetSessionIdentifier";
+        static final String REQUEST_RESET = "TargetRequestReset";
+        static final String CLEAR_PREFETCH_CACHE = "TargetClearPrefetchCache";
+        static final String SET_PREVIEW_DEEPLINK = "TargetSetPreviewRestartDeeplink";
+        static final String TARGET_RAW_REQUEST = "TargetRawRequest";
+        static final String TARGET_RAW_NOTIFICATIONS = "TargetRawNotifications";
+
+        private EventName() {}
+    }
+
+    static final class EventType {
+        static final String TARGET = "com.adobe.eventType.target";
+
+        private EventType() {}
+    }
+
+
+    static final class EventSource {
+        static final String REQUEST_CONTENT = "com.adobe.eventSource.requestContent";
+        static final String RESPONSE_CONTENT = "com.adobe.eventSource.responseContent";
+        static final String REQUEST_IDENTITY = "com.adobe.eventSource.requestIdentity";
+        static final String REQUEST_RESET = "com.adobe.eventSource.requestReset";
+
+        private EventSource() {}
+    }
+
+    static final class EventDataKeys {
+        static final String MBOX_NAME = "name";
+        static final String MBOX_NAMES = "names";
+        static final String TARGET_PARAMETERS = "targetparams";
+        static final String EXECUTE = "execute";
+        static final String PREFETCH = "prefetch";
+        static final String LOAD_REQUEST = "request";
+        static final String PREFETCH_ERROR = "prefetcherror";
+        static final String IS_LOCATION_DISPLAYED = "islocationdisplayed";
+        static final String IS_LOCATION_CLICKED = "islocationclicked";
+        static final String THIRD_PARTY_ID = "thirdpartyid";
+        static final String TNT_ID         = "tntid";
+        static final String SESSION_ID = "sessionid";
+        static final String RESET_EXPERIENCE = "resetexperience";
+        static final String CLEAR_PREFETCH_CACHE = "clearcache";
+        static final String PREVIEW_RESTART_DEEP_LINK = "restartdeeplink";
+        static final String IS_RAW_EVENT = "israwevent";
+        static final String NOTIFICATIONS = "notifications";
+        static final String RESPONSE_DATA = "responsedata";
+        static final String TARGET_RESPONSE_EVENT_ID = "responseEventId";
+        static final String TARGET_RESPONSE_PAIR_ID = "responsePairId";
+        static final String ANALYTICS_PAYLOAD = "analytics.payload";
+        static final String RESPONSE_TOKENS = "responseTokens";
+        static final String CLICK_METRIC_ANALYTICS_PAYLOAD = "clickmetric.analytics.payload";
+        static final String TARGET_CONTENT = "content";
+        static final String TARGET_DATA_PAYLOAD = "data";
+
+        private EventDataKeys() {}
+    }
+
     private static final String NULL_MBOX_MESSAGE = "Mbox name must not be empty or null";
     private static final String NULL_MBOXES_MESSAGE = "List of Mbox names must not be empty or null";
     private static final String NULL_REQUEST_MESSAGE = "The provided request list for mboxes is empty or null";
@@ -60,7 +130,7 @@ public class Target {
      */
     @NonNull
     public static String extensionVersion() {
-        return TargetConstants.EXTENSION_VERSION;
+        return EXTENSION_VERSION;
     }
 
     /**
@@ -75,7 +145,7 @@ public class Target {
                 return;
             }
 
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "An error occurred while registering the Target extension: (%s) ", extensionError.getErrorName());
         });
     }
@@ -107,7 +177,7 @@ public class Target {
         if (mboxPrefetchList == null || mboxPrefetchList.isEmpty()) {
             error = String.format("Failed to prefetch Target request (%s).",
                             NULL_REQUEST_MESSAGE);
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, error);
+            Log.warning(LOG_TAG, CLASS_NAME, error);
 
             if (callbackWithError != null) {
                 callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
@@ -128,7 +198,7 @@ public class Target {
         if (flattenedPrefetchRequests.isEmpty()) {
             error = String.format("Failed to prefetch Target request (%s).",
                             NO_VALID_REQUEST_MESSAGE);
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, error);
+            Log.warning(LOG_TAG, CLASS_NAME, error);
             if (callbackWithError != null) {
                 callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
             } else if (callback != null) {
@@ -137,12 +207,12 @@ public class Target {
         }
 
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.PREFETCH, flattenedPrefetchRequests);
+        eventData.put(EventDataKeys.PREFETCH, flattenedPrefetchRequests);
         if (parameters != null) {
-            eventData.put(TargetConstants.EventDataKeys.TARGET_PARAMETERS, parameters.toEventData());
+            eventData.put(EventDataKeys.TARGET_PARAMETERS, parameters.toEventData());
         }
 
-        final Event event = new Event.Builder(TargetConstants.EventName.PREFETCH_CONTENT, EventType.TARGET, EventSource.REQUEST_CONTENT)
+        final Event event = new Event.Builder(EventName.PREFETCH_REQUEST, EventType.TARGET, EventSource.REQUEST_CONTENT)
                 .setEventData(eventData).build();
 
         MobileCore.dispatchEventWithResponseCallback(event, DEFAULT_TIMEOUT_MS, new AdobeCallbackWithError<Event>() {
@@ -156,14 +226,14 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (TargetUtils.isNullOrEmpty(eventData)) {
+                if (eventData == null || eventData.isEmpty()) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
                     return;
                 }
 
-                final String prefetchError = DataReader.optString(eventData, TargetConstants.EventDataKeys.PREFETCH_ERROR, null);
+                final String prefetchError = DataReader.optString(eventData, EventDataKeys.PREFETCH_ERROR, null);
                 callback.call(prefetchError);
             }
         });
@@ -189,7 +259,7 @@ public class Target {
     public static void retrieveLocationContent(@NonNull final List<TargetRequest> mboxRequestList,
                                                @Nullable final TargetParameters parameters) {
         if (mboxRequestList == null || mboxRequestList.isEmpty()) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to retrieve Target location content (%s).",
                     NULL_REQUEST_MESSAGE);
             return;
@@ -207,8 +277,8 @@ public class Target {
 
             // Skip the target request objects with null/empty mbox names
             final String mboxName = request.getMboxName();
-            if (TargetUtils.isNullOrEmpty(mboxName)) {
-                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to retrieve Target location content (%s), returning default content.",
+            if (StringUtils.isNullOrEmpty(mboxName)) {
+                Log.warning(LOG_TAG, CLASS_NAME, "Failed to retrieve Target location content (%s), returning default content.",
                         NULL_MBOX_MESSAGE);
                 final String defaultContent = request.getDefaultContent();
                 if (contentWithDataCallback != null) {
@@ -227,7 +297,7 @@ public class Target {
         }
 
         if (flattenedLocationRequests.isEmpty()) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to retrieve Target location content (%s).",
+            Log.warning(LOG_TAG, CLASS_NAME, "Failed to retrieve Target location content (%s).",
                     NO_VALID_REQUEST_MESSAGE);
             return;
         }
@@ -236,14 +306,14 @@ public class Target {
         registerResponseContentEventListener();
 
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.LOAD_REQUEST, flattenedLocationRequests);
+        eventData.put(EventDataKeys.LOAD_REQUEST, flattenedLocationRequests);
         if (parameters != null) {
-            eventData.put(TargetConstants.EventDataKeys.TARGET_PARAMETERS, parameters.toEventData());
+            eventData.put(EventDataKeys.TARGET_PARAMETERS, parameters.toEventData());
         }
 
-        final Event event = new Event.Builder(TargetConstants.EventName.LOAD_REQUEST,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_CONTENT)
+        final Event event = new Event.Builder(EventName.LOAD_REQUEST,
+                EventType.TARGET,
+                EventSource.REQUEST_CONTENT)
                 .setEventData(eventData)
                 .build();
 
@@ -266,22 +336,22 @@ public class Target {
     public static void locationsDisplayed(@NonNull final List<String> mboxNames, @Nullable final TargetParameters targetParameters) {
 
         if (mboxNames == null || mboxNames.size() == 0) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to send display notification (%s).",
                     NULL_MBOXES_MESSAGE);
             return;
         }
 
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.IS_LOCATION_DISPLAYED, true);
-        eventData.put(TargetConstants.EventDataKeys.MBOX_NAMES, mboxNames);
+        eventData.put(EventDataKeys.IS_LOCATION_DISPLAYED, true);
+        eventData.put(EventDataKeys.MBOX_NAMES, mboxNames);
         if (targetParameters != null) {
-            eventData.put(TargetConstants.EventDataKeys.TARGET_PARAMETERS, targetParameters.toEventData());
+            eventData.put(EventDataKeys.TARGET_PARAMETERS, targetParameters.toEventData());
         }
 
-        final Event event = new Event.Builder(TargetConstants.EventName.LOCATIONS_DISPLAYED,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_CONTENT)
+        final Event event = new Event.Builder(EventName.LOCATIONS_DISPLAYED,
+                EventType.TARGET,
+                EventSource.REQUEST_CONTENT)
                 .setEventData(eventData)
                 .build();
 
@@ -298,23 +368,23 @@ public class Target {
      * @param parameters {@link TargetParameters} object for the location clicked
      */
     public static void locationClicked(@NonNull final String mboxName, @Nullable final TargetParameters parameters) {
-        if (TargetUtils.isNullOrEmpty(mboxName)) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+        if (StringUtils.isNullOrEmpty(mboxName)) {
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to send click notification (%s).",
                     NULL_MBOX_MESSAGE);
             return;
         }
 
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.IS_LOCATION_CLICKED, true);
-        eventData.put(TargetConstants.EventDataKeys.MBOX_NAME, mboxName);
+        eventData.put(EventDataKeys.IS_LOCATION_CLICKED, true);
+        eventData.put(EventDataKeys.MBOX_NAME, mboxName);
         if (parameters != null) {
-            eventData.put(TargetConstants.EventDataKeys.TARGET_PARAMETERS, parameters.toEventData());
+            eventData.put(EventDataKeys.TARGET_PARAMETERS, parameters.toEventData());
         }
 
-        final Event event = new Event.Builder(TargetConstants.EventName.LOCATION_CLICKED,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_CONTENT)
+        final Event event = new Event.Builder(EventName.LOCATION_CLICKED,
+                EventType.TARGET,
+                EventSource.REQUEST_CONTENT)
                 .setEventData(eventData)
                 .build();
 
@@ -334,12 +404,12 @@ public class Target {
      */
     public static void getThirdPartyId(@NonNull final AdobeCallback<String> callback) {
         if (callback == null) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to get Target session ID, provided AdobeCallback (callback) is null.");
             return;
         }
 
-        final Event event = new Event.Builder(TargetConstants.EventName.GET_THIRD_PARTY_ID,
+        final Event event = new Event.Builder(EventName.GET_THIRD_PARTY_ID,
                 EventType.TARGET,
                 EventSource.REQUEST_IDENTITY)
                 .build();
@@ -358,14 +428,14 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (TargetUtils.isNullOrEmpty(eventData)) {
+                if (eventData == null || eventData.isEmpty()) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
                     return;
                 }
 
-                final String responseData = (String)eventData.get(TargetConstants.EventDataKeys.THIRD_PARTY_ID);
+                final String responseData = (String)eventData.get(EventDataKeys.THIRD_PARTY_ID);
                 callback.call(responseData);
             }
         });
@@ -380,11 +450,11 @@ public class Target {
      */
     public static void setThirdPartyId(@Nullable final String thirdPartyId) {
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.THIRD_PARTY_ID, thirdPartyId);
+        eventData.put(EventDataKeys.THIRD_PARTY_ID, thirdPartyId);
 
-        final Event event = new Event.Builder(TargetConstants.EventName.SET_THIRD_PARTY_ID,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_IDENTITY)
+        final Event event = new Event.Builder(EventName.SET_THIRD_PARTY_ID,
+                EventType.TARGET,
+                EventSource.REQUEST_IDENTITY)
                 .setEventData(eventData)
                 .build();
 
@@ -406,12 +476,12 @@ public class Target {
      */
     public static void getTntId(@NonNull final AdobeCallback<String> callback) {
         if (callback == null) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to get Target session ID, provided AdobeCallback (callback) is null.");
             return;
         }
 
-        final Event event = new Event.Builder(TargetConstants.EventName.GET_TNT_ID,
+        final Event event = new Event.Builder(EventName.GET_TNT_ID,
                 EventType.TARGET,
                 EventSource.REQUEST_IDENTITY)
                 .build();
@@ -430,14 +500,14 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (TargetUtils.isNullOrEmpty(eventData)) {
+                if (eventData == null || eventData.isEmpty()) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
                     return;
                 }
 
-                final String responseData = (String)eventData.get(TargetConstants.EventDataKeys.TNT_ID);
+                final String responseData = (String)eventData.get(EventDataKeys.TNT_ID);
                 callback.call(responseData);
             }
         });
@@ -459,11 +529,11 @@ public class Target {
      */
     public static void setTntId(@Nullable final String tntId) {
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.TNT_ID, tntId);
+        eventData.put(EventDataKeys.TNT_ID, tntId);
 
-        final Event event = new Event.Builder(TargetConstants.EventName.SET_TNT_ID,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_IDENTITY)
+        final Event event = new Event.Builder(EventName.SET_TNT_ID,
+                EventType.TARGET,
+                EventSource.REQUEST_IDENTITY)
                 .setEventData(eventData)
                 .build();
 
@@ -484,12 +554,12 @@ public class Target {
      */
     public static void getSessionId(@NonNull final AdobeCallback<String> callback) {
         if (callback == null) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to get Target session ID, provided AdobeCallback (callback) is null.");
             return;
         }
 
-        final Event event = new Event.Builder(TargetConstants.EventName.GET_SESSION_ID,
+        final Event event = new Event.Builder(EventName.GET_SESSION_ID,
                 EventType.TARGET,
                 EventSource.REQUEST_IDENTITY)
                 .build();
@@ -508,14 +578,14 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (TargetUtils.isNullOrEmpty(eventData)) {
+                if (eventData == null || eventData.isEmpty()) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
                     return;
                 }
 
-                final String responseData = (String)eventData.get(TargetConstants.EventDataKeys.SESSION_ID);
+                final String responseData = (String)eventData.get(EventDataKeys.SESSION_ID);
                 callback.call(responseData);
             }
         });
@@ -536,11 +606,11 @@ public class Target {
      */
     public static void setSessionId(@Nullable final String sessionId) {
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.SESSION_ID, sessionId);
+        eventData.put(EventDataKeys.SESSION_ID, sessionId);
 
-        final Event event = new Event.Builder(TargetConstants.EventName.SET_SESSION_ID,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_IDENTITY)
+        final Event event = new Event.Builder(EventName.SET_SESSION_ID,
+                EventType.TARGET,
+                EventSource.REQUEST_IDENTITY)
                 .setEventData(eventData)
                 .build();
 
@@ -557,11 +627,11 @@ public class Target {
      */
     public static void resetExperience() {
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.RESET_EXPERIENCE, true);
+        eventData.put(EventDataKeys.RESET_EXPERIENCE, true);
 
-        final Event event = new Event.Builder(TargetConstants.EventName.REQUEST_RESET,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_RESET)
+        final Event event = new Event.Builder(EventName.REQUEST_RESET,
+                EventType.TARGET,
+                EventSource.REQUEST_RESET)
                 .setEventData(eventData)
                 .build();
 
@@ -575,11 +645,11 @@ public class Target {
      */
     public static void clearPrefetchCache() {
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.CLEAR_PREFETCH_CACHE, true);
+        eventData.put(EventDataKeys.CLEAR_PREFETCH_CACHE, true);
 
-        final Event event = new Event.Builder(TargetConstants.EventName.CLEAR_PREFETCH_CACHE,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_RESET)
+        final Event event = new Event.Builder(EventName.CLEAR_PREFETCH_CACHE,
+                EventType.TARGET,
+                EventSource.REQUEST_RESET)
                 .setEventData(eventData)
                 .build();
 
@@ -595,17 +665,17 @@ public class Target {
      */
     public static void setPreviewRestartDeepLink(@NonNull final Uri deepLink) {
         if (deepLink == null) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to set preview restart deeplink as the provided value is null.");
             return;
         }
 
         final Map<String, Object> eventData = new HashMap<>();
-        eventData.put(TargetConstants.EventDataKeys.PREVIEW_RESTART_DEEP_LINK, deepLink.toString());
+        eventData.put(EventDataKeys.PREVIEW_RESTART_DEEP_LINK, deepLink.toString());
 
-        final Event event = new Event.Builder(TargetConstants.EventName.SET_PREVIEW_DEEPLINK,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_CONTENT)
+        final Event event = new Event.Builder(EventName.SET_PREVIEW_DEEPLINK,
+                EventType.TARGET,
+                EventSource.REQUEST_CONTENT)
                 .setEventData(eventData)
                 .build();
 
@@ -627,8 +697,8 @@ public class Target {
         final AdobeCallbackWithError<?> callbackWithError = callback instanceof AdobeCallbackWithError ?
                 (AdobeCallbackWithError<?>) callback : null;
 
-        if (TargetUtils.isNullOrEmpty(request)) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+        if (request == null || request.isEmpty()) {
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to execute raw Target request (%s).", NULL_RAW_REQUEST_MESSAGE);
 
             if (callbackWithError != null) {
@@ -639,9 +709,9 @@ public class Target {
             return;
         }
 
-        if (!request.containsKey(TargetConstants.EventDataKeys.EXECUTE)
-                && !request.containsKey(TargetConstants.EventDataKeys.PREFETCH)) {
-            Log.warning(TargetConstants.LOG_TAG,CLASS_NAME,
+        if (!request.containsKey(EventDataKeys.EXECUTE)
+                && !request.containsKey(EventDataKeys.PREFETCH)) {
+            Log.warning(LOG_TAG,CLASS_NAME,
                     "Failed to execute raw Target request, provided request doesn't contain prefetch or execute data.");
 
             if (callbackWithError != null) {
@@ -653,11 +723,11 @@ public class Target {
         }
 
         final Map<String, Object> eventData = new HashMap<>(request);
-        eventData.put(TargetConstants.EventDataKeys.IS_RAW_EVENT, true);
+        eventData.put(EventDataKeys.IS_RAW_EVENT, true);
 
-        final Event event = new Event.Builder(TargetConstants.EventName.TARGET_RAW_REQUEST,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_CONTENT)
+        final Event event = new Event.Builder(EventName.TARGET_RAW_REQUEST,
+                EventType.TARGET,
+                EventSource.REQUEST_CONTENT)
                 .setEventData(eventData)
                 .build();
 
@@ -673,7 +743,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (TargetUtils.isNullOrEmpty(eventData)) {
+                if (eventData == null || eventData.isEmpty()) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -681,7 +751,7 @@ public class Target {
                 }
 
                 final Map<String, Object> responseData = DataReader.optTypedMap(Object.class,
-                        eventData, TargetConstants.EventDataKeys.RESPONSE_DATA, null);
+                        eventData, EventDataKeys.RESPONSE_DATA, null);
                 callback.call(responseData);
             }
         });
@@ -697,24 +767,24 @@ public class Target {
      * @see #executeRawRequest(Map, AdobeCallback)
      */
     public static void sendRawNotifications(@NonNull final Map<String, Object> request) {
-        if (TargetUtils.isNullOrEmpty(request)) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+        if (request == null || request.isEmpty()) {
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to send raw Target notification(s) (%s).", NULL_RAW_REQUEST_MESSAGE);
             return;
         }
 
-        if (!request.containsKey(TargetConstants.EventDataKeys.NOTIFICATIONS)) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
+        if (!request.containsKey(EventDataKeys.NOTIFICATIONS)) {
+            Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to send raw Target notification(s), provided request doesn't contain notifications data.");
             return;
         }
 
         final Map<String, Object> eventData = new HashMap<>(request);
-        eventData.put(TargetConstants.EventDataKeys.IS_RAW_EVENT, true);
+        eventData.put(EventDataKeys.IS_RAW_EVENT, true);
 
-        final Event event = new Event.Builder(TargetConstants.EventName.TARGET_RAW_NOTIFICATIONS,
-                TargetConstants.EventType.TARGET,
-                TargetConstants.EventSource.REQUEST_CONTENT)
+        final Event event = new Event.Builder(EventName.TARGET_RAW_NOTIFICATIONS,
+                EventType.TARGET,
+                EventSource.REQUEST_CONTENT)
                 .setEventData(eventData)
                 .build();
 
@@ -727,68 +797,60 @@ public class Target {
     private static void registerResponseContentEventListener() {
         // Only register the listener once
         if (!isResponseListenerRegistered) {
-            MobileCore.registerEventListener(TargetConstants.EventType.TARGET, TargetConstants.EventSource.RESPONSE_CONTENT, new AdobeCallbackWithError<Event>() {
-                @Override
-                public void fail(final AdobeError adobeError) {
-                    fail(adobeError);
+            MobileCore.registerEventListener(EventType.TARGET, EventSource.RESPONSE_CONTENT, event -> {
+                if (!event.getName().equals(EventName.TARGET_REQUEST_RESPONSE)) {
+                    return;
                 }
 
-                @Override
-                public void call(final Event event) {
-                    if (!event.getName().equals(TargetConstants.EventName.TARGET_REQUEST_RESPONSE)) {
-                        return;
-                    }
+                final Map<String, Object> eventData = event.getEventData();
+                if (eventData == null || eventData.isEmpty()) {
+                    Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, response event data is null or empty.");
+                    return;
+                }
 
-                    final Map<String, Object> eventData = event.getEventData();
-                    if (TargetUtils.isNullOrEmpty(eventData)) {
-                       fail(AdobeError.UNEXPECTED_ERROR);
-                        return;
-                    }
+                String id = null;
+                try {
+                    id = DataReader.getString(eventData, EventDataKeys.TARGET_RESPONSE_EVENT_ID);
+                } catch (final DataReaderException e) {
+                    Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is invalid (%s).", e.getLocalizedMessage());
+                }
+                if (StringUtils.isNullOrEmpty(id)) {
+                    Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is not available.");
+                    return;
+                }
 
-                    String id = null;
-                    try {
-                        id = DataReader.getString(eventData, TargetConstants.EventDataKeys.TARGET_RESPONSE_EVENT_ID);
-                    } catch (final DataReaderException e) {
-                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is invalid (%s).", e.getLocalizedMessage());
-                    }
-                    if (TargetUtils.isNullOrEmpty(id)) {
-                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responseEventId is not available.");
-                        return;
-                    }
+                String responsePairId = null;
+                try {
+                    responsePairId = DataReader.getString(eventData, EventDataKeys.TARGET_RESPONSE_PAIR_ID);
+                } catch (final DataReaderException e) {
+                    Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is invalid (%s).", e.getLocalizedMessage());
+                }
+                if (StringUtils.isNullOrEmpty(responsePairId)) {
+                    Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is not available.");
+                    return;
+                }
 
-                    String responsePairId = null;
-                    try {
-                        responsePairId = DataReader.getString(eventData, TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID);
-                    } catch (final DataReaderException e) {
-                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is invalid (%s).", e.getLocalizedMessage());
-                    }
-                    if (TargetUtils.isNullOrEmpty(responsePairId)) {
-                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,  "Cannot find target request, responsePairId is not available.");
-                        return;
-                    }
+                final String requestSearchId = id+"-"+responsePairId;
+                final TargetRequest request = pendingTargetRequestsMap.get(requestSearchId);
+                if (request == null) {
+                    Log.warning(LOG_TAG, CLASS_NAME,  "Missing target request for (%s)", requestSearchId);
+                    return;
+                }
 
-                    final String requestSearchId = id+"-"+responsePairId;
-                    final TargetRequest request = pendingTargetRequestsMap.get(requestSearchId);
-                    if (request == null) {
-                        Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,  "Missing target request for (%s)", requestSearchId);
-                        return;
-                    }
+                final AdobeCallback<String> callback = request.getContentCallback();
+                final AdobeTargetDetailedCallback contentWithDataCallback = request.getContentWithDataCallback();
 
-                    final AdobeCallback<String> callback = request.getContentCallback();
-                    final AdobeTargetDetailedCallback contentWithDataCallback = request.getContentWithDataCallback();
-
-                    if (contentWithDataCallback != null) {
-                        final Map<String, Object> mboxPayloadMap = createMboxPayloadMap(DataReader.optTypedMap(Object.class,
-                                eventData, TargetConstants.EventDataKeys.TARGET_DATA_PAYLOAD, null), request);
-                        final String content = DataReader.optString(eventData,
-                                TargetConstants.EventDataKeys.TARGET_CONTENT,
-                                request.getDefaultContent());
-                        contentWithDataCallback.call(content, mboxPayloadMap);
-                    } else if (callback != null) {
-                        callback.call(DataReader.optString(eventData,
-                                TargetConstants.EventDataKeys.TARGET_CONTENT,
-                                request.getDefaultContent()));
-                    }
+                if (contentWithDataCallback != null) {
+                    final Map<String, Object> mboxPayloadMap = createMboxPayloadMap(DataReader.optTypedMap(Object.class,
+                            eventData, EventDataKeys.TARGET_DATA_PAYLOAD, null), request);
+                    final String content = DataReader.optString(eventData,
+                            EventDataKeys.TARGET_CONTENT,
+                            request.getDefaultContent());
+                    contentWithDataCallback.call(content, mboxPayloadMap);
+                } else if (callback != null) {
+                    callback.call(DataReader.optString(eventData,
+                            EventDataKeys.TARGET_CONTENT,
+                            request.getDefaultContent()));
                 }
             });
             isResponseListenerRegistered = true;
@@ -806,39 +868,39 @@ public class Target {
      * @return a {@code Map<String, Object>} containing mbox values received in {@code data} map.
      */
     private static Map<String, Object> createMboxPayloadMap(final Map<String, Object> data, final TargetRequest request) {
-        if (TargetUtils.isNullOrEmpty(data)) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+        if (data == null || data.isEmpty()) {
+            Log.debug(LOG_TAG, CLASS_NAME,
                     "The data payload map containing response tokens and analytics payload is not present for the mbox location (%s)", request.getMboxName());
             return null;
         }
         final Map<String, Object> mboxPayload = new HashMap<>();
 
         final Map<String, String> a4tParams = DataReader.optStringMap(data,
-                TargetConstants.EventDataKeys.ANALYTICS_PAYLOAD,
+                EventDataKeys.ANALYTICS_PAYLOAD,
                 null);
         if (a4tParams != null) {
-            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "A4t params map is present for mbox location (%s)", request.getMboxName());
-            mboxPayload.put(TargetConstants.EventDataKeys.ANALYTICS_PAYLOAD, a4tParams);
+            Log.trace(LOG_TAG, CLASS_NAME, "A4t params map is present for mbox location (%s)", request.getMboxName());
+            mboxPayload.put(EventDataKeys.ANALYTICS_PAYLOAD, a4tParams);
         }
 
         final Map<String, String> responseTokens = DataReader.optStringMap(data,
-                TargetConstants.EventDataKeys.RESPONSE_TOKENS,
+                EventDataKeys.RESPONSE_TOKENS,
                 null);
         if (responseTokens != null) {
-            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "Response tokens map is present for mbox location (%s)", request.getMboxName());
-            mboxPayload.put(TargetConstants.EventDataKeys.RESPONSE_TOKENS, responseTokens);
+            Log.trace(LOG_TAG, CLASS_NAME, "Response tokens map is present for mbox location (%s)", request.getMboxName());
+            mboxPayload.put(EventDataKeys.RESPONSE_TOKENS, responseTokens);
         }
 
         final Map<String, String> clickMetricA4TParams = DataReader.optStringMap(data,
-                TargetConstants.EventDataKeys.CLICK_METRIC_ANALYTICS_PAYLOAD,
+                EventDataKeys.CLICK_METRIC_ANALYTICS_PAYLOAD,
                 null);
         if (clickMetricA4TParams != null) {
-            Log.trace(TargetConstants.LOG_TAG, CLASS_NAME, "Click metrics map is present for mbox location (%s)", request.getMboxName());
-            mboxPayload.put(TargetConstants.EventDataKeys.CLICK_METRIC_ANALYTICS_PAYLOAD, clickMetricA4TParams);
+            Log.trace(LOG_TAG, CLASS_NAME, "Click metrics map is present for mbox location (%s)", request.getMboxName());
+            mboxPayload.put(EventDataKeys.CLICK_METRIC_ANALYTICS_PAYLOAD, clickMetricA4TParams);
         }
 
         if (mboxPayload.isEmpty()) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
+            Log.debug(LOG_TAG, CLASS_NAME,
                     "Neither response tokens are activated on Target UI nor activity is A4T enabled, returning null data payload for mbox location (%s)",
                     request.getMboxName());
             return null;

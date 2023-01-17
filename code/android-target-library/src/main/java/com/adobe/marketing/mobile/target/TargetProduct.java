@@ -15,6 +15,7 @@ package com.adobe.marketing.mobile.target;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
+import com.adobe.marketing.mobile.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -87,7 +88,7 @@ public class TargetProduct {
 
         try {
             final String id = DataReader.getString(data, TargetConstants.EventDataKeys.Product.ID);
-            if (TargetUtils.isNullOrEmpty(id)) {
+            if (StringUtils.isNullOrEmpty(id)) {
                 Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Cannot create TargetProduct object, provided data Map doesn't contain valid product ID.");
                 return null;
             }

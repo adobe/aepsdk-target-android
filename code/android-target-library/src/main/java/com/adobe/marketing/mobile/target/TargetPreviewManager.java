@@ -46,6 +46,19 @@ public class TargetPreviewManager {
         this.extensionApi = extensionApi;
     }
 
+    protected void enterPreviewModeWithDeepLinkParams(final String clientCode, final String deepLink) {
+        // todo
+    }
+
+    /**
+     * Sets the local variable {@code #restartUrl} with the provided value.
+     *
+     * @param restartDeepLink {@link String} deeplink
+     */
+    protected void setRestartDeepLink(final String restartDeepLink) {
+        restartUrl = restartDeepLink;
+    }
+
     /**
      * Returns current preview parameters representing the json received from target servers as a {@code String}.
      * <p>
