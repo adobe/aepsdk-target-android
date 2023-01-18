@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+    Copyright 2023 Adobe. All rights reserved.
+    This file is licensed to you under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software distributed under
+    the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+    OF ANY KIND, either express or implied. See the License for the specific language
+    governing permissions and limitations under the License.
+
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:focusable="auto"
+            android:focusableInTouchMode="true">
+
+                <TextView
+                    android:id="@+id/newApiLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="16dp"
+                    android:text="Target APIs" />
+
+                <Button
+                    android:id="@+id/prefetchContentNew"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/newApiLabel"
+                    android:layout_alignParentLeft="true"
+                    android:layout_marginTop="0dp"
+                    android:onClick="prefetchRequests"
+                    android:text="Prefetch Content" />
+
+                <TextView
+                    android:id="@+id/prefetchStatus"
+                    android:layout_width="161dp"
+                    android:layout_height="wrap_content"
+                    android:layout_alignTop="@id/prefetchContentNew"
+                    android:layout_alignParentRight="true"
+                    android:layout_marginStart="0dp"
+                    android:layout_marginLeft="0dp"
+                    android:layout_marginTop="16dp"
+                    android:text="Prefetch Status" />
+
+
+                <Button
+                    android:id="@+id/retrieveLocation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/prefetchContentNew"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_marginStart="0dp"
+                    android:layout_marginLeft="0dp"
+                    android:layout_marginTop="0dp"
+                    android:onClick="retrieveLocation"
+                    android:text="retrieve location" />
+
+                <Button
+                    android:id="@+id/locationClicked"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/retrieveLocation"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_marginTop="0dp"
+                    android:onClick="locationsClicked"
+                    android:text="location clicked" />
+
+                <Button
+                    android:id="@+id/locationsDisplayed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/prefetchContentNew"
+                    android:layout_alignTop="@id/locationClicked"
+                    android:layout_alignParentRight="true"
+                    android:layout_marginTop="0dp"
+                    android:onClick="locationsDisplayed"
+                    android:text="locations displayed" />
+
+                <Button
+                    android:id="@+id/retrieveLocationWithPayload"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/locationClicked"
+                    android:layout_alignLeft="@id/locationClicked"
+                    android:layout_marginTop="0dp"
+                    android:onClick="retrieveLocationWithPayloadCallback"
+                    android:text="Retrieve Location With Payload Callback" />
+
+                <TextView
+                    android:id="@+id/TargetIdentitiesLabel"
+                    android:layout_width="120dp"
+                    android:layout_height="25dp"
+                    android:layout_below="@id/retrieveLocationWithPayload"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="0dp"
+                    android:text="Target Identities" />
+
+                <Button
+                    android:id="@+id/setTntId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/TargetIdentitiesLabel"
+                    android:layout_alignLeft="@id/retrieveLocationWithPayload"
+                    android:layout_marginTop="0dp"
+                    android:onClick="setTntId"
+                    android:text="@string/set_tntId" />
+
+                <EditText
+                    android:id="@+id/setTntIdInput"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignTop="@id/setTntId"
+                    android:layout_toLeftOf="@id/getTntId"
+                    android:layout_toRightOf="@id/setTntId"
+                    android:ems="10"
+                    android:hint="tntId value"
+                    android:inputType="none"
+                    android:singleLine="true"
+                    tools:ignore="TouchTargetSizeCheck" />
+
+                <Button
+                    android:id="@+id/getTntId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/retrieveLocationWithPayload"
+                    android:layout_alignTop="@id/setTntId"
+                    android:layout_alignParentRight="true"
+                    android:layout_marginTop="0dp"
+                    android:onClick="getTntId"
+                    android:text="@string/get_tntId" />
+
+                <Button
+                    android:id="@+id/setSessionId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/setTntId"
+                    android:layout_alignLeft="@id/setTntId"
+                    android:layout_marginTop="0dp"
+                    android:onClick="setSessionId"
+                    android:text="@string/set_sessionId" />
+
+                <EditText
+                    android:id="@+id/setSessionIdInput"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignTop="@id/setSessionId"
+                    android:layout_toLeftOf="@id/getSessionId"
+                    android:layout_toRightOf="@id/setSessionId"
+                    android:ems="10"
+                    android:hint="sessionId value"
+                    android:inputType="none"
+                    android:singleLine="true"
+                    tools:ignore="TouchTargetSizeCheck" />
+
+                <Button
+                    android:id="@+id/getSessionId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/getTntId"
+                    android:layout_alignTop="@id/setSessionId"
+                    android:layout_alignParentRight="true"
+                    android:layout_marginTop="0dp"
+                    android:onClick="getSessionId"
+                    android:text="@string/get_sessionId" />
+
+                <Button
+                    android:id="@+id/setThirdPartyId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/setSessionId"
+                    android:layout_alignLeft="@id/setSessionId"
+                    android:layout_marginTop="0dp"
+                    android:onClick="setThirdPartyId"
+                    android:text="@string/set_thirdPartyId" />
+
+                <EditText
+                    android:id="@+id/setTpIdInput"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignTop="@id/setThirdPartyId"
+                    android:layout_toLeftOf="@id/getThirdPartyId"
+                    android:layout_toRightOf="@id/setThirdPartyId"
+                    android:ems="10"
+                    android:hint="tpId value"
+                    android:inputType="none"
+                    android:singleLine="true"
+                    tools:ignore="TouchTargetSizeCheck" />
+
+                <Button
+                    android:id="@+id/getThirdPartyId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignTop="@id/setThirdPartyId"
+                    android:layout_alignParentRight="true"
+                    android:onClick="getThirdPartyId"
+                    android:text="@string/get_thirdPartyId" />
+
+                <TextView
+                    android:id="@+id/rawApiLabel"
+                    android:layout_width="120dp"
+                    android:layout_height="25dp"
+                    android:layout_below="@id/setThirdPartyId"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="0dp"
+                    android:text="Raw Target APIs" />
+
+                <Button
+                    android:id="@+id/executeRawRequest"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/rawApiLabel"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_marginStart="0dp"
+                    android:layout_marginLeft="0dp"
+                    android:layout_marginTop="0dp"
+                    android:onClick="executeRawRequest"
+                    android:text="@string/execute_raw_request" />
+
+                <Button
+                    android:id="@+id/sendRawNotifications"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/executeRawRequest"
+                    android:layout_alignParentLeft="true"
+                    android:layout_marginTop="0dp"
+                    android:onClick="sendRawNotifications"
+                    android:text="@string/send_raw_notifications" />
+
+                <TextView
+                    android:id="@+id/resetExperiencesLabel"
+                    android:layout_width="120dp"
+                    android:layout_height="25dp"
+                    android:layout_below="@id/sendRawNotifications"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="0dp"
+                    android:text="Reset Experiences" />
+
+                <Button
+                    android:id="@+id/resetTarget"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/resetExperiencesLabel"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="5dp"
+                    android:onClick="resetTarget"
+                    android:text="reset target" />
+
+                <Button
+                    android:id="@+id/clearPrefetch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/resetExperiencesLabel"
+                    android:layout_marginStart="37dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="5dp"
+                    android:layout_toEndOf="@+id/resetTarget"
+                    android:onClick="clearPrefetch"
+                    android:text="Clear Prefetch" />
+        </RelativeLayout>
+</ScrollView>
