@@ -20,6 +20,7 @@ import com.adobe.marketing.mobile.target.TargetPrefetch;
 import com.adobe.marketing.mobile.target.TargetRequest;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
+import com.adobe.marketing.mobile.util.MapUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
 
 import android.net.Uri;
@@ -226,7 +227,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (MapUtils.isNullOrEmpty(eventData)) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -428,7 +429,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (MapUtils.isNullOrEmpty(eventData)) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -500,7 +501,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (MapUtils.isNullOrEmpty(eventData)) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -578,7 +579,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (MapUtils.isNullOrEmpty(eventData)) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -697,7 +698,7 @@ public class Target {
         final AdobeCallbackWithError<?> callbackWithError = callback instanceof AdobeCallbackWithError ?
                 (AdobeCallbackWithError<?>) callback : null;
 
-        if (request == null || request.isEmpty()) {
+        if (MapUtils.isNullOrEmpty(request)) {
             Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to execute raw Target request (%s).", NULL_RAW_REQUEST_MESSAGE);
 
@@ -743,7 +744,7 @@ public class Target {
             @Override
             public void call(final Event event) {
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (MapUtils.isNullOrEmpty(eventData)) {
                     if (callbackWithError != null) {
                         callbackWithError.fail(AdobeError.UNEXPECTED_ERROR);
                     }
@@ -767,7 +768,7 @@ public class Target {
      * @see #executeRawRequest(Map, AdobeCallback)
      */
     public static void sendRawNotifications(@NonNull final Map<String, Object> request) {
-        if (request == null || request.isEmpty()) {
+        if (MapUtils.isNullOrEmpty(request)) {
             Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to send raw Target notification(s) (%s).", NULL_RAW_REQUEST_MESSAGE);
             return;
@@ -803,7 +804,7 @@ public class Target {
                 }
 
                 final Map<String, Object> eventData = event.getEventData();
-                if (eventData == null || eventData.isEmpty()) {
+                if (MapUtils.isNullOrEmpty(eventData)) {
                     Log.debug(LOG_TAG, CLASS_NAME,  "Cannot find target request, response event data is null or empty.");
                     return;
                 }
@@ -868,7 +869,7 @@ public class Target {
      * @return a {@code Map<String, Object>} containing mbox values received in {@code data} map.
      */
     private static Map<String, Object> createMboxPayloadMap(final Map<String, Object> data, final TargetRequest request) {
-        if (data == null || data.isEmpty()) {
+        if (MapUtils.isNullOrEmpty(data)) {
             Log.debug(LOG_TAG, CLASS_NAME,
                     "The data payload map containing response tokens and analytics payload is not present for the mbox location (%s)", request.getMboxName());
             return null;

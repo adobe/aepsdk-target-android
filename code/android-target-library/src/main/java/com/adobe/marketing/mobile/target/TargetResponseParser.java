@@ -50,32 +50,16 @@ class TargetResponseParser {
 	@Nullable
 	JSONObject parseResponseToJson(final HttpConnecting connection) {
 		try {
-			final String responseString = StreamUtils.readAsString(connection.getInputStream());
-			final JSONObject responseJson = new JSONObject(responseString);
-			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Target Response was received : %s", responseString);
-			return responseJson;
+			if (connection != null) {
+				final String responseString = StreamUtils.readAsString(connection.getInputStream());
+				final JSONObject responseJson = new JSONObject(responseString);
+				Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Target Response was received : %s", responseString);
+				return responseJson;
+			}
 		} catch (final JSONException e) {
 			Log.error(TargetConstants.LOG_TAG, CLASS_NAME,"Unable to parse Target Response, Error (%s)", e);
-			return null;
 		}
-	}
-
-	/**
-	 * Extracts the raw server response and returns it as a {@code Map} containing the
-	 * response data from the Target server.
-	 * <p>
-	 * Returns null if the provided {@code serverResponseJson} is null.
-	 *
-	 * @param serverResponseJson A {@link JSONObject} server response.
-	 * @return A {@code List<Map<String, Object>>} containing the response data.
-	 * @throws {@link JSONException}
-	 */
-	Map<String, Object> extractRawResponse(final JSONObject serverResponseJson) throws JSONException {
-		if (serverResponseJson == null) {
-			return null;
-		}
-
-		return JSONUtils.toMap(serverResponseJson);
+		return null;
 	}
 
 	/**
@@ -256,7 +240,7 @@ class TargetResponseParser {
 	 */
 	@Nullable
 	Map<String, String> preprocessAnalyticsForTargetPayload(final Map<String, String> payload, final String sessionId) {
-		if (payload == null || payload.isEmpty()) {
+		if (TargetUtils.isNullOrEmpty(payload)) {
 			return null;
 		}
 
@@ -314,7 +298,7 @@ class TargetResponseParser {
 
 		final JSONArray optionsArray = mboxJson.optJSONArray(TargetJson.OPTIONS);
 
-		if (optionsArray == null || optionsArray.length() == 0) {
+		if (JSONUtils.isNullOrEmpty(optionsArray)) {
 			return null;
 		}
 
@@ -366,7 +350,7 @@ class TargetResponseParser {
 
 		final JSONArray metricsArray = mboxJson.optJSONArray(TargetJson.METRICS);
 
-		if (metricsArray == null || metricsArray.length() == 0) {
+		if (JSONUtils.isNullOrEmpty(metricsArray)) {
 			return null;
 		}
 
