@@ -114,7 +114,7 @@ public class TargetExtension extends Extension {
 
         targetState = new TargetState(dataStore);
         targetResponseParser = new TargetResponseParser();
-        targetPreviewManager = getPreviewManager();
+        targetPreviewManager = new TargetPreviewManager(networkService, uiService);
         targetRequestBuilder = getRequestBuilder();
     }
 
@@ -313,11 +313,6 @@ public class TargetExtension extends Extension {
      * @param deepLink the {@link String} deep link received from the public API - SetPreviewRestartDeeplink
      */
     void setPreviewRestartDeepLink(final String deepLink) {
-        if (targetPreviewManager == null) {
-            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.PREVIEW_MANAGER_INIT_FAILED);
-            return;
-        }
-
         targetPreviewManager.setRestartDeepLink(deepLink);
     }
 
@@ -1219,7 +1214,6 @@ public class TargetExtension extends Extension {
      *
      * @param event    current {@link Event} used for retrieving the config shared state
      * @param deepLink {@link String} the deep link extracted from the {@link EventType#GENERIC_DATA} {@link EventSource#OS} event
-     * @see #getPreviewManager()
      */
     private void setupPreviewMode(final Event event, final String deepLink) {
         final String sendRequestError = prepareForTargetRequest();
@@ -1231,11 +1225,6 @@ public class TargetExtension extends Extension {
 
         if (!targetState.isPreviewEnabled()) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "setupPreviewMode - " + TargetErrors.TARGET_PREVIEW_DISABLED);
-            return;
-        }
-
-        if (targetPreviewManager == null) {
-            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, TargetErrors.PREVIEW_MANAGER_INIT_FAILED);
             return;
         }
 
@@ -1399,34 +1388,13 @@ public class TargetExtension extends Extension {
     }
 
     /**
-     * Gets the {@code TargetPreviewManager} instance.
-     * <p>
-     * Returns null if either of {@link Networking} or {@link UIService} is null.
-     *
-     */
-    private TargetPreviewManager getPreviewManager() {
-        if (networkService == null) {
-            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, Network services are not available");
-            return null;
-        } else if (uiService == null) {
-            Log.error(TargetConstants.LOG_TAG, CLASS_NAME, "Unable to get the request builder, UI services are not available");
-            return null;
-        }
-        return new TargetPreviewManager(networkService, uiService, getApi());
-    }
-
-    /**
      * Verifies if the target extension is in preview mode.
      *
      * @return {@code boolean} indicating if the target extension is in preview mode
      */
     private boolean inPreviewMode() {
-        if (targetPreviewManager != null) {
-            final String previewParams = targetPreviewManager.getPreviewParameters();
-            return !StringUtils.isNullOrEmpty(previewParams);
-        }
-
-        return false;
+        final String previewParams = targetPreviewManager.getPreviewParameters();
+        return !StringUtils.isNullOrEmpty(previewParams);
     }
 
     /**
