@@ -1,4 +1,8 @@
-# Adobe Experience Platform Target Mobile SDK
+# Adobe Experience Platform Target Mobile SDK (Beta)
+
+## Beta version acknowledgment
+
+By using the AEP Target mobile SDK ("Beta"), you hereby acknowledge that the Beta is provided "as is" without warranty of any kind. Adobe shall have no obligation to maintain, correct, update, change, modify or otherwise support the Beta. You are advised to use caution and not to rely in any way on the correct functioning or performance of such Beta and/or accompanying materials.
 
 ## About this project
 The AEP Target mobile SDK Extension provides APIs to personalize, and optimize mobile app experiences based on user behavior and mobile context.
