@@ -354,13 +354,13 @@ public class TargetExtension extends Extension {
             if (StringUtils.isNullOrEmpty(propertyToken)) {
                 final Map<String, Object> property = DataReader.getTypedMap(Object.class, eventData, TargetConstants.EventDataKeys.PROPERTY);
                 if (!TargetUtils.isNullOrEmpty(property)) {
-                    propertyToken = DataReader.getString(property, TargetConstants.EventDataKeys.TOKEN);
+                    propertyToken = DataReader.optString(property, TargetConstants.EventDataKeys.TOKEN, "");
                 }
             }
 
             long environmentId = targetState.getEnvironmentId();
             if (environmentId == 0) {
-                environmentId = DataReader.getLong(eventData, TargetConstants.EventDataKeys.ENVIRONMENT_ID);
+                environmentId = DataReader.optLong(eventData, TargetConstants.EventDataKeys.ENVIRONMENT_ID, 0L);
             }
 
             final String sendRequestError = prepareForTargetRequest();
@@ -1317,7 +1317,7 @@ public class TargetExtension extends Extension {
         data.put(TargetConstants.EventDataKeys.TARGET_DATA_PAYLOAD, dataPayload);
 
         if (!StringUtils.isNullOrEmpty(pairId)) {
-            dataPayload.put(TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID, pairId);
+            data.put(TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID, pairId);
         }
         data.put(TargetConstants.EventDataKeys.TARGET_RESPONSE_EVENT_ID, event.getUniqueIdentifier());
 

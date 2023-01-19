@@ -398,7 +398,6 @@ public class MainActivity extends AppCompatActivity {
 
 	public void clearPrefetch(View view) {
 		final TextView prefetchStatusTextView = findViewById(R.id.prefetchStatus);
-		Target.resetExperience();
 		Target.clearPrefetchCache();
 		prefetchStatusTextView.setText("Prefetch cache cleared");
 		contentPrefetched = false;
