@@ -16,6 +16,7 @@ import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NamedCollection;
 import com.adobe.marketing.mobile.util.DataReader;
+import com.adobe.marketing.mobile.util.JSONUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
 import com.adobe.marketing.mobile.util.TimeUtils;
 
@@ -181,10 +182,6 @@ class TargetState {
 
             // update session id timestamp when the new session id is generated
             updateSessionTimestamp(false);
-        } else {
-            if (StringUtils.isNullOrEmpty(sessionId) && dataStore != null) {
-                sessionId = dataStore.getString(TargetConstants.DataStoreKeys.SESSION_ID, null);
-            }
         }
 
         return sessionId;
@@ -397,6 +394,9 @@ class TargetState {
     }
 
     void mergePrefetchedMboxJson(final Map<String, JSONObject> mboxMap) {
+        if (TargetUtils.isNullOrEmpty(mboxMap)) {
+            return;
+        }
         prefetchedMbox.putAll(mboxMap);
     }
 
@@ -415,6 +415,9 @@ class TargetState {
      * @param mBoxResponses the mbox responses list from the target response
      */
     void saveLoadedMbox(@NonNull final Map<String, JSONObject> mBoxResponses) {
+        if (TargetUtils.isNullOrEmpty(mBoxResponses)) {
+            return;
+        }
         for (Map.Entry<String, JSONObject> mbox : mBoxResponses.entrySet()) {
             final String mboxName = mbox.getKey();
             final JSONObject mboxNode = mbox.getValue();
@@ -463,6 +466,9 @@ class TargetState {
     }
 
     void addNotification(final JSONObject notification) {
+        if (JSONUtils.isNullOrEmpty(notification)){
+            return;
+        }
         notifications.add(notification);
     }
 

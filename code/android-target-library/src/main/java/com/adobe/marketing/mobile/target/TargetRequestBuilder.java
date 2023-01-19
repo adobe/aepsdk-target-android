@@ -744,8 +744,7 @@ class TargetRequestBuilder {
 	 * @return {@link JSONObject} contains order data
 	 */
 	private JSONObject getOrderParameters(final TargetOrder order) {
-		if (order == null || StringUtils.isNullOrEmpty(order.getId()) || order.getTotal() == 0
-				|| TargetUtils.isNullOrEmpty(order.getPurchasedProductIds())) {
+		if (order == null || StringUtils.isNullOrEmpty(order.getId())) {
 			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "getOrderParameters - Unable to get the order parameters, TargetOrder is null");
 			return null;
 		}
@@ -755,11 +754,21 @@ class TargetRequestBuilder {
 		try {
 			orderJson.put(TargetJson.Order.ID, order.getId());
 
-			orderJson.put(TargetJson.Order.TOTAL, order.getTotal());
+			if (order.getTotal() != 0) {
+				orderJson.put(TargetJson.Order.TOTAL, order.getTotal());
+			}
 
-			final List<String> productIds = order.getPurchasedProductIds();
-			final JSONArray productIdsJson = new JSONArray(productIds);
-			orderJson.put(TargetJson.Order.PURCHASED_PRODUCT_IDS, productIdsJson);
+			List<String> productIds = order.getPurchasedProductIds();
+
+			if (productIds != null && !productIds.isEmpty()) {
+				JSONArray productIdsJson = new JSONArray("[]");
+
+				for (String productId : productIds) {
+					productIdsJson.put(productId);
+				}
+
+				orderJson.put(TargetJson.Order.PURCHASED_PRODUCT_IDS, productIdsJson);
+			}
 
 			return orderJson;
 		} catch (final JSONException ex) {
@@ -776,7 +785,7 @@ class TargetRequestBuilder {
 	 * @return {@link JSONObject} contains product data
 	 */
 	private JSONObject getProductParameters(final TargetProduct product) {
-		if (product == null || StringUtils.isNullOrEmpty(product.getId()) || StringUtils.isNullOrEmpty(product.getCategoryId())) {
+		if (product == null || StringUtils.isNullOrEmpty(product.getId())) {
 			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
 					"getProductParameters - Unable to get the product parameters, TargetProduct is null");
 			return null;
@@ -786,7 +795,9 @@ class TargetRequestBuilder {
 
 		try {
 			productNode.put(TargetJson.Product.ID, product.getId());
-			productNode.put(TargetJson.Product.CATEGORY_ID, product.getCategoryId());
+			if (!StringUtils.isNullOrEmpty(product.getCategoryId())) {
+				productNode.put(TargetJson.Product.CATEGORY_ID, product.getCategoryId());
+			}
 		} catch (final JSONException exception) {
 			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
 					"getProductParameters - Failed to append product parameters to the target request json (%s)",

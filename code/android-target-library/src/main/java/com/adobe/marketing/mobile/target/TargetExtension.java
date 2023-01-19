@@ -384,7 +384,7 @@ public class TargetExtension extends Extension {
                     notifications,
                     propertyToken);
 
-            if (payloadJson == null || payloadJson.length() == 0) {
+            if (JSONUtils.isNullOrEmpty(payloadJson)) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                         "handleRawRequest - Cannot send raw Target request, payload json is null or empty.");
                 dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
@@ -884,7 +884,7 @@ public class TargetExtension extends Extension {
                 batchRequests, targetParameters, targetState.getNotifications(), propertyToken,
                 identityData, lifecycleContextData);
 
-        if (payloadJson == null || payloadJson.length() == 0) {
+        if (JSONUtils.isNullOrEmpty(payloadJson)) {
             Log.error(TargetConstants.LOG_TAG, CLASS_NAME,
                     "sendTargetRequest - Unable to send target request, Payload json is (%s)",
                     (payloadJson == null ? "null" : "empty"));
