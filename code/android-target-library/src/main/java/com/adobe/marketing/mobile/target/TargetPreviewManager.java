@@ -11,7 +11,6 @@
 
 package com.adobe.marketing.mobile.target;
 
-import com.adobe.marketing.mobile.ExtensionApi;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NetworkRequest;

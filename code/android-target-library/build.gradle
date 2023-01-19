@@ -79,6 +79,10 @@ android.libraryVariants.all { variant ->
         options {
             links "https://developer.android.com/reference"
         }
+        def currentJavaVersion = JavaVersion.current()
+        if (currentJavaVersion >= JavaVersion.VERSION_1_9) {
+            options.addStringOption("-release", "8");
+        }
     }
 }
 
@@ -117,7 +121,7 @@ publishing {
             pom {
                 name = mavenRepoName
                 description = mavenRepoDescription
-                url = 'https://aep-sdks.gitbook.io'
+                url = 'https://developer.adobe.com/client-sdks'
                 licenses {
                     license {
                         name = 'Adobe Proprietary'
@@ -132,8 +136,8 @@ publishing {
                 }
                 scm {
                     connection = 'scm:git:github.com//Adobe-Marketing-Cloud/acp-sdks.git'
-                    developerConnection = 'scm:git:ssh://github.com//Adobe-Marketing-Cloud/acp-sdks.git'
-                    url = 'https://github.com/Adobe-Marketing-Cloud/acp-sdks'
+                    developerConnection = 'scm:git:ssh://github.com/adobe/aepsdk-target-android.git'
+                    url = 'https://github.com/adobe/aepsdk-target-android'
                 }
                 withXml {
                     def dependenciesNode = asNode().appendNode('dependencies')
@@ -142,11 +146,6 @@ publishing {
                     coreDependencyNode.appendNode('groupId', 'com.adobe.marketing.mobile')
                     coreDependencyNode.appendNode('artifactId', 'core')
                     coreDependencyNode.appendNode('version', mavenCoreVersion)
-
-                    def edgeDependencyNode = dependenciesNode.appendNode('dependency')
-                    edgeDependencyNode.appendNode('groupId', 'com.adobe.marketing.mobile')
-                    edgeDependencyNode.appendNode('artifactId', 'edge')
-                    edgeDependencyNode.appendNode('version', mavenEdgeVersion)
                 }
             }
         }
@@ -179,12 +178,17 @@ signing {
 
 task platformUnitTestJacocoReport(type: JacocoReport, dependsOn: "testPhoneDebugUnitTest") {
     def excludeRegex = ['**/ADB*.class', '**/BuildConfig.class']
-    def debugTree = fileTree(dir: "${project.buildDir}/intermediates/javac/phoneDebug/classes/com/adobe/marketing/mobile", excludes: excludeRegex)
+    def javaClasses = fileTree(dir: "${project.buildDir}/intermediates/javac/phoneDebug/classes", excludes: excludeRegex)
+    def kotlinClasses = fileTree(dir: "${project.buildDir}/tmp/kotlin-classes/phoneDebug", excludes: excludeRegex)
+    classDirectories.setFrom(files([javaClasses, kotlinClasses]))
 
-    additionalClassDirs.setFrom files([debugTree])
-    additionalSourceDirs.setFrom files(android.sourceSets.main.java.sourceFiles)
-    sourceDirectories.setFrom files(android.sourceSets.phone.java.sourceFiles)
-    executionData "jacoco.exec"
+    def mainSrc = "${project.projectDir}/src/main/java"
+    def phoneSrc = "${project.projectDir}/src/phone/java"
+    sourceDirectories.setFrom files([mainSrc, phoneSrc])
+
+    executionData.setFrom fileTree(dir: "$buildDir", includes: [
+            "outputs/unit_test_code_coverage/phoneDebugUnitTest/testPhoneDebugUnitTest.exec",
+    ])
 
     reports {
         xml.enabled true
@@ -195,19 +199,21 @@ task platformUnitTestJacocoReport(type: JacocoReport, dependsOn: "testPhoneDebug
 
 task platformFunctionalTestJacocoReport(type: JacocoReport, dependsOn: "createPhoneDebugCoverageReport") {
     def excludeRegex = ['**/ADB*.class', '**/BuildConfig.class']
-    def debugTree = fileTree(dir: "${project.buildDir}/intermediates/javac/phoneDebug/classes/com/adobe/marketing/mobile", excludes: excludeRegex)
+    def javaClasses = fileTree(dir: "${project.buildDir}/intermediates/javac/phoneDebug/classes", excludes: excludeRegex)
+    def kotlinClasses = fileTree(dir: "${project.buildDir}/tmp/kotlin-classes/phoneDebug", excludes: excludeRegex)
+    classDirectories.setFrom(files([javaClasses, kotlinClasses]))
 
-    additionalClassDirs.setFrom files([debugTree])
-    additionalSourceDirs.setFrom files(android.sourceSets.main.java.sourceFiles)
-    sourceDirectories.setFrom files(android.sourceSets.phone.java.sourceFiles)
-    executionData fileTree(dir: "$buildDir", includes: [
+    def mainSrc = "${project.projectDir}/src/main/java"
+    def phoneSrc = "${project.projectDir}/src/phone/java"
+    sourceDirectories.setFrom files([mainSrc, phoneSrc])
+
+    executionData.setFrom fileTree(dir: "$buildDir", includes: [
             "outputs/code_coverage/phoneDebugAndroidTest/connected/*coverage.ec"
     ])
-
     reports {
         xml.enabled true
         csv.enabled false
-        html.enabled true
+        html.enabled false
     }
 }
 
@@ -229,13 +235,6 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:${rootProject.ext.junitVersion}"
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
-
-    androidTestImplementation("com.adobe.marketing.mobile:edge:1.+"){
-        transitive = false
-    }
-    androidTestImplementation("com.adobe.marketing.mobile:edgeidentity:1.+"){
-        transitive = false
-    }
 }
 
 tasks.withType(Test) {

@@ -11,4 +11,4 @@
  */
 include ':testapp'
 include ':android-target-library'
-rootProject.name = 'target'
+rootProject.name = 'aepsdk-target-android'

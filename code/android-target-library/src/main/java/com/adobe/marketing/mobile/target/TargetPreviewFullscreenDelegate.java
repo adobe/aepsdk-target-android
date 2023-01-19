@@ -47,7 +47,7 @@ public class TargetPreviewFullscreenDelegate implements FullscreenMessageDelegat
 	}
 
 	@Override
-	public boolean shouldShowMessage(FullscreenMessage var1) {
+	public boolean shouldShowMessage(final FullscreenMessage var1) {
 		return true;
 	}
 

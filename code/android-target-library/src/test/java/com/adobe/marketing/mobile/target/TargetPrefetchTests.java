@@ -14,6 +14,7 @@ package com.adobe.marketing.mobile.target;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 
@@ -111,5 +112,12 @@ public class TargetPrefetchTests {
 
         assertEquals(MBOX_NAME_HAPPY_PATH, targetPrefetch.getMboxName());
         assertEquals(TARGET_PARAMETERS_HAPPY_PATH, targetPrefetch.getTargetParameters());
+    }
+
+    @Test
+    public void testFromEventData_nullOrEmptyMap() {
+        assertNull(TargetPrefetch.fromEventData(null));
+
+        assertNull(TargetPrefetch.fromEventData(new HashMap<>()));
     }
 }

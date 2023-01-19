@@ -81,11 +81,15 @@ dependencies {
 
     // Adobe mobile SDKs
     implementation project(":${rootProject.moduleProjectName}")
-    // implementation "com.adobe.marketing.mobile:core:1.+"
     implementation 'com.github.adobe.aepsdk-core-android:core:dev-v2.0.0-SNAPSHOT'
-    implementation "com.adobe.marketing.mobile:lifecycle:1.+"
-    implementation "com.adobe.marketing.mobile:identity:1.+"
-    implementation "com.adobe.marketing.mobile:assurance:1.+"
-
+    implementation ('com.adobe.marketing.mobile:lifecycle:2.0.0-SNAPSHOT'){
+        transitive = false
+    }
+    implementation ('com.adobe.marketing.mobile:identity:2.0.0-SNAPSHOT'){
+        transitive = false
+    }
+    implementation ('com.adobe.marketing.mobile:assurance:2.0.0-SNAPSHOT'){
+        transitive = false
+    }
     implementation("io.coil-kt:coil-compose:1.3.2")
 }

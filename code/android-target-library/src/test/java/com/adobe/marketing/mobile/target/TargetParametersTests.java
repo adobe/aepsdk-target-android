@@ -183,6 +183,13 @@ public class TargetParametersTests {
     }
 
     @Test
+    public void testFromEventData_nullOrEmptyMap() {
+        assertNull(TargetParameters.fromEventData(null));
+
+        assertNull(TargetParameters.fromEventData(new HashMap<>()));
+    }
+
+    @Test
     public void testMerge_happy() {
         final List<TargetParameters> targetParametersList = new ArrayList<>();
         final TargetParameters targetParamsWithProduct = new TargetParameters.Builder()

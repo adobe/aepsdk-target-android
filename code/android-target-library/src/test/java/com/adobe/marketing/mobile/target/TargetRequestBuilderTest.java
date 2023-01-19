@@ -14,6 +14,7 @@ package com.adobe.marketing.mobile.target;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,13 +27,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
-
 import com.adobe.marketing.mobile.VisitorID;
 import com.adobe.marketing.mobile.services.DeviceInforming;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class TargetRequestBuilderTest {
+	static final String METRICS = "metrics";
+	static final String CONTEXT_PARAMETERS = "context";
 	static String ID = "id";
 	static String MARKETING_CLOUD_ID = "marketingCloudVisitorId";
 	static String EXPERIENCE_CLOUD = "experienceCloud";
@@ -73,6 +74,29 @@ public class TargetRequestBuilderTest {
 	static String METRIC_TYPE_DISPLAY = "display";
 	static String METRIC_TYPE_CLICK = "click";
 	static String PREVIEW_QA_MODE = "qaMode";
+	static String STATE = "state";
+	static String OPTIONS= "options";
+
+	// setup
+	static Map<String, String> lifecycleData = new HashMap<String, String>() {
+		{
+			put("a.OSVersion", "iOS 14.2");
+			put("a.DaysSinceFirstUse", "0");
+			put("a.CrashEvent", "CrashEvent");
+			put("a.CarrierName", "(nil)");
+			put("a.Resolution", "828x1792");
+			put("a.RunMode", "Application");
+			put("a.ignoredSessionLength", "-1605549540");
+			put("a.HourOfDay", "11");
+			put("a.AppID", "v5ManualTestApp 1.0 (1)");
+			put("a.DayOfWeek", "2");
+			put("a.DeviceName", "x86_64");
+			put("a.LaunchEvent", "LaunchEvent");
+			put("a.Launches", "2");
+			put("a.DaysSinceLastUse", "0");
+			put("a.locale", "en-US");
+		}
+	};
 
 	@Mock
 	DeviceInforming mockDeviceInfoService;
@@ -100,9 +124,9 @@ public class TargetRequestBuilderTest {
                 null, null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals(0, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
-        assertEquals("mbox0", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
+        Assert.assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals(0, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
+        Assert.assertEquals("mbox0", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
     }
 
     @Test
@@ -112,11 +136,11 @@ public class TargetRequestBuilderTest {
                 null, null, null, null);
 
 		// verify
-		assertEquals(2, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals(0, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
-        assertEquals("mbox0", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
-        assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(INDEX));
-        assertEquals("mbox1", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(NAME));
+		Assert.assertEquals(2, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals(0, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
+        Assert.assertEquals("mbox0", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
+        Assert.assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(INDEX));
+        Assert.assertEquals("mbox1", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(NAME));
     }
 
 
@@ -127,13 +151,13 @@ public class TargetRequestBuilderTest {
                 null, null, null, null);
 
 		// verify
-        assertNull(json.optJSONArray(PREFETCH_MBOXES));
+        Assert.assertNull(json.optJSONArray(PREFETCH_MBOXES));
 
 		// test
         json = targetRequestBuilder.getRequestPayload(null, null, null, null, null, null, null);
 
 		// verify
-        assertNull(json.optJSONArray(PREFETCH_MBOXES));
+        Assert.assertNull(json.optJSONArray(PREFETCH_MBOXES));
     }
 
     // ===================================
@@ -153,8 +177,8 @@ public class TargetRequestBuilderTest {
         JSONObject json = targetRequestBuilder.getRequestPayload(null, null, params, null, null, null, null);
 
 		// verify
-        assertNull(json.optJSONObject(EXECUTE_MBOXES));
-        assertNull(json.optJSONObject(PREFETCH_MBOXES));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES));
+        Assert.assertNull(json.optJSONObject(PREFETCH_MBOXES));
     }
 
     @Test
@@ -166,12 +190,12 @@ public class TargetRequestBuilderTest {
 		// test
         JSONObject json = targetRequestBuilder.getRequestPayload(null, null, params, null, null, null, null);
 		// verify
-        assertNull(json.optJSONObject(PROFILE_PARAMETERS));
+        Assert.assertNull(json.optJSONObject(PROFILE_PARAMETERS));
 
 		// test
         json = targetRequestBuilder.getRequestPayload(null, null, params, null, null, null, null);
 		// verify
-        assertNull(json.optJSONObject(PROFILE_PARAMETERS));
+        Assert.assertNull(json.optJSONObject(PROFILE_PARAMETERS));
     }
 
     // ===================================
@@ -184,9 +208,9 @@ public class TargetRequestBuilderTest {
                 null, null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals(0, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
-        assertEquals("mbox0", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals(0, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
+        Assert.assertEquals("mbox0", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
     }
 
     @Test
@@ -196,11 +220,11 @@ public class TargetRequestBuilderTest {
                 null, null, null, null);
 
 		// verify
-        assertEquals(2, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals(0, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
-        assertEquals("mbox0", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(INDEX));
-        assertEquals("mbox1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(NAME));
+        Assert.assertEquals(2, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals(0, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
+        Assert.assertEquals("mbox0", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(INDEX));
+        Assert.assertEquals("mbox1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(NAME));
     }
 
     @Test
@@ -209,12 +233,12 @@ public class TargetRequestBuilderTest {
         JSONObject json = targetRequestBuilder.getRequestPayload(null, getTargetRequestList(0), null,
                 null, null, null, null);
 		// verify
-        assertNull(json.optJSONObject(EXECUTE_MBOXES));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES));
 
 		// test
         json = targetRequestBuilder.getRequestPayload(null, null, null, null, null, null, null);
 		// verify
-        assertNull(json.optJSONObject(EXECUTE_MBOXES));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES));
     }
 
     // ===================================
@@ -233,8 +257,8 @@ public class TargetRequestBuilderTest {
         JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null, notifications , null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONArray(VISITED_MBOXES).length());
-        assertEquals("{}", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).toString());
+        Assert.assertEquals(1, json.optJSONArray(VISITED_MBOXES).length());
+        Assert.assertEquals("{}", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).toString());
     }
 
     @Test
@@ -251,9 +275,9 @@ public class TargetRequestBuilderTest {
         JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null,notifications, null, null, null);
 
 		// verify
-        assertEquals(2, json.optJSONArray(VISITED_MBOXES).length());
-        assertEquals("{}", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).toString());
-        assertEquals("{\"id\":1}", json.optJSONArray(VISITED_MBOXES).optJSONObject(1).toString());
+        Assert.assertEquals(2, json.optJSONArray(VISITED_MBOXES).length());
+        Assert.assertEquals("{}", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).toString());
+        Assert.assertEquals("{\"id\":1}", json.optJSONArray(VISITED_MBOXES).optJSONObject(1).toString());
     }
 
     @Test
@@ -262,12 +286,12 @@ public class TargetRequestBuilderTest {
         JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null,
                 new ArrayList<>(), null, null, null);
 		// verify
-        assertNull(json.optJSONArray(VISITED_MBOXES));
+        Assert.assertNull(json.optJSONArray(VISITED_MBOXES));
 
 		// test
         json = targetRequestBuilder.getRequestPayload(null, null, null, null, null, null, null);
 		// verify
-        assertNull(json.optJSONArray(VISITED_MBOXES));
+        Assert.assertNull(json.optJSONArray(VISITED_MBOXES));
     }
 
     // ===================================
@@ -283,7 +307,7 @@ public class TargetRequestBuilderTest {
         JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null, null, null, null, null);
 
 		// verify
-        assertEquals("value", json.optJSONObject(PREVIEW_QA_MODE).opt("key"));
+        Assert.assertEquals("value", json.optJSONObject(PREVIEW_QA_MODE).opt("key"));
     }
 
     @Test
@@ -296,7 +320,7 @@ public class TargetRequestBuilderTest {
         JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null, null, null, null, null);
 
 		// verify
-		assertEquals("value", json.optJSONObject(PREVIEW_QA_MODE).opt("key"));
+		Assert.assertEquals("value", json.optJSONObject(PREVIEW_QA_MODE).opt("key"));
     }
 
     @Test
@@ -309,7 +333,7 @@ public class TargetRequestBuilderTest {
         JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null, null, null, null, null);
 
 		// verify
-        assertNull(json.optJSONObject(PREVIEW_QA_MODE));
+        Assert.assertNull(json.optJSONObject(PREVIEW_QA_MODE));
 
     }
 
@@ -323,7 +347,7 @@ public class TargetRequestBuilderTest {
         JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null, null, null, null, null);
 
 		// verify
-        assertNull(json.optJSONObject(PREVIEW_QA_MODE));
+        Assert.assertNull(json.optJSONObject(PREVIEW_QA_MODE));
     }
 
     @Test
@@ -336,7 +360,7 @@ public class TargetRequestBuilderTest {
         JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null, null, null, null, null);
 
 		// verify
-        assertNull(json.optJSONObject(PREVIEW_QA_MODE));
+        Assert.assertNull(json.optJSONObject(PREVIEW_QA_MODE));
 
     }
 
@@ -361,18 +385,18 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, targetRequestList, null, null, null, null, null);
 
 		// verify
-		assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertEquals(0.1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER).opt(
+		Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		Assert.assertEquals(0.1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER).opt(
 				ORDER_TOTAL));
-		assertEquals("orderId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals("orderId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				ORDER).opt(ID));
-		assertEquals(2, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals(2, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				ORDER).optJSONArray(
 				PURCHASED_PRODUCT_IDS).length());
-		assertEquals("id1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals("id1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				ORDER).optJSONArray(
 				PURCHASED_PRODUCT_IDS).opt(0));
-		assertEquals("id2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals("id2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				ORDER).optJSONArray(
 				PURCHASED_PRODUCT_IDS).opt(1));
 
@@ -391,7 +415,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, targetRequestList, null, null, null, null, null);
 
 		// verify
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
 	}
 
 	@Test
@@ -407,7 +431,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, targetRequestList, null, null, null, null, null);
 
 		// verify
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
 	}
 
 	@Test
@@ -423,7 +447,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, targetRequestList, null, null, null, null, null);
 
 		// verify
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER).optJSONArray(
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER).optJSONArray(
 				PURCHASED_PRODUCT_IDS));
 	}
 
@@ -440,7 +464,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, targetRequestList, null, null, null, null, null);
 
 		// verify
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER).optJSONArray(
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER).optJSONArray(
 				PURCHASED_PRODUCT_IDS));
 	}
 
@@ -469,18 +493,18 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertEquals(0.1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER).opt(
+		Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		Assert.assertEquals(0.1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER).opt(
 				ORDER_TOTAL));
-		assertEquals("orderId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals("orderId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				ORDER).opt(ID));
-		assertEquals(2, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals(2, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				ORDER).optJSONArray(
 				PURCHASED_PRODUCT_IDS).length());
-		assertEquals("id1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals("id1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				ORDER).optJSONArray(
 				PURCHASED_PRODUCT_IDS).opt(0));
-		assertEquals("id2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals("id2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				ORDER).optJSONArray(
 				PURCHASED_PRODUCT_IDS).opt(1));
 	}
@@ -504,7 +528,7 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
 	}
 
 	@Test
@@ -526,7 +550,7 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
 	}
 
 	@Test
@@ -548,7 +572,7 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
 	}
 
 	@Test
@@ -570,7 +594,7 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
 	}
 
 	@Test
@@ -592,8 +616,8 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+		Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
 	}
 
 	@Test
@@ -615,8 +639,8 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+		Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
 	}
 
 	@Test
@@ -642,7 +666,7 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
 	}
 
 	@Test
@@ -669,7 +693,7 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
 	}
 
     // ===================================
@@ -689,10 +713,10 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PRODUCT).opt(ID));
-        assertEquals("categoryId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals("categoryId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PRODUCT).opt(CATEGORY_ID));
 
     }
@@ -711,8 +735,8 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
 
     }
 
@@ -730,8 +754,8 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
     }
 
     @Test
@@ -748,10 +772,10 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		Assert.assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				PRODUCT).opt(ID));
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT).opt(
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT).opt(
 				CATEGORY_ID));
 	}
 
@@ -769,10 +793,10 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		Assert.assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				PRODUCT).opt(ID));
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT).opt(
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT).opt(
 				CATEGORY_ID));
 	}
 
@@ -795,10 +819,10 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		Assert.assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				PRODUCT).opt(ID));
-		assertEquals("categoryId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals("categoryId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				PRODUCT).opt(CATEGORY_ID));
 	}
 
@@ -821,8 +845,8 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
+		Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
 
 	}
 
@@ -845,8 +869,8 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
+		Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
 	}
 
 	@Test
@@ -868,10 +892,10 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		Assert.assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				PRODUCT).opt(ID));
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT).opt(
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT).opt(
 				CATEGORY_ID));
 	}
 
@@ -894,10 +918,10 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-		assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-		assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+		Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+		Assert.assertEquals("productId", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
 				PRODUCT).opt(ID));
-		assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT).opt(
+		 Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT).opt(
 				CATEGORY_ID));
 	}
 
@@ -935,11 +959,11 @@ public class TargetRequestBuilderTest {
                 null);
 
         // verify
-        assertEquals(2, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals(0, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
-        assertEquals("mbox1", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
-        assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(INDEX));
-        assertEquals("mbox2", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(NAME));
+        Assert.assertEquals(2, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals(0, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
+        Assert.assertEquals("mbox1", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
+        Assert.assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(INDEX));
+        Assert.assertEquals("mbox2", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(NAME));
     }
 
     @Test
@@ -953,7 +977,7 @@ public class TargetRequestBuilderTest {
                 null);
 
         // verify
-        assertNull(json.optJSONArray(PREFETCH_MBOXES));
+        Assert.assertNull(json.optJSONArray(PREFETCH_MBOXES));
     }
 
     @Test
@@ -966,7 +990,7 @@ public class TargetRequestBuilderTest {
                 null);
 
         // verify
-        assertNull(json.optJSONArray(PREFETCH_MBOXES));
+        Assert.assertNull(json.optJSONArray(PREFETCH_MBOXES));
     }
 
     // ===================================
@@ -1003,11 +1027,11 @@ public class TargetRequestBuilderTest {
                 null);
 
         // verify
-        assertEquals(2, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals(0, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
-        assertEquals("mbox1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(INDEX));
-        assertEquals("mbox2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(NAME));
+        Assert.assertEquals(2, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals(0, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(INDEX));
+        Assert.assertEquals("mbox1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).opt(NAME));
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(INDEX));
+        Assert.assertEquals("mbox2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1).opt(NAME));
     }
 
     @Test
@@ -1021,7 +1045,7 @@ public class TargetRequestBuilderTest {
                 null);
 
         // verify
-        assertNull(json.optJSONArray(EXECUTE_MBOXES));
+        Assert.assertNull(json.optJSONArray(EXECUTE_MBOXES));
     }
 
     @Test
@@ -1034,7 +1058,7 @@ public class TargetRequestBuilderTest {
                 null);
 
         // verify
-        assertNull(json.optJSONArray(EXECUTE_MBOXES));
+        Assert.assertNull(json.optJSONArray(EXECUTE_MBOXES));
     }
 
     // ===================================
@@ -1090,17 +1114,17 @@ public class TargetRequestBuilderTest {
                 null);
 
         // verify
-        assertEquals(2, json.optJSONArray(VISITED_MBOXES).length());
-        assertEquals("0", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).opt(ID));
-        assertEquals("display", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).opt(METRIC_TYPE));
-        assertEquals("mbox1", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).optJSONObject(MBOX).opt(NAME));
-        assertEquals("displayToken", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).optJSONArray(TOKENS).opt(0));
-        assertNotEquals(0L, json.optJSONArray(VISITED_MBOXES).optJSONObject(0).opt(TIMESTAMP));
-        assertEquals("1", json.optJSONArray(VISITED_MBOXES).optJSONObject(1).opt(ID));
-        assertEquals("click", json.optJSONArray(VISITED_MBOXES).optJSONObject(1).opt(METRIC_TYPE));
-        assertEquals("mbox2", json.optJSONArray(VISITED_MBOXES).optJSONObject(1).optJSONObject(MBOX).opt(NAME));
-        assertEquals("clickToken", json.optJSONArray(VISITED_MBOXES).optJSONObject(1).optJSONArray(TOKENS).opt(0));
-        assertNotEquals(0L, json.optJSONArray(VISITED_MBOXES).optJSONObject(1).opt(TIMESTAMP));
+        Assert.assertEquals(2, json.optJSONArray(VISITED_MBOXES).length());
+        Assert.assertEquals("0", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).opt(ID));
+        Assert.assertEquals("display", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).opt(METRIC_TYPE));
+        Assert.assertEquals("mbox1", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).optJSONObject(MBOX).opt(NAME));
+        Assert.assertEquals("displayToken", json.optJSONArray(VISITED_MBOXES).optJSONObject(0).optJSONArray(TOKENS).opt(0));
+        Assert.assertNotEquals(0L, json.optJSONArray(VISITED_MBOXES).optJSONObject(0).opt(TIMESTAMP));
+        Assert.assertEquals("1", json.optJSONArray(VISITED_MBOXES).optJSONObject(1).opt(ID));
+        Assert.assertEquals("click", json.optJSONArray(VISITED_MBOXES).optJSONObject(1).opt(METRIC_TYPE));
+        Assert.assertEquals("mbox2", json.optJSONArray(VISITED_MBOXES).optJSONObject(1).optJSONObject(MBOX).opt(NAME));
+        Assert.assertEquals("clickToken", json.optJSONArray(VISITED_MBOXES).optJSONObject(1).optJSONArray(TOKENS).opt(0));
+        Assert.assertNotEquals(0L, json.optJSONArray(VISITED_MBOXES).optJSONObject(1).opt(TIMESTAMP));
     }
 
     @Test
@@ -1114,7 +1138,7 @@ public class TargetRequestBuilderTest {
                 null);
 
         // verify
-        assertNull(json.optJSONArray(VISITED_MBOXES));
+        Assert.assertNull(json.optJSONArray(VISITED_MBOXES));
     }
 
     @Test
@@ -1127,7 +1151,7 @@ public class TargetRequestBuilderTest {
                 null);
 
         // verify
-        assertNull(json.optJSONArray(VISITED_MBOXES));
+        Assert.assertNull(json.optJSONArray(VISITED_MBOXES));
     }
 
     // ===================================
@@ -1143,9 +1167,9 @@ public class TargetRequestBuilderTest {
                 "randomPropertyToken");
 
         // verify
-        assertNotNull(json.optJSONObject(PROPERTY));
-        assertEquals(1, json.optJSONObject(PROPERTY).length());
-        assertEquals("randomPropertyToken", json.getJSONObject(PROPERTY).opt(TOKEN));
+        Assert.assertNotNull(json.optJSONObject(PROPERTY));
+        Assert.assertEquals(1, json.optJSONObject(PROPERTY).length());
+        Assert.assertEquals("randomPropertyToken", json.getJSONObject(PROPERTY).opt(TOKEN));
     }
 
     @Test
@@ -1158,7 +1182,7 @@ public class TargetRequestBuilderTest {
                 null);
 
         // verify
-        assertNull(json.optJSONObject(PROPERTY));
+        Assert.assertNull(json.optJSONObject(PROPERTY));
     }
 
     @Test
@@ -1171,7 +1195,7 @@ public class TargetRequestBuilderTest {
                 "");
 
         // verify
-        assertNull(json.optJSONObject(PROPERTY));
+        Assert.assertNull(json.optJSONObject(PROPERTY));
     }
 
     @Test
@@ -1181,7 +1205,7 @@ public class TargetRequestBuilderTest {
                 null, null, null, null);
 
 		// verify
-        assertNull(json.optJSONObject(PROPERTY));
+        Assert.assertNull(json.optJSONObject(PROPERTY));
     }
 
     @Test
@@ -1191,7 +1215,7 @@ public class TargetRequestBuilderTest {
                 null, "", null, null);
 
 		// verify
-        assertNull(json.optJSONObject(PROPERTY));
+        Assert.assertNull(json.optJSONObject(PROPERTY));
     }
 
     @Test
@@ -1201,9 +1225,9 @@ public class TargetRequestBuilderTest {
                 null, "randomPropertyToken", null, null);
 
 		// verify
-        assertNotNull(json.optJSONObject(PROPERTY));
-        assertEquals(1, json.optJSONObject(PROPERTY).length());
-        assertEquals("randomPropertyToken", json.getJSONObject(PROPERTY).opt(TOKEN));
+        Assert.assertNotNull(json.optJSONObject(PROPERTY));
+        Assert.assertEquals(1, json.optJSONObject(PROPERTY).length());
+        Assert.assertEquals("randomPropertyToken", json.getJSONObject(PROPERTY).opt(TOKEN));
     }
 
     // ===================================
@@ -1227,10 +1251,10 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals("mBox-Value1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals("mBox-Value1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PARAMETERS).opt("mBox-parameter-Key1"));
-        assertEquals("mBox-Value2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals("mBox-Value2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PARAMETERS).opt("mBox-parameter-Key2"));
     }
 
@@ -1252,10 +1276,10 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PARAMETERS).optString("mBox-parameter-Key1", null));
-        assertEquals("mBox-Value2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals("mBox-Value2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PARAMETERS).opt("mBox-parameter-Key2"));
     }
 
@@ -1272,8 +1296,8 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PARAMETERS));
     }
 
@@ -1298,10 +1322,10 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals("profile-Value1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals("profile-Value1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key1"));
-        assertEquals("profile-Value2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals("profile-Value2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key2"));
     }
 
@@ -1323,10 +1347,10 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS).optString("profile-parameter-Key1", null));
-        assertEquals("profile-Value2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals("profile-Value2", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key2"));
     }
 
@@ -1343,8 +1367,8 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS));
     }
 
@@ -1364,11 +1388,11 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PROFILE_PARAMETERS));
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PROFILE_PARAMETERS));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
     }
 
     @Test
@@ -1383,11 +1407,11 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PROFILE_PARAMETERS));
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(ORDER));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PRODUCT));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PROFILE_PARAMETERS));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
     }
 
 	// ===================================
@@ -1417,11 +1441,11 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals("profile-Value1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals("profile-Value1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key1"));
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
-        assertNull(json.optJSONObject(TargetJson.PROPERTY));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
+        Assert.assertNull(json.optJSONObject(TargetJson.PROPERTY));
     }
 
     @Test
@@ -1448,11 +1472,11 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals("profile-Value1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals("profile-Value1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key1"));
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
-        assertNull(json.optJSONObject(TargetJson.PROPERTY));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
+        Assert.assertNull(json.optJSONObject(TargetJson.PROPERTY));
     }
 
     @Test
@@ -1491,17 +1515,17 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, targetRequestList, null, null,
 				null, null, null);
 
-        assertNull(json.optJSONObject(TargetJson.PROPERTY));
+        Assert.assertNull(json.optJSONObject(TargetJson.PROPERTY));
         JSONArray mboxesArray = json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES);
-        assertEquals(2, mboxesArray.length());
+        Assert.assertEquals(2, mboxesArray.length());
         JSONObject mbox1 = json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0);
-        assertEquals("profile-Value1", mbox1.optJSONObject(
+        Assert.assertEquals("profile-Value1", mbox1.optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key1"));
-        assertNull(mbox1.optJSONObject(PARAMETERS));
+        Assert.assertNull(mbox1.optJSONObject(PARAMETERS));
         JSONObject mbox2 = json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1);
-        assertEquals("profile-Value2", mbox2.optJSONObject(
+        Assert.assertEquals("profile-Value2", mbox2.optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key2"));
-        assertNull(mbox2.optJSONObject(PARAMETERS));
+        Assert.assertNull(mbox2.optJSONObject(PARAMETERS));
     }
 
     @Test
@@ -1542,17 +1566,17 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-        assertNull(json.optJSONObject(TargetJson.PROPERTY));
+        Assert.assertNull(json.optJSONObject(TargetJson.PROPERTY));
         JSONArray mboxesArray = json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES);
-        assertEquals(2, mboxesArray.length());
+        Assert.assertEquals(2, mboxesArray.length());
         JSONObject mbox1 = json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0);
-        assertEquals("profile-Value1", mbox1.optJSONObject(
+        Assert.assertEquals("profile-Value1", mbox1.optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key1"));
-        assertNull(mbox1.optJSONObject(PARAMETERS));
+        Assert.assertNull(mbox1.optJSONObject(PARAMETERS));
         JSONObject mbox2 = json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1);
-        assertEquals("profile-Value2", mbox2.optJSONObject(
+        Assert.assertEquals("profile-Value2", mbox2.optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key2"));
-        assertNull(mbox2.optJSONObject(PARAMETERS));
+        Assert.assertNull(mbox2.optJSONObject(PARAMETERS));
     }
 
     @Test
@@ -1594,17 +1618,17 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-        assertNull(json.optJSONObject(TargetJson.PROPERTY));
+        Assert.assertNull(json.optJSONObject(TargetJson.PROPERTY));
         JSONArray mboxesArray = json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES);
-        assertEquals(2, mboxesArray.length());
+        Assert.assertEquals(2, mboxesArray.length());
         JSONObject mbox1 = json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0);
-        assertEquals("profile-Value1", mbox1.optJSONObject(
+        Assert.assertEquals("profile-Value1", mbox1.optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key1"));
-        assertNull(mbox1.optJSONObject(PARAMETERS));
+        Assert.assertNull(mbox1.optJSONObject(PARAMETERS));
         JSONObject mbox2 = json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(1);
-        assertEquals("profile-Value2", mbox2.optJSONObject(
+        Assert.assertEquals("profile-Value2", mbox2.optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key2"));
-        assertNull(mbox2.optJSONObject(PARAMETERS));
+        Assert.assertNull(mbox2.optJSONObject(PARAMETERS));
     }
 
     @Test
@@ -1631,12 +1655,12 @@ public class TargetRequestBuilderTest {
 				"GlobalPropertyToken", null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals("profile-Value1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals("profile-Value1", json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key1"));
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
-        assertEquals(1, json.optJSONObject(TargetJson.PROPERTY).length());
-        assertEquals("GlobalPropertyToken", json.optJSONObject(TargetJson.PROPERTY).optString(TargetJson.TOKEN, ""));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
+        Assert.assertEquals(1, json.optJSONObject(TargetJson.PROPERTY).length());
+        Assert.assertEquals("GlobalPropertyToken", json.optJSONObject(TargetJson.PROPERTY).optString(TargetJson.TOKEN, ""));
     }
 
     @Test
@@ -1663,11 +1687,11 @@ public class TargetRequestBuilderTest {
                 null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals("profile-Value1", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals("profile-Value1", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key1"));
-        assertNull(json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
-        assertNull(json.optJSONObject(TargetJson.PROPERTY));
+        Assert.assertNull(json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
+        Assert.assertNull(json.optJSONObject(TargetJson.PROPERTY));
     }
 
     @Test
@@ -1695,12 +1719,12 @@ public class TargetRequestBuilderTest {
 				"GlobalPropertyToken", null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals("profile-Value1", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals("profile-Value1", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key1"));
-        assertNull(json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
-        assertEquals(1, json.optJSONObject(TargetJson.PROPERTY).length());
-        assertEquals("GlobalPropertyToken", json.optJSONObject(TargetJson.PROPERTY).optString(TargetJson.TOKEN, ""));
+        Assert.assertNull(json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
+        Assert.assertEquals(1, json.optJSONObject(TargetJson.PROPERTY).length());
+        Assert.assertEquals("GlobalPropertyToken", json.optJSONObject(TargetJson.PROPERTY).optString(TargetJson.TOKEN, ""));
     }
 
     @Test
@@ -1727,11 +1751,11 @@ public class TargetRequestBuilderTest {
 				null, null, null);
 
 		// verify
-        assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
-        assertEquals("profile-Value1", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+        Assert.assertEquals(1, json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).length());
+        Assert.assertEquals("profile-Value1", json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
                 PROFILE_PARAMETERS).opt("profile-parameter-Key1"));
-        assertNull(json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
-        assertNull(json.optJSONObject(TargetJson.PROPERTY));
+        Assert.assertNull(json.optJSONObject(PREFETCH_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
+        Assert.assertNull(json.optJSONObject(TargetJson.PROPERTY));
     }
 
 
@@ -1747,7 +1771,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null, null, null, identitySharedState, null);
 		
 		// test
-		assertNull(json.optJSONObject(ID));
+		 Assert.assertNull(json.optJSONObject(ID));
 
 		// setup
 		Map<String, Object> identitySharedState2 = getIdentitySharedState(null, "", "", null);
@@ -1756,7 +1780,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json2 = targetRequestBuilder.getRequestPayload(null, null, null, null, null, identitySharedState2, null);
 
 		// test
-		assertNull(json2.optJSONObject(ID));
+		 Assert.assertNull(json2.optJSONObject(ID));
 	}
 
 	@Test
@@ -1768,7 +1792,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null,null, null, identitySharedState, null);
 
 		// test
-		assertEquals(json.getJSONObject(ID).getString(MARKETING_CLOUD_ID), "mid");
+		Assert.assertEquals(json.getJSONObject(ID).getString(MARKETING_CLOUD_ID), "mid");
 	}
 
 	@Test
@@ -1780,7 +1804,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null,null, null, identitySharedState, null);
 
 		// test
-		assertNull(json.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS));
+		 Assert.assertNull(json.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS));
 
 		// setup
 		Map<String, Object> identitySharedState2 = getIdentitySharedState("", null, "", null);
@@ -1789,7 +1813,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json2 = targetRequestBuilder.getRequestPayload(null, null, null, null,null, identitySharedState2, null);
 
 		// test
-		assertNull(json2.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS));
+		 Assert.assertNull(json2.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS));
 	}
 
 	@Test
@@ -1801,7 +1825,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null, null,null, identitySharedState, null);
 
 		// test
-		assertEquals(json.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS).getString(BLOB), "blob");
+		Assert.assertEquals(json.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS).getString(BLOB), "blob");
 	}
 
 	@Test
@@ -1813,7 +1837,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null, null,null, identitySharedState, null);
 
 		// test
-		assertEquals(json.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS).getString(LOCATION_HINT),
+		Assert.assertEquals(json.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS).getString(LOCATION_HINT),
 				"LocationHint");
 	}
 
@@ -1826,7 +1850,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null,null, null, identitySharedState, null);
 
 		// test
-		assertNull(json.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS));
+		 Assert.assertNull(json.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS));
 
 		// setup
 		Map<String, Object> identitySharedState2 = getIdentitySharedState("", null, "", null);
@@ -1835,7 +1859,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json2 = targetRequestBuilder.getRequestPayload(null, null, null, null,null, identitySharedState2, null);
 
 		// test
-		assertNull(json2.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS));
+		 Assert.assertNull(json2.optJSONObject(EXPERIENCE_CLOUD).optJSONObject(AAM_PARAMETERS));
 	}
 
 	@Test
@@ -1851,8 +1875,43 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null,null, null, identitySharedState, null);
 
 		// test
-		assertEquals(json.optJSONObject(ID).optJSONArray(CUSTOMER_IDS).getJSONObject(0).get(AUTHENTICATION_STATE),
+		Assert.assertEquals(json.optJSONObject(ID).optJSONArray(CUSTOMER_IDS).getJSONObject(0).get(AUTHENTICATION_STATE),
 				"authenticated");
+	}
+
+	@Test
+	public void getRequestPayload_CustomerIdsInJson_When_CustomerIdsIsValid_AndLoggedOut() throws JSONException {
+		// setup
+
+		List<VisitorID> testVisitorIDList = new ArrayList<VisitorID>();
+		testVisitorIDList.add(new VisitorID("d_cid_ic", "id1", "hodor",
+				VisitorID.AuthenticationState.LOGGED_OUT));
+		Map<String, Object> identitySharedState = getIdentitySharedState("", "", "", testVisitorIDList);
+
+		// test
+		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null,null, null, identitySharedState, null);
+
+		// test
+		Assert.assertEquals(json.optJSONObject(ID).optJSONArray(CUSTOMER_IDS).getJSONObject(0).get(AUTHENTICATION_STATE),
+				"logged_out");
+	}
+
+
+	@Test
+	public void getRequestPayload_CustomerIdsInJson_When_CustomerIdsIsValid_AndUnknown() throws JSONException {
+		// setup
+
+		List<VisitorID> testVisitorIDList = new ArrayList<VisitorID>();
+		testVisitorIDList.add(new VisitorID("d_cid_ic", "id1", "hodor",
+				VisitorID.AuthenticationState.UNKNOWN));
+		Map<String, Object> identitySharedState = getIdentitySharedState("", "", "", testVisitorIDList);
+
+		// test
+		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null,null, null, identitySharedState, null);
+
+		// test
+		Assert.assertEquals(json.optJSONObject(ID).optJSONArray(CUSTOMER_IDS).getJSONObject(0).get(AUTHENTICATION_STATE),
+				"unknown");
 	}
 
 	@Test
@@ -1864,7 +1923,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null,null, null, identitySharedState, null);
 
 		// test
-		assertNull(json.optJSONObject(ID));
+		 Assert.assertNull(json.optJSONObject(ID));
 
 		// setup
 		Map<String, Object> identitySharedState2 = getIdentitySharedState("", null, "", null);
@@ -1873,7 +1932,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json2 = targetRequestBuilder.getRequestPayload(null, null, null, null,null, identitySharedState2, null);
 
 		// test
-		assertNull(json.optJSONObject(ID));
+		 Assert.assertNull(json.optJSONObject(ID));
 	}
 
 
@@ -1887,34 +1946,27 @@ public class TargetRequestBuilderTest {
                 null, null, null, null);
 
 		// verify
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
 
 		// test
 		json = targetRequestBuilder.getRequestPayload(null, getTargetRequestList(1), null,
                 null, null, null,  new HashMap<>());
 
 		// verify
-        assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
+        Assert.assertNull(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(PARAMETERS));
 
 
     }
 
     @Test
     public void getRequestPayload_LifecycleDataInMboxParameters_When_LifecycleIsValid() {
-		// setup
-		Map<String, String> lifecycleData = new HashMap<String, String>() {
-			{
-				put("key", "value");
-			}
-		};
-
 		// test
 		JSONObject json = targetRequestBuilder.getRequestPayload(null, getTargetRequestList(1), null,
                 null, null, null, lifecycleData);
 
 		// verify
-        assertEquals(json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
-                PARAMETERS).optString("key", ""), "value");
+        Assert.assertEquals(new JSONObject(lifecycleData).toString(), json.optJSONObject(EXECUTE_MBOXES).optJSONArray(MBOXES).optJSONObject(0).optJSONObject(
+                PARAMETERS).toString());
 
     }
 
@@ -1927,7 +1979,7 @@ public class TargetRequestBuilderTest {
 		JSONObject json = targetRequestBuilder.getDisplayNotificationJsonObject(null, null, null, 123L, null);
 
 		// verify
-		assertNull(json);
+		 Assert.assertNull(json);
 	}
 
 	@Test
@@ -1938,21 +1990,60 @@ public class TargetRequestBuilderTest {
 		json.put(CONTENT, "content");
 		json.put(A4T, "A4T");
 		json.put("key", "value");
+		json.put(STATE, "somestate");
+		JSONObject options1 = new JSONObject();
+		options1.put("eventToken", "token1");
+		JSONObject options2 = new JSONObject();
+		JSONArray optionsArray = new JSONArray();
+		optionsArray.put(options1);
+		optionsArray.put(options2);
+		json.put(OPTIONS, optionsArray);
 
 		// test
-		JSONObject visitedMboxNode = targetRequestBuilder.getDisplayNotificationJsonObject("name", json,
+		JSONObject visitedMboxNode = targetRequestBuilder.getDisplayNotificationJsonObject("mboxName", json,
 				null, 123L, null);
 
 		// verify
-		assertNull(visitedMboxNode.opt(CONTENT));
-		assertNull(visitedMboxNode.opt(A4T));
-		assertEquals(METRIC_TYPE_DISPLAY, visitedMboxNode.opt(METRIC_TYPE));
-		assertEquals(123L, visitedMboxNode.opt(TIMESTAMP));
+		 Assert.assertNull(visitedMboxNode.opt(CONTENT));
+		 Assert.assertNull(visitedMboxNode.opt(A4T));
+		Assert.assertEquals(METRIC_TYPE_DISPLAY, visitedMboxNode.opt(METRIC_TYPE));
+		Assert.assertEquals(123L, visitedMboxNode.opt(TIMESTAMP));
+		Assert.assertEquals("mboxName", visitedMboxNode.optJSONObject(MBOX).opt(NAME));
+		Assert.assertEquals("somestate", visitedMboxNode.optJSONObject(MBOX).opt(STATE));
+		Assert.assertEquals("token1", visitedMboxNode.optJSONArray(TOKENS).get(0));
 	}
 
 	// ===================================
 	// Test getClickNotificationJsonObject
 	// ===================================
+	@Test
+	public void getClickNotificationJsonObject_When_InputJsonIsNotNull() throws JSONException {
+		// setup
+		JSONObject mboxJson = new JSONObject();;
+		mboxJson.put(NAME, "mboxName");
+		JSONObject metric1 = new JSONObject();
+		metric1.put("eventToken", "token1");
+		metric1.put(METRIC_TYPE, METRIC_TYPE_CLICK);
+		JSONObject metric2 = new JSONObject();
+		JSONObject metric3 = new JSONObject();
+		metric3.put(METRIC_TYPE, "custom");
+		JSONArray metricsArray = new JSONArray();
+		metricsArray.put(metric1);
+		metricsArray.put(metric2);
+		metricsArray.put(metric3);
+		mboxJson.put(METRICS, metricsArray);
+
+		// test
+		JSONObject clickJson = targetRequestBuilder.getClickNotificationJsonObject(mboxJson,
+				null, 123L, null);
+
+		// verify
+		Assert.assertEquals(123L, clickJson.opt(TIMESTAMP));
+		Assert.assertEquals(METRIC_TYPE_CLICK, clickJson.opt(METRIC_TYPE));
+		Assert.assertEquals("mboxName", clickJson.optJSONObject(MBOX).opt(NAME));
+		Assert.assertEquals("token1", clickJson.optJSONArray(TOKENS).get(0));
+	}
+
 	@Test
 	public void getClickNotificationJsonObject_ReturnObjectWithTimeStampAndMetricType_When_InputJsonIsNull() {
 		// test
@@ -1960,9 +2051,59 @@ public class TargetRequestBuilderTest {
 				JSONObject) null, null, 123L, null);
 
 		// verify
-		assertNotNull(json);
-		assertEquals(123L, json.opt(TIMESTAMP));
-		assertEquals(METRIC_TYPE_CLICK, json.opt(METRIC_TYPE));
+		Assert.assertNotNull(json);
+		Assert.assertEquals(123L, json.opt(TIMESTAMP));
+		Assert.assertEquals(METRIC_TYPE_CLICK, json.opt(METRIC_TYPE));
+	}
+
+	// ===================================
+	// Test getDefaultJsonObject
+	// ===================================
+	@Test
+	public void getDefaultJsonObject_NullParameters() {
+		// test
+		Mockito.when(mockTargetState.getTntId()).thenReturn("tntId");
+		Mockito.when(mockTargetState.getThirdPartyId()).thenReturn("thirdPartyId");
+
+		JSONObject json = targetRequestBuilder.getDefaultJsonObject(null, null, null, 0L, null);
+
+		// verify
+		Assert.assertEquals(3, json.length());
+		Assert.assertNotNull(json.optJSONObject(ID));
+		Assert.assertNotNull(json.optJSONObject(CONTEXT_PARAMETERS));
+		Assert.assertNotNull(json.optJSONObject(EXPERIENCE_CLOUD));
+	}
+
+	@Test
+	public void getDefaultJsonObject_CustomParameters() {
+		// setup
+		Map<String, Object> idMap = new HashMap<String, Object>() {
+			{
+				put("id", "customId");
+			}
+		};
+
+		Map<String, Object> contextMap = new HashMap<String, Object>() {
+			{
+				put("context", "customContext");
+			}
+		};
+
+		Map<String, Object> experienceCloudId = new HashMap<String, Object>() {
+			{
+				put("ecid", "customEcid");
+			}
+		};
+
+		// test
+		JSONObject json = targetRequestBuilder.getDefaultJsonObject(idMap, contextMap, experienceCloudId,
+				1234L, getIdentitySharedState("mcid", "blob", "locationHint", new ArrayList<>()));
+
+		// verify
+		Assert.assertEquals(new JSONObject(idMap).toString(), json.optJSONObject(ID).toString());
+        Assert.assertEquals(new JSONObject(contextMap).toString(), json.optJSONObject(CONTEXT_PARAMETERS).toString());
+		Assert.assertEquals(new JSONObject(experienceCloudId).toString(), json.optJSONObject(EXPERIENCE_CLOUD).toString());
+		Assert.assertEquals(1234L, json.optLong(ENVIRONMENT_ID));
 	}
 
     // ===================================
