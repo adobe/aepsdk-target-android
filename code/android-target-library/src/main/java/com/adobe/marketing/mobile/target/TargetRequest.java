@@ -106,7 +106,7 @@ public class TargetRequest {
     /**
      * Get {@link #contentCallback} for this request
      *
-     * @return {@link AdobeCallback<String>} containing this {@code contentCallback}
+     * @return {@link AdobeCallback} containing this {@code contentCallback}
      */
     public AdobeCallback<String> getContentCallback() {
         return this.contentCallback;
