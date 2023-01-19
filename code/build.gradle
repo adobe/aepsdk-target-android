@@ -21,7 +21,6 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.2.2'
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.10'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -42,6 +41,13 @@ allprojects {
     }
 
     apply plugin: 'maven-publish'
+    if (project.hasProperty("sonatypeUser") && project.hasProperty("sonatypePass")) {
+        ext["ossrhUsername"] = "$sonatypeUser"
+        ext["ossrhPassword"] = "$sonatypePass"
+    } else {
+        ext["ossrhUsername"] = ""
+        ext["ossrhPassword"] = ""
+    }
 }
 
 license {
@@ -64,7 +70,7 @@ task clean(type: Delete) {
 
 ext {
     // android config
-    minSdkVersion = 19
+    minSdkVersion = 21
     targetSdkVersion = 33
     compileSdkVersion = 33
     versionCode = 2
@@ -74,7 +80,7 @@ ext {
     targetCompatibility = JavaVersion.VERSION_1_8
 
     // dependencies
-    junitVersion = "1.1.2"
+    junitVersion = "1.1.3"
     buildToolsVersion = "30.0.2"
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     jacocoVersion = "0.8.5"

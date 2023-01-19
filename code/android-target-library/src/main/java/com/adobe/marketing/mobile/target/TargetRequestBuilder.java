@@ -814,14 +814,6 @@ class TargetRequestBuilder {
 	 * @return target preview parameters in {@link JSONObject} format
 	 */
 	private JSONObject getPreviewParameters() {
-
-		// Bail out early if previewManager instance is null
-		if (targetPreviewManager == null) {
-			Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-					"getPreviewParameters - Unable to get the preview parameters, target preview manager is null");
-			return null;
-		}
-
 		if (targetPreviewManager.getPreviewToken() != null && targetPreviewManager.getPreviewParameters() != null) {
 			try {
 				return new JSONObject(targetPreviewManager.getPreviewParameters());

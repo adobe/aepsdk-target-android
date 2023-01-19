@@ -14,6 +14,7 @@ package com.adobe.marketing.mobile.target;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import com.adobe.marketing.mobile.AdobeCallback;
 import com.adobe.marketing.mobile.AdobeError;
@@ -152,5 +153,24 @@ public class TargetRequestTests {
         assertEquals(TARGET_PARAMETERS_HAPPY_PATH, targetRequest.getTargetParameters());
         assertEquals(DEFAULT_CONTENT_HAPPY_PATH, targetRequest.getDefaultContent());
         assertEquals(RESPONSE_PAIR_ID_HAPPY_PATH, targetRequest.getResponsePairId());
+    }
+
+    @Test
+    public void testFromEventData_InvalidTargetRequest() {
+        final Map<String, Object> targetRequestMap = new HashMap<>();
+        targetRequestMap.put("name", MBOX_NAME_HAPPY_PATH);
+        targetRequestMap.put("targetparams", TARGET_PARAMETERS_HAPPY_PATH_MAP);
+        targetRequestMap.put("defaultContent", DEFAULT_CONTENT_HAPPY_PATH);
+        targetRequestMap.put("responsePairId", new Object());
+
+        final TargetRequest targetRequest = TargetRequest.fromEventData(targetRequestMap);
+        assertNull(targetRequest);
+    }
+
+    @Test
+    public void testFromEventData_nullOrEmptyTargetRequest() {
+        assertNull(TargetRequest.fromEventData(null));
+
+        assertNull( TargetRequest.fromEventData(new HashMap<>()));
     }
 }
