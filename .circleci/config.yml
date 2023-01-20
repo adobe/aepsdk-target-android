@@ -12,7 +12,7 @@
 
 version: 2.1
 orbs:
-  android: circleci/android@1.0
+  android: circleci/android@2.1.2
 
 # Workflows orchestrate a set of jobs to be run;
 workflows:
@@ -25,12 +25,16 @@ workflows:
 jobs:
   build-and-unit-test:
     working_directory: ~/code
-    docker:
-      - image: circleci/android:api-29-node
-    environment:
-      JVM_OPTS: -Xmx3200m
+    executor:
+        name: android/android-machine
+        resource-class: large
+        tag: 2021.10.1
     steps:
       - checkout
+      - run:
+          name: Checkstyle
+          command: make checkstyle
+
       - run:
           name: Javadoc
           command: make ci-javadoc
@@ -68,6 +72,7 @@ jobs:
     executor:
       name: android/android-machine
       resource-class: large
+      tag: 2021.10.1
     steps:
       - checkout
       - android/start-emulator-and-run-tests:
