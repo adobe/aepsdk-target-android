@@ -12,7 +12,7 @@
 
 version: 2.1
 orbs:
-  android: circleci/android@1.0
+  android: circleci/android@2.1.2
 
 # Workflows orchestrate a set of jobs to be run;
 workflows:
@@ -24,26 +24,30 @@ workflows:
  
 jobs:
   build-and-unit-test:
+    executor:
+        name: android/android-machine
+        resource-class: large
+        tag: 2022.01.1
     working_directory: ~/code
-    docker:
-      - image: circleci/android:api-29-node
-    environment:
-      JVM_OPTS: -Xmx3200m
     steps:
       - checkout
       - run:
+          name: Check style
+          command: make checkstyle
+      
+      - run:
           name: Javadoc
-          command: make ci-javadoc
+          command: make javadoc
       - store_artifacts:
           path: ci/javadoc/build/reports
 
       - run:
           name: Build
-          command: make ci-build
+          command: make build
 
       - run:
           name: UnitTests
-          command: make ci-unit-test
+          command: make unit-test
 
       # code coverage
       - run:
