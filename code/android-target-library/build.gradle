@@ -67,21 +67,16 @@ android {
     }
 }
 
-android.libraryVariants.all { variant ->
+afterEvaluate {
     tasks.withType(Javadoc) {
         source = [android.sourceSets.main.java.sourceFiles, android.sourceSets.phone.java.sourceFiles]
-        ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
-
-        doFirst{classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)}
-
-        exclude "**/BuildConfig.java"
-        exclude "**/R.java"
+        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+        classpath += files(android.libraryVariants.collect { variant ->
+            variant.javaCompileProvider.get().classpath.files
+        })
         options {
+            source = "8"
             links "https://developer.android.com/reference"
-        }
-        def currentJavaVersion = JavaVersion.current()
-        if (currentJavaVersion >= JavaVersion.VERSION_1_9) {
-            options.addStringOption("-release", "8");
         }
     }
 }
@@ -220,7 +215,7 @@ task platformFunctionalTestJacocoReport(type: JacocoReport, dependsOn: "createPh
 apply from: '../checkstyle.gradle'
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
 
     // Adobe Mobile SDK Core
     // implementation "com.adobe.marketing.mobile:core:${rootProject.mavenCoreVersion}"
