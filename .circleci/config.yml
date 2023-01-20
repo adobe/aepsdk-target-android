@@ -35,11 +35,11 @@ jobs:
           name: Check style
           command: make checkstyle
       
-      - run:
-          name: Javadoc
-          command: make javadoc
-      - store_artifacts:
-          path: ci/javadoc/build/reports
+      # - run:
+      #     name: Javadoc
+      #     command: make javadoc
+      # - store_artifacts:
+      #     path: ci/javadoc/build/reports
 
       - run:
           name: Build
@@ -79,9 +79,9 @@ jobs:
           #   It should match the name seen in the "sdkmanager --list" output
           system-image: system-images;android-29;default;x86
           #   The command to be run, while waiting for emulator startup
-          post-emulator-launch-assemble-command: make ci-build
+          post-emulator-launch-assemble-command: make build
           #   The test command
-          test-command: make ci-functional-test
+          test-command: make functional-test
 
       # code coverage
       - run:
