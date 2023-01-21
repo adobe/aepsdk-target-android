@@ -52,6 +52,9 @@ class TargetResponseParser {
 		try {
 			if (connection != null) {
 				final String responseString = StreamUtils.readAsString(connection.getInputStream());
+				if (StringUtils.isNullOrEmpty(responseString)) {
+					return null;
+				}
 				final JSONObject responseJson = new JSONObject(responseString);
 				Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Target Response was received : %s", responseString);
 				return responseJson;

@@ -1319,6 +1319,7 @@ public class TargetExtension extends Extension {
         if (!StringUtils.isNullOrEmpty(pairId)) {
             data.put(TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID, pairId);
         }
+
         data.put(TargetConstants.EventDataKeys.TARGET_RESPONSE_EVENT_ID, event.getUniqueIdentifier());
 
         // Create Event and dispatch to EventHub
