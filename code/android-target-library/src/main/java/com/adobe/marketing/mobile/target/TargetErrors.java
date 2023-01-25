@@ -14,11 +14,10 @@ package com.adobe.marketing.mobile.target;
 
 final class TargetErrors {
 	static final String NO_CLIENT_CODE = "Missing client code";
-	static final String CONFIG_NULL = "Missing shared configuration state";
-	static final String OPTED_OUT = "Privacy status is opted out";
+	static final String NOT_OPTED_IN = "Privacy status is not opted in";
 	static final String NO_PREFETCH_REQUESTS = "Empty or null prefetch requests list";
 	static final String NO_CONNECTION = "Unable to open connection";
-	static final String NULL_RESPONSE_JSON = "Null response Json";
+	static final String NULL_RESPONSE_JSON = "Null response Json ";
 	static final String ERROR_RESPONSE = "Errors returned in Target response: ";
 	static final String NOTIFICATION_ERROR_TAG = "Notification";
 	static final String NO_PREFETCH_MBOXES = "No prefetch mbox content in Target response";
@@ -30,7 +29,7 @@ final class TargetErrors {
 	static final String REQUEST_BUILDER_INIT_FAILED = "Couldn't initialize the target request builder for this request";
 	static final String REQUEST_BUILDER_INIT_FAILED_NOTIFICATIONS =
 		"Couldn't initialize the target request builder to extract the notifications";
-	static final String REQUEST_GENERATION_FAILED = "Failed to generate the Target request payload (%s)";
+	static final String REQUEST_GENERATION_FAILED = "Failed to generate the Target request payload";
 	static final String UNEXPECTED_VISITORIDS_LIST = "The serialized visitorIdsList received as parameter is not a list %s";
 	static final String NO_CACHED_MBOX_FOUND = "No cached mbox found for %s";
 	static final String TOKEN_LIST_EMPTY_OR_NULL = "Tokens list is null or empty in the view notification object";
@@ -46,7 +45,6 @@ final class TargetErrors {
 	static final String NO_CLICK_METRIC_FOUND = "No click metric found on mbox: %s";
 	static final String CLICK_NOTIFICATION_CREATE_FAILED = "Failed to create click notification Json(%s)";
 	static final String NO_PREFETCH_IN_PREVIEW = "Target prefetch can't be used while in preview mode";
-	static final String PREVIEW_MANAGER_INIT_FAILED = "Couldn't initialize the Target preview manager";
 	static final String TARGET_NOT_ENABLED_FOR_PREVIEW = "Target is not enabled, cannot enter in preview mode: %s";
 	static final String TARGET_PREVIEW_DISABLED =
 		"Target Preview is disabled, please change the configuration and try again";
