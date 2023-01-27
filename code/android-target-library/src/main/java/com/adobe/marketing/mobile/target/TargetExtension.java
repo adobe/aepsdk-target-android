@@ -13,6 +13,7 @@
 package com.adobe.marketing.mobile.target;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.EventSource;
@@ -119,6 +120,27 @@ public class TargetExtension extends Extension {
     }
 
     /**
+     * Constructor for {@code TargetExtension}.
+     * <p>
+     * Used only for Testing purposes.
+     *
+     * @param extensionApi {@link ExtensionApi} instance.
+     */
+    @VisibleForTesting
+    protected TargetExtension(final ExtensionApi extensionApi, final DeviceInforming deviceInfoService, final Networking networkService,
+                              final UIService uiService, final TargetState targetState, final TargetPreviewManager targetPreviewManager,
+                              final TargetRequestBuilder requestBuilder, final TargetResponseParser responseParser) {
+        super(extensionApi);
+        this.deviceInfoService = deviceInfoService;
+        this.networkService = networkService;
+        this.uiService = uiService;
+        this.targetState = targetState;
+        this.targetPreviewManager = targetPreviewManager;
+        this.targetRequestBuilder = requestBuilder;
+        this.targetResponseParser = responseParser;
+    }
+
+    /**
      * Retrieve the extension name.
      *
      * @return {@link String} containing the unique name for this extension.
@@ -188,6 +210,7 @@ public class TargetExtension extends Extension {
             if (TargetUtils.isNullOrEmpty(flattenedPrefetchRequests)) {
                 Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
                         "handleTargetRequestContentEvent -Failed to retrieve Target Prefetch list (%s)", TargetErrors.NO_PREFETCH_REQUESTS);
+                dispatchMboxPrefetchResult(TargetErrors.NO_PREFETCH_REQUESTS, event);
                 return;
             }
             final List<TargetPrefetch> targetPrefetchRequests = new ArrayList<>();
@@ -290,7 +313,7 @@ public class TargetExtension extends Extension {
         final String deepLink = DataReader.optString(event.getEventData(), TargetConstants.PreviewKeys.DEEPLINK, null);
 
         if (!StringUtils.isNullOrEmpty(deepLink)) {
-            setupPreviewMode(event, deepLink);
+            setupPreviewMode(deepLink);
         }
     }
 
@@ -502,7 +525,7 @@ public class TargetExtension extends Extension {
 
         for (String mboxName : mboxNames) {
 
-            //If loadedMbox contains mboxName then do not send analytics request again
+            // If loadedMbox contains mboxName then do not send analytics request again
             if (StringUtils.isNullOrEmpty(mboxName) || targetState.getLoadedMbox().containsKey(mboxName)) {
                 continue;
             }
@@ -658,8 +681,8 @@ public class TargetExtension extends Extension {
 
         if (targetState.getMobilePrivacyStatus() != MobilePrivacyStatus.OPT_IN) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "prepareForTargetRequest - TargetRequest preparation failed because (%s)", TargetErrors.OPTED_OUT);
-            return TargetErrors.OPTED_OUT;
+                    "prepareForTargetRequest - TargetRequest preparation failed because (%s)", TargetErrors.NOT_OPTED_IN);
+            return TargetErrors.NOT_OPTED_IN;
         }
 
         return null;
@@ -731,7 +754,7 @@ public class TargetExtension extends Extension {
 
             // save the network request timestamp for computing the session id expiration
             targetState.updateSessionTimestamp(false);
-            setTntIdInternal( targetResponseParser.getTntId(responseJson));
+            setTntIdInternal(targetResponseParser.getTntId(responseJson));
             targetState.updateEdgeHost(targetResponseParser.getEdgeHost(responseJson));
 
             getApi().createSharedState(targetState.generateSharedState(), event);
@@ -758,7 +781,7 @@ public class TargetExtension extends Extension {
                                      final Event event) {
         if (TargetUtils.isNullOrEmpty(targetPrefetchRequests)) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleMboxPrefetch - Unable to prefetch mbox content, Error %s",
+                    "prefetchMboxContent - Unable to prefetch mbox content, Error %s",
                     TargetErrors.NO_PREFETCH_REQUESTS);
             dispatchMboxPrefetchResult(TargetErrors.NO_PREFETCH_REQUESTS, event);
             return;
@@ -767,7 +790,7 @@ public class TargetExtension extends Extension {
         final String sendRequestError = prepareForTargetRequest();
         if (sendRequestError != null) {
             Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "handleMboxPrefetch - Unable to prefetch mbox content, Error %s",
+                    "prefetchMboxContent - Unable to prefetch mbox content, Error %s",
                     sendRequestError);
             dispatchMboxPrefetchResult(sendRequestError, event);
             return;
@@ -1212,10 +1235,9 @@ public class TargetExtension extends Extension {
      * It then dispatches a new event to messages to create a custom full screen message for target preview.
      * Bail out if the Target configurations are not found or if preview is disabled in Target configuration or if {@code TargetPreviewManager} cannot be instantiated.
      *
-     * @param event    current {@link Event} used for retrieving the config shared state
      * @param deepLink {@link String} the deep link extracted from the {@link EventType#GENERIC_DATA} {@link EventSource#OS} event
      */
-    private void setupPreviewMode(final Event event, final String deepLink) {
+    private void setupPreviewMode(final String deepLink) {
         final String sendRequestError = prepareForTargetRequest();
         if (sendRequestError != null) {
             Log.debug(TargetConstants.LOG_TAG, "setupPreviewMode - " + TargetErrors.TARGET_NOT_ENABLED_FOR_PREVIEW,
@@ -1319,7 +1341,6 @@ public class TargetExtension extends Extension {
         if (!StringUtils.isNullOrEmpty(pairId)) {
             data.put(TargetConstants.EventDataKeys.TARGET_RESPONSE_PAIR_ID, pairId);
         }
-
         data.put(TargetConstants.EventDataKeys.TARGET_RESPONSE_EVENT_ID, event.getUniqueIdentifier());
 
         // Create Event and dispatch to EventHub
@@ -1439,7 +1460,6 @@ public class TargetExtension extends Extension {
 
     /**
      * Saves the {@code #thirdPartyId} to the Target DataStore or remove its key in the dataStore if the newThirdPartyId {@link String} is null
-     * If the {@code #thirdPartyId} ID is changed. We set the sessionID to null to start a new session.
      *
      * @param updatedThirdPartyId newThirdPartyID {@link String} to be set
      */
