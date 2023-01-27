@@ -42,6 +42,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -242,7 +243,7 @@ public class TargetExtensionTests {
         // test
         extension.onRegistered();
 
-        // verify that five listeners are registers
+        // verify that five listeners are registered
         verify(mockExtensionApi, times(5)).registerEventListener(any(), any(), any());
     }
 
@@ -258,7 +259,7 @@ public class TargetExtensionTests {
         // test
         extension.readyForEvent(noEventDataEvent());
 
-        // verify target state is updated with correct configuration
+        // verify target state is not updated with correct configuration
         verify(targetState).updateConfigurationSharedState(notNull());
     }
 
@@ -267,7 +268,7 @@ public class TargetExtensionTests {
         // test
         extension.readyForEvent(noEventDataEvent());
 
-        // verify that five listeners are registers
+        // verify that the target state is not updated with latest configuration
         verify(targetState).updateConfigurationSharedState(null);
     }
 
@@ -692,7 +693,7 @@ public class TargetExtensionTests {
         final Event event = setThirdPartyIdEvent(MOCK_THIRD_PARTY_ID);
         extension.handleTargetRequestIdentityEvent(event);
 
-        // validate that the shared state is updated with empty map and the thrid party Id is not set
+        // validate that the shared state is updated with empty map and the third party Id is not set
         verify(mockExtensionApi).createSharedState(emptySharedState, event);
         verify(targetState, times(0)).updateThirdPartyId(any());
     }
