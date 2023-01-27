@@ -1,4 +1,4 @@
-EXTENSION-LIBRARY-FOLDER-NAME = android-target-library
+EXTENSION-LIBRARY-FOLDER-NAME = target
 
 BUILD-ASSEMBLE-LOCATION = ./ci/assemble
 ROOT_DIR=$(shell git rev-parse --show-toplevel)

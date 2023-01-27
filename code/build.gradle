@@ -72,7 +72,7 @@ task clean(type: Delete) {
 
 ext {
     // android config
-    minSdkVersion = 21
+    minSdkVersion = 19
     targetSdkVersion = 33
     compileSdkVersion = 33
     versionCode = 2
