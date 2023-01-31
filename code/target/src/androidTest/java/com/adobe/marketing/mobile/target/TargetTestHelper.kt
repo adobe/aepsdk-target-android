@@ -95,7 +95,7 @@ internal object TargetTestHelper {
                 if (mBoxResponseMap.size > 0 && mBoxResponseMap.containsKey(mboxNames[i])) {
                     val mBoxObject = mBoxResponseMap[mboxNames[i]]
                     val optionsArray = mBoxObject!!.optJSONArray(TARGET_API_JSON_OPTIONS)
-                    var optionsObject: JSONObject? = null
+                    var optionsObject: JSONObject?
                     if (optionsArray != null && optionsArray.length() > 0) {
                         optionsObject = optionsArray.optJSONObject(0)
                         if (optionsObject != null) {
@@ -181,7 +181,7 @@ internal object TargetTestHelper {
             errorMessage, clientCode, prefetchResponses, mboxResponses, edgeHost, tntId,
             null, null
         )
-        return responseString?.byteInputStream() ?: null
+        return responseString?.byteInputStream()
     }
 
     private fun createMBoxResponse(
@@ -309,7 +309,7 @@ internal object TargetTestHelper {
         if (responseContent == null) {
             return mBoxResponseHashMap
         }
-        var contentJsonObject: JSONObject? = null
+        var contentJsonObject: JSONObject?
         contentJsonObject = try {
             JSONObject(responseContent)
         } catch (e: JSONException) {

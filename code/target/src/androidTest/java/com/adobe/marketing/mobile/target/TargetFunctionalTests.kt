@@ -341,7 +341,7 @@ class TargetFunctionalTests {
 
         // setup
         val retrieveLocationCountdownLatch = CountDownLatch(1)
-        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { status ->
+        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { _ ->
             retrieveLocationCountdownLatch.countDown()
         })
         var retrieveLocationRequestString = ""
@@ -437,7 +437,7 @@ class TargetFunctionalTests {
         val targetParameters: TargetParameters = TargetParameters.Builder()
             .order(TargetOrder.fromEventData(orderParameters))
             .build()
-        val targetRequestList = listOf(TargetRequest(mboxName, targetParameters, defaultContent) { data ->
+        val targetRequestList = listOf(TargetRequest(mboxName, targetParameters, defaultContent) { _ ->
             retrieveLocationCountdownLatch.countDown()
         })
         var retrieveLocationRequestString = ""
@@ -475,7 +475,7 @@ class TargetFunctionalTests {
         val targetParameters: TargetParameters = TargetParameters.Builder()
             .product(TargetProduct.fromEventData(productParameters))
             .build()
-        val targetRequestList = listOf(TargetRequest(mboxName, targetParameters, defaultContent) { data ->
+        val targetRequestList = listOf(TargetRequest(mboxName, targetParameters, defaultContent) { _ ->
             retrieveLocationCountdownLatch.countDown()
         })
         var retrieveLocationRequestString = ""
@@ -510,7 +510,7 @@ class TargetFunctionalTests {
             .order(TargetOrder.fromEventData(orderParameters))
             .product(TargetProduct.fromEventData(productParameters))
             .build()
-        val targetRequestList = listOf(TargetRequest(mboxName, targetParameters, defaultContent) { data ->
+        val targetRequestList = listOf(TargetRequest(mboxName, targetParameters, defaultContent) { _ ->
             retrieveLocationCountdownLatch.countDown()
         })
         var retrieveLocationRequestString = ""
@@ -595,7 +595,7 @@ class TargetFunctionalTests {
     fun test_Functional_Happy_Target_targetRetrieveLocationContent_VerifyWithoutTargetParameters() {
         // setup
         val retrieveLocationCountdownLatch = CountDownLatch(1)
-        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { data ->
+        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { _ ->
             retrieveLocationCountdownLatch.countDown()
         })
         var retrieveLocationRequestString = ""

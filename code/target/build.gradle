@@ -135,7 +135,7 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:github.com//Adobe-Marketing-Cloud/acp-sdks.git'
+                    connection = 'scm:git:github.com//adobe/aepsdk-target-android.git'
                     developerConnection = 'scm:git:ssh://github.com/adobe/aepsdk-target-android.git'
                     url = 'https://github.com/adobe/aepsdk-target-android'
                 }
@@ -220,7 +220,7 @@ task platformFunctionalTestJacocoReport(type: JacocoReport, dependsOn: "createPh
 apply from: '../checkstyle.gradle'
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation "androidx.annotation:annotation:1.0.0"
 
     // Adobe Mobile SDK Core
     // implementation "com.adobe.marketing.mobile:core:${rootProject.mavenCoreVersion}"

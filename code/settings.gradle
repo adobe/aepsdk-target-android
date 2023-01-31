@@ -10,5 +10,5 @@
  * governing permissions and limitations under the License.
  */
 include ':testapp'
-include ':android-target-library'
+include ':target'
 rootProject.name = 'aepsdk-target-android'

@@ -43,7 +43,7 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
-    implementation project(':android-target-library')
+    implementation project(':target')
     implementation 'com.adobe.marketing.mobile:core:2.0.0-SNAPSHOT'
     implementation('com.adobe.marketing.mobile:identity:2.0.0-SNAPSHOT') {
         transitive = false
