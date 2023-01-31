@@ -365,7 +365,7 @@ class TargetRequestBuilder {
 					idNode.put(TargetJson.ID_MARKETING_CLOUD_VISITOR_ID, visitorMarketingCloudId);
 				}
 
-				final List<VisitorID> visitorCustomerIds = DataReader.optTypedList(VisitorID.class, identityData, TargetConstants.Identity.VISITOR_IDS_LIST, null);
+				final List<Map<String,Object>> visitorCustomerIds = DataReader.optTypedListOfMap(Object.class, identityData, TargetConstants.Identity.VISITOR_IDS_LIST, null);
 				if (visitorCustomerIds != null && !visitorCustomerIds.isEmpty()) {
 					idNode.put(TargetJson.ID_CUSTOMER_IDS, getCustomerIDs(visitorCustomerIds));
 				}
@@ -561,21 +561,20 @@ class TargetRequestBuilder {
 	 * @param customerIDs the {@code List<VisitorID>} of customer visitor id
 	 * @return the {@code JSONArray} generated
 	 */
-	private JSONArray getCustomerIDs(final List<VisitorID> customerIDs) {
+	private JSONArray getCustomerIDs(final List<Map<String, Object>> customerIDs) {
 		final JSONArray customerIDsArrayNode = new JSONArray();
 
 		try {
-			for (VisitorID visitorID : customerIDs) {
-				JSONObject newVisitorIDNode = new JSONObject();
-				newVisitorIDNode.put(TargetJson.CustomerIds.ID, visitorID.getId());
-				newVisitorIDNode.put(TargetJson.CustomerIds.INTEGRATION_CODE, visitorID.getIdType());
-				newVisitorIDNode.put(TargetJson.CustomerIds.AUTHENTICATION_STATE,
-						getAuthenticationStateToString(visitorID.getAuthenticationState()));
+			for (Map<String, Object> visitorID : customerIDs) {
+				final JSONObject newVisitorIDNode = new JSONObject();
+				newVisitorIDNode.put(TargetJson.CustomerIds.ID, String.valueOf(visitorID.get(TargetConstants.Identity.VISITOR_IDS_KEY_ID)));
+				newVisitorIDNode.put(TargetJson.CustomerIds.INTEGRATION_CODE, String.valueOf(visitorID.get(TargetConstants.Identity.VISITOR_IDS_ID_KEY_TYPE)));
+				final int authenticationStateInt = DataReader.optInt(visitorID, TargetConstants.Identity.VISITOR_IDS_KEY_AUTHENTICATION_STATE, -1);
+				newVisitorIDNode.put(TargetJson.CustomerIds.AUTHENTICATION_STATE, getAuthenticationStateToString(VisitorID.AuthenticationState.fromInteger(authenticationStateInt)));
 				customerIDsArrayNode.put(newVisitorIDNode);
 			}
 		} catch (final JSONException exception) {
 			Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to create json node for customer visitor ids (%s)", exception);
-
 		}
 
 		return customerIDsArrayNode;
