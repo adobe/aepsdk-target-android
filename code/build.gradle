@@ -85,9 +85,4 @@ ext {
     buildToolsVersion = "30.0.2"
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     jacocoVersion = "0.8.7"
-
-    // kotlin
-    kotlinJvmTarget = JavaVersion.VERSION_1_8
-    kotlinLanguageVersion = "1.4"
-    kotlinApiVersion = "1.4"
 }
