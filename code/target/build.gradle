@@ -135,7 +135,7 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:github.com//Adobe-Marketing-Cloud/acp-sdks.git'
+                    connection = 'scm:git:github.com//adobe/aepsdk-target-android.git'
                     developerConnection = 'scm:git:ssh://github.com/adobe/aepsdk-target-android.git'
                     url = 'https://github.com/adobe/aepsdk-target-android'
                 }
