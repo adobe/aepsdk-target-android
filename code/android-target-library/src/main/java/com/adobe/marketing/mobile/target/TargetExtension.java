@@ -495,7 +495,7 @@ public class TargetExtension extends Extension {
      *     <li> If the mboxes are either loaded previously or not prefetched.</li>
      * </ol>
      *
-     * @param event            the {@link Event} object
+     * @param event the {@link Event} object
      */
     void handleLocationsDisplayed(@NonNull final Event event) {
         Log.trace(TargetConstants.LOG_TAG, CLASS_NAME,
@@ -813,7 +813,7 @@ public class TargetExtension extends Extension {
                     connection.close();
 
                     if (responseJson == null) {
-                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "prefetchMboxContent - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
                         dispatchMboxPrefetchResult(TargetErrors.NULL_RESPONSE_JSON + responseError, event);
                         return;
                     }
@@ -992,7 +992,7 @@ public class TargetExtension extends Extension {
      * <p>
      * If a cached mbox exists, then dispatch the mbox content.
      *
-     * @param batchRequests    an {@code List<TargetRequest>} representing the desired mboxes to load
+     * @param batchRequests an {@code List<TargetRequest>} representing the desired mboxes to load
      * @return {@code List<TargetRequest>} that didn't hit the cache
      */
     List<TargetRequest> processCachedTargetRequest(final List<TargetRequest> batchRequests, final Event event) {

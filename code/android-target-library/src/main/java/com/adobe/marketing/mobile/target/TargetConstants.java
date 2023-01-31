@@ -203,6 +203,9 @@ final class TargetConstants {
         static final String VISITOR_ID_LOCATION_HINT = "locationhint";
         static final String VISITOR_IDS_LIST = "visitoridslist";
         static final String ADVERTISING_IDENTIFIER = "advertisingidentifier";
+        static final String VISITOR_IDS_KEY_ID = "ID";
+        static final String VISITOR_IDS_ID_KEY_TYPE = "ID_TYPE";
+        static final String VISITOR_IDS_KEY_AUTHENTICATION_STATE = "STATE";
 
         private Identity() {}
     }
