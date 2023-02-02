@@ -16,7 +16,7 @@ import java.util.HashMap;
 
 final class TargetConstants {
     static final String LOG_TAG = "Target";
-    static final String EXTENSION_NAME = "com.adobe.target";
+    static final String EXTENSION_NAME = "com.adobe.module.target";
     static final String FRIENDLY_NAME = "Target";
 
     static final String API_URL_HOST_BASE 		= "%s.tt.omtrdc.net";

@@ -16,7 +16,7 @@ import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.ui.FullscreenMessage;
 import com.adobe.marketing.mobile.services.ui.FullscreenMessageDelegate;
 
-public class TargetPreviewFullscreenDelegate implements FullscreenMessageDelegate {
+class TargetPreviewFullscreenDelegate implements FullscreenMessageDelegate {
 	private static final String CLASS_NAME = "TargetPreviewFullscreenDelegate";
 	final private TargetPreviewManager targetPreviewManager;
 

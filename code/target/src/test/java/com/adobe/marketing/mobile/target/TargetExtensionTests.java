@@ -207,7 +207,7 @@ public class TargetExtensionTests {
     public void test_getName() {
         // test
         final String extensionName = extension.getName();
-        assertEquals("getName should return the correct extension name.", "com.adobe.target", extensionName);
+        assertEquals("getName should return the correct extension name.", "com.adobe.module.target", extensionName);
     }
 
     @Test

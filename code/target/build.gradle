@@ -223,8 +223,7 @@ dependencies {
     implementation "androidx.annotation:annotation:1.0.0"
 
     // Adobe Mobile SDK Core
-    // implementation "com.adobe.marketing.mobile:core:${rootProject.mavenCoreVersion}"
-    implementation 'com.adobe.marketing.mobile:core:2.0.0-SNAPSHOT'
+    implementation 'com.adobe.marketing.mobile:core:2.0.0'
 
     testImplementation "androidx.test.ext:junit:${rootProject.ext.junitVersion}"
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
