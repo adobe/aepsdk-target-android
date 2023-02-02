@@ -124,7 +124,7 @@ publishing {
                 url = 'https://developer.adobe.com/client-sdks'
                 licenses {
                     license {
-                        name = 'Adobe Proprietary'
+                        name = 'Apache 2.0'
                     }
                 }
                 developers {
