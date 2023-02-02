@@ -1,20 +1,13 @@
-# Adobe Experience Platform Target Mobile SDK (Beta)
-
-## Beta version acknowledgment
-
-By using the AEP Target mobile SDK ("Beta"), you hereby acknowledge that the Beta is provided "as is" without warranty of any kind. Adobe shall have no obligation to maintain, correct, update, change, modify or otherwise support the Beta. You are advised to use caution and not to rely in any way on the correct functioning or performance of such Beta and/or accompanying materials.
+# Adobe Experience Platform Target Mobile SDK
 
 ## About this project
-The AEP Target mobile SDK Extension provides APIs to personalize, and optimize mobile app experiences based on user behavior and mobile context.
 
-## Installation
-Integrate the Target extension into your app by including the following lines in your gradle file's `dependencies`:
+Adobe Target helps test, personalize, and optimize mobile app experiences based on user behavior and mobile context. You can deliver interactions that engage and convert through iterative testing and rules-based and AI-powered personalization.
 
-```
-implementation 'com.adobe.marketing.mobile:target:2.+'
-implementation 'com.adobe.marketing.mobile:core:2.+'
-implementation 'com.adobe.marketing.mobile:identity:2.+'
-```
+
+## Getting started
+
+Refer to the [getting started](./Documentation/getting-started.md) guide for setting up and using the SDK with your application.
 
 ### Development
 
@@ -23,13 +16,17 @@ implementation 'com.adobe.marketing.mobile:identity:2.+'
 To open and run the project, open the `code/build.gradle` file in Android Studio
 
 **Run demo application**
-Once you open the project in Android Studio (see above), select the `app` runnable and your favorite emulator and run the program.
+Once you open the project in Android Studio (see above), select the `testapp` runnable and your favorite emulator and run the program.
+
+## Documentation
+
+Additional documentation about API usage and SDK architecture can be found under the [Documentation](./Documentation) directory.
 
 ## Related Projects
 
 | Project                                                      | Description                                                  |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| [AEP SDK Sample App for Android](https://github.com/adobe/aepsdk-sample-app-android) | Contains Android sample app for the AEP SDK. |
+| [Core extensions](https://github.com/adobe/aepsdk-core-android)                                    | The Mobile Core represents the foundation of the Experience Platform Mobile SDK. |
 
 ## Contributing
 Contributions are welcomed! Read the [CONTRIBUTING](.github/CONTRIBUTING.md) for more information.
