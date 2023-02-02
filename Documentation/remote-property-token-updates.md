@@ -87,7 +87,7 @@ On Experience Platform Data Collection, navigate to Data Collection > Tags using
 3. From the Event Type dropdown list, select Content Prefetched.
 4. Click on Keep Changes.
 
-![Remote property token regular prefetch request rule event configuration](./assets/remote-property-token-prefetch-regular-request-rule-event-configuration.jpg)
+![Remote property token regular prefetch request rule event configuration](./assets/remote-property-token-regular-prefetch-request-rule-event-configuration.jpg)
 
 **Define the action**
 
@@ -182,7 +182,7 @@ On Experience Platform Data Collection, navigate to Data Collection > Tags using
 3. From the Event Type dropdown list, select Locations Displayed.
 4. Click on Keep Changes.
 
-![Remote property token regular display notification rule event configuration](./assets/remote-property-token-regular-display-notification-rule-event-configuration.jpg)
+![Remote property token regular display notification rule event configuration](./assets/remote-property-token-regular-display-notification-event-configuration.jpg)
 
 **Define the action**
 

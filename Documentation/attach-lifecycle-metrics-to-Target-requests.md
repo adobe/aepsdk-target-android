@@ -8,7 +8,7 @@ On Experience Platform Data Collection, navigate to Data Collection > Tags using
 1. In your mobile property, navigate to Rules in the left navigation panel and click on Create New Rule. If there already are existing rules, you can click on Add Rule to add a new rule.
 2. Provide a name for your rule. In the example here, the rule is named " Attach mobile lifecycle metrics to Target raw requests (execute)".
 
-![Attach lifecycle metrics raw request rule](attach-lifecycle-metrics-raw-request-rule.jpg)
+![Attach lifecycle metrics raw request rule](./assets/attach-lifecycle-metrics-raw-request-rule.jpg)
 
 **Select an event**
 
@@ -17,7 +17,7 @@ On Experience Platform Data Collection, navigate to Data Collection > Tags using
 3. From the Event Type dropdown list, select Raw Request.
 4. Click on Keep Changes.
 
-![Attach lifecycle metrics raw request rule event configuration](attach-lifecycle-metrics-raw-request-rule-event-configuration.jpg)
+![Attach lifecycle metrics raw request rule event configuration](./assets/attach-lifecycle-metrics-raw-request-rule-event-configuration.jpg)
 
 ** Define the action **
 
@@ -134,7 +134,7 @@ Attach data JSON for notification requests
 
 5. Click on Keep Changes.
 
-![Attach lifecycle metrics raw request rule action](attach-lifecycle-metrics-raw-request-rule-action.jpg)
+![Attach lifecycle metrics raw request rule action](./assets/attach-lifecycle-metrics-raw-request-rule-action.jpg)
 
 **Save the rule and republish the configuration**
 

@@ -14,7 +14,7 @@ To get started with Target, follow these steps:
 
 ## Configure the Target extension in the Data Collection UI
 
-![Adobe Target Extension Configuration](.assets/adobe-target-launch-options.png)
+![Adobe Target Extension Configuration](./assets/adobe-target-launch-options.png)
 
 1. In the Data Collection UI, click the **Extensions** tab.
 2. On the **Catalog** tab, locate the Adobe Target extension, and click **Install**.
@@ -252,10 +252,11 @@ For more information, see [Programmatic updates to Configuration](https://github
 > We recommend that, instead of passing the property token as a mbox parameter, you use an Experience Platform Launch configuration so that Target can pass the token. If the token is passed both in an Experience Platform Launch configuration, and as a mbox parameter, the token that was provided as the mbox parameter is discarded.
 
 > **Warning**
-> Currently, the `target.sessiontimeout` value can only be configured programmatically. For more information, see [updateConfiguration](https://aep-sdks.gitbook.io/docs/using-mobile-extensions/mobile-core/configuration/configuration-api-reference#programmatic-updates-to-configuration).
+> Currently, the `target.sessiontimeout` value can only be configured programmatically. For more information, see [updateConfiguration](https://github.com/adobe/aepsdk-core-android/blob/main/Documentation/MobileCore/api-reference.md#updating-the-configuration-programmatically).
 
 ## Additional information
 
+* Get familiar with the various APIs offered by the AEP SDK by checking out the [Adobe Target API reference](./api-reference.md).
 * Want to get your Target client code? See the **Client** row in [Configure mbox.js](https://experienceleague.adobe.com/docs/target/using/implement-target/client-side/implement-target-for-client-side-web.html?lang=en).
 * What is an mbox? See [How Target works in mobile apps](https://experienceleague.adobe.com/docs/target/using/implement-target/mobile-apps/mobile-how-target-works-mobile-apps.html?lang=en).
 * What is Analytics for Target \(A4T\)? See [Adobe Analytics as the reporting source for Adobe Target \(A4T\)](https://experienceleague.adobe.com/docs/target/using/integrate/a4t/a4t.html?lang=en).
