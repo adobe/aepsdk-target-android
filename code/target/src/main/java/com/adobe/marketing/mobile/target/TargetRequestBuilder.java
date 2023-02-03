@@ -567,8 +567,22 @@ class TargetRequestBuilder {
 		try {
 			for (Map<String, Object> visitorID : customerIDs) {
 				final JSONObject newVisitorIDNode = new JSONObject();
-				newVisitorIDNode.put(TargetJson.CustomerIds.ID, String.valueOf(visitorID.get(TargetConstants.Identity.VISITOR_IDS_KEY_ID)));
-				newVisitorIDNode.put(TargetJson.CustomerIds.INTEGRATION_CODE, String.valueOf(visitorID.get(TargetConstants.Identity.VISITOR_IDS_ID_KEY_TYPE)));
+
+				// Add CustomerId's Id
+				final String id = DataReader.optString(visitorID, TargetConstants.Identity.VISITOR_IDS_KEY_ID, null);
+				if (StringUtils.isNullOrEmpty(id)) {
+					continue; // id is a mandatory field, ignore populating this customerId if not available
+				}
+				newVisitorIDNode.put(TargetJson.CustomerIds.ID, id);
+
+				// Add CustomerId's IntegrationCode
+				final String type = DataReader.optString(visitorID, TargetConstants.Identity.VISITOR_IDS_ID_KEY_TYPE, null);
+				if (StringUtils.isNullOrEmpty(type)) {
+					continue;  // integrationCode is a mandatory field, ignoring customerId if not available
+				}
+				newVisitorIDNode.put(TargetJson.CustomerIds.INTEGRATION_CODE, type);
+
+				// Add CustomerId's AuthenticationState
 				final int authenticationStateInt = DataReader.optInt(visitorID, TargetConstants.Identity.VISITOR_IDS_KEY_AUTHENTICATION_STATE, -1);
 				newVisitorIDNode.put(TargetJson.CustomerIds.AUTHENTICATION_STATE, getAuthenticationStateToString(VisitorID.AuthenticationState.fromInteger(authenticationStateInt)));
 				customerIDsArrayNode.put(newVisitorIDNode);

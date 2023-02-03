@@ -17,7 +17,7 @@ final class TargetErrors {
 	static final String NOT_OPTED_IN = "Privacy status is not opted in";
 	static final String NO_PREFETCH_REQUESTS = "Empty or null prefetch requests list";
 	static final String NO_CONNECTION = "Unable to open connection";
-	static final String NULL_RESPONSE_JSON = "Null response Json ";
+	static final String NULL_RESPONSE_JSON = "Null response Json";
 	static final String ERROR_RESPONSE = "Errors returned in Target response: ";
 	static final String NOTIFICATION_ERROR_TAG = "Notification";
 	static final String NO_PREFETCH_MBOXES = "No prefetch mbox content in Target response";
