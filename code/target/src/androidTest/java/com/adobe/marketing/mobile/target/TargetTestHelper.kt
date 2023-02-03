@@ -10,11 +10,15 @@
  */
 package com.adobe.marketing.mobile.target
 
+import com.adobe.marketing.mobile.services.DeviceInforming
+import com.adobe.marketing.mobile.services.Log
+import com.adobe.marketing.mobile.services.ServiceProvider
 import com.adobe.marketing.mobile.util.StringUtils
-import java.io.InputStream
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import java.io.File
+import java.io.InputStream
 
 internal object TargetTestHelper {
     // ================================================================================
@@ -184,6 +188,15 @@ internal object TargetTestHelper {
         return responseString?.byteInputStream()
     }
 
+    /**
+     * Attempt to recursively delete all the files under the application cache directory.
+     * @see DeviceInforming.getApplicationCacheDir
+     */
+    fun cleanCacheDir() {
+        val cacheDir = ServiceProvider.getInstance().deviceInfoService.applicationCacheDir
+        deleteFiles(cacheDir)
+    }
+
     private fun createMBoxResponse(
         mboxName: String?,
         content: Any?,
@@ -334,6 +347,22 @@ internal object TargetTestHelper {
             mBoxResponseHashMap[mboxName] = mboxNode
         }
         return mBoxResponseHashMap
+    }
+
+    /**
+     * Recursively delete all files under the given `directory`.
+     * @param directory the directory to clean of files
+     */
+    private fun deleteFiles(directory: File?) {
+        if (directory == null) {
+            return
+        }
+        for (item in directory.listFiles()) {
+            if (item.isDirectory) {
+                deleteFiles(item)
+            }
+            item.delete()
+        }
     }
 
     /**
