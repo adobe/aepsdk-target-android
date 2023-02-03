@@ -736,7 +736,7 @@ public class TargetExtension extends Extension {
             connection.close();
 
             if (responseJson == null) {
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s)" + TargetErrors.NULL_RESPONSE_JSON);
                 dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
                 return;
             }
@@ -760,7 +760,7 @@ public class TargetExtension extends Extension {
             getApi().createSharedState(targetState.generateSharedState(), event);
             dispatchTargetRawResponseIfNeeded(isContentRequest,  JSONUtils.toMap(responseJson), event);
         } catch (final JSONException e) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRawResponse - (%s)" + TargetErrors.NULL_RESPONSE_JSON);
             dispatchTargetRawResponseIfNeeded(isContentRequest, null, event);
         }
     }
@@ -813,8 +813,8 @@ public class TargetExtension extends Extension {
                     connection.close();
 
                     if (responseJson == null) {
-                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "prefetchMboxContent - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
-                        dispatchMboxPrefetchResult(TargetErrors.NULL_RESPONSE_JSON + responseError, event);
+                        Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "prefetchMboxContent - (%s)" + TargetErrors.NULL_RESPONSE_JSON);
+                        dispatchMboxPrefetchResult(String.format(("%s %s"),TargetErrors.NULL_RESPONSE_JSON,responseError), event);
                         return;
                     }
 
