@@ -1886,7 +1886,12 @@ public class TargetExtensionTests {
     // TargetIdentitiesGetter
     //**********************************************************************************************
     @Test
-    public void testHandleTargetRequestIdentityEvent() {
+    public void testGetTargetIdentities_whenAllIDPresent() {
+        // setup
+        when(targetState.getThirdPartyId()).thenReturn(MOCK_THIRD_PARTY_ID);
+        when(targetState.getTntId()).thenReturn(MOCK_TNT_ID);
+        when(targetState.getSessionId()).thenReturn(MOCK_SESSION_ID);
+
         // test
         extension.handleTargetRequestIdentityEvent(noEventDataEvent());
 
@@ -1896,8 +1901,30 @@ public class TargetExtensionTests {
         assertEquals(EventType.TARGET, capturedEvent.getType());
         assertEquals(EventSource.RESPONSE_IDENTITY, capturedEvent.getSource());
         assertEquals(EventType.TARGET, capturedEvent.getType());
-        assertEquals(targetState.getThirdPartyId(), capturedEvent.getEventData().get(EventDataKeys.THIRD_PARTY_ID));
-        assertEquals(targetState.getTntId(), capturedEvent.getEventData().get(EventDataKeys.TNT_ID));
+        assertEquals(MOCK_THIRD_PARTY_ID, capturedEvent.getEventData().get(EventDataKeys.THIRD_PARTY_ID));
+        assertEquals(MOCK_TNT_ID, capturedEvent.getEventData().get(EventDataKeys.TNT_ID));
+        assertEquals(MOCK_SESSION_ID, capturedEvent.getEventData().get(EventDataKeys.SESSION_ID));
+    }
+
+
+    @Test
+    public void testGetTargetIdentities_whenNullTntIDAndThirdPartyID() {
+        // setup
+        when(targetState.getThirdPartyId()).thenReturn(null);
+        when(targetState.getTntId()).thenReturn(null);
+        when(targetState.getSessionId()).thenReturn(null);
+
+        // test
+        extension.handleTargetRequestIdentityEvent(noEventDataEvent());
+
+        // verify
+        verify(mockExtensionApi).dispatch(eventArgumentCaptor.capture());
+        final Event capturedEvent = eventArgumentCaptor.getValue();
+        assertEquals(EventType.TARGET, capturedEvent.getType());
+        assertEquals(EventSource.RESPONSE_IDENTITY, capturedEvent.getSource());
+        assertEquals(EventType.TARGET, capturedEvent.getType());
+        assertFalse(capturedEvent.getEventData().containsKey(EventDataKeys.THIRD_PARTY_ID));
+        assertFalse(capturedEvent.getEventData().containsKey(EventDataKeys.TNT_ID));
         assertEquals(targetState.getSessionId(), capturedEvent.getEventData().get(EventDataKeys.SESSION_ID));
     }
 
