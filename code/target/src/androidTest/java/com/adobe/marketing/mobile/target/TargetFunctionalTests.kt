@@ -262,7 +262,7 @@ class TargetFunctionalTests {
             waitForCallback?.countDown()
         }
         Target.retrieveLocationContent(listOf(targetRequest), targetParameters)
-        waitForCallback?.await(50, TimeUnit.SECONDS)
+        waitForCallback?.await(3, TimeUnit.SECONDS)
 
         // verify
         val json = JSONObject(networkRequestBody)
@@ -603,7 +603,7 @@ class TargetFunctionalTests {
             waitForCallback?.countDown() })
         Target.retrieveLocationContent(targetRequestList, null)
         waitForCallback?.await(5, TimeUnit.SECONDS)
-        waitForNetworkCall?.await(5000, TimeUnit.SECONDS)
+        waitForNetworkCall?.await(5, TimeUnit.SECONDS)
 
         val latch2 = CountDownLatch(1)
         val adobeCallback2: AdobeCallback<String?> =
@@ -2076,7 +2076,7 @@ class TargetFunctionalTests {
         val configurationLatch = CountDownLatch(1)
         configurationAwareness { configurationLatch.countDown() }
         MobileCore.updateConfiguration(config)
-        assertTrue(configurationLatch.await(5000, TimeUnit.MILLISECONDS))
+        assertTrue(configurationLatch.await(5, TimeUnit.SECONDS))
     }
 
     private fun resetRules() {
