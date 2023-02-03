@@ -32,7 +32,7 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TargetPreviewManager {
+class TargetPreviewManager {
 
     private static final String CLASS_NAME = "TargetPreviewManager";
     static final String CHARSET_UTF_8 = "UTF-8";

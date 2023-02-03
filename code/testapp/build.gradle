@@ -44,18 +44,12 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     implementation project(':target')
-    implementation 'com.adobe.marketing.mobile:core:2.0.0-SNAPSHOT'
-    implementation('com.adobe.marketing.mobile:identity:2.0.0-SNAPSHOT') {
-        transitive = false
-    }
-    implementation('com.adobe.marketing.mobile:lifecycle:2.0.0-SNAPSHOT') {
-        transitive = false
-    }
-    implementation('com.adobe.marketing.mobile:assurance:2.0.0-SNAPSHOT') {
-        transitive = false
-    }
+    implementation 'com.adobe.marketing.mobile:core:2.0.0'
+    implementation 'com.adobe.marketing.mobile:identity:2.0.0'
+    implementation 'com.adobe.marketing.mobile:lifecycle:2.0.0'
+    implementation 'com.adobe.marketing.mobile:assurance:2.0.0'
 
-    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'androidx.annotation:annotation:1.0.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'

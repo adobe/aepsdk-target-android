@@ -816,7 +816,6 @@ public class TargetTests {
         }
     }
 
-    // TODO
     @Test
     public void testSetPreviewRestartDeepLink() {
         try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
