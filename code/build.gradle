@@ -13,6 +13,9 @@
 import com.hierynomus.gradle.license.tasks.LicenseFormat
 
 buildscript {
+    ext {
+        kotlin_version = '1.4.0'
+    }
     repositories {
         google()
         mavenCentral()
@@ -21,9 +24,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.2.2'
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.20"
     }
 }
 
@@ -70,7 +71,7 @@ task clean(type: Delete) {
 
 ext {
     // android config
-    minSdkVersion = 21
+    minSdkVersion = 19
     targetSdkVersion = 33
     compileSdkVersion = 33
     versionCode = 2
