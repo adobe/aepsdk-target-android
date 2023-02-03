@@ -1894,6 +1894,51 @@ public class TargetRequestBuilderTest {
 				"authenticated");
 	}
 
+	@Test
+	public void getRequestPayload_CustomerIdsInJson_OnlyPicks_ValidCustomerIDs() throws JSONException {
+		// setup
+		final Map<String, Object> customVisitorID1 = new HashMap<String, Object>(){{
+			put(VISITOR_IDS_ID, "someID1");
+			put(VISITOR_IDS_ID_TYPE, "someType1" );
+			put(VISITOR_IDS_ID_ORIGIN, "someOrigin1" );
+			put(VISITOR_IDS_STATE, VisitorID.AuthenticationState.LOGGED_OUT.getValue());
+		}};
+
+		// without ID
+		final Map<String, Object> customVisitorID2 = new HashMap<String, Object>(){{
+			put(VISITOR_IDS_ID_TYPE, "someType2" );
+			put(VISITOR_IDS_ID_ORIGIN, "someOrigin2" );
+			put(VISITOR_IDS_STATE, VisitorID.AuthenticationState.AUTHENTICATED.getValue());
+		}};
+
+		// without integrationCode (type)
+		final Map<String, Object> customVisitorID3 = new HashMap<String, Object>(){{
+			put(VISITOR_IDS_ID, "someID2");
+			put(VISITOR_IDS_ID_ORIGIN, "someOrigin2" );
+			put(VISITOR_IDS_STATE, VisitorID.AuthenticationState.AUTHENTICATED.getValue());
+		}};
+
+		// nonString integrationCode value
+		final Map<String, Object> customVisitorID4 = new HashMap<String, Object>(){{
+			put(VISITOR_IDS_ID, 34);
+			put(VISITOR_IDS_ID_TYPE, "someType2" );
+			put(VISITOR_IDS_ID_ORIGIN, "someOrigin2" );
+			put(VISITOR_IDS_STATE, VisitorID.AuthenticationState.LOGGED_OUT.getValue());
+		}};
+		Map<String, Object> identitySharedState = getIdentitySharedState("", "", "", Arrays.asList(customVisitorID1, customVisitorID2, customVisitorID3, customVisitorID4));
+
+		// test
+		JSONObject json = targetRequestBuilder.getRequestPayload(null, null, null,null, null, identitySharedState, null);
+
+		// verify
+		JSONArray gatheredIds = json.optJSONObject(ID).optJSONArray(CUSTOMER_IDS);
+		assertEquals("Length of customerIDs is correct", 1,gatheredIds.length());
+		JSONObject gatheredVisitorID = gatheredIds.getJSONObject(0);
+		assertEquals("Correct CustomerID id is set", gatheredVisitorID.get(CUSTOMER_ID_ID), "someID1");
+		assertEquals("Correct CustomerID IntegrationCode is set", gatheredVisitorID.get(CUSTOMER_ID_INTEGRATION_CODE), "someType1");
+		assertEquals("Correct CustomerID authentication state is set", gatheredVisitorID.get(CUSTOMER_ID_AUTHENTICATION_STATE), "logged_out");
+	}
+
 
 	@Test
 	public void getRequestPayload_CustomerIdsInJson_When_CustomerIdsIsValid_AndLoggedOut() throws JSONException {
@@ -2183,11 +2228,7 @@ public class TargetRequestBuilderTest {
 		// verify
 		JSONObject id  = json.optJSONObject(ID);
 		JSONArray visitorIDList  = id.optJSONArray(CUSTOMER_IDS);
-		JSONObject firstVisitorID = (JSONObject) visitorIDList.get(0);
-
-		assertEquals("false", firstVisitorID.get(CUSTOMER_ID_ID));
-		assertEquals("788", firstVisitorID.get(CUSTOMER_ID_INTEGRATION_CODE));
-		assertEquals("unknown", firstVisitorID.get(CUSTOMER_ID_AUTHENTICATION_STATE));
+		assertEquals(0, visitorIDList.length());
 	}
 
     // ===================================

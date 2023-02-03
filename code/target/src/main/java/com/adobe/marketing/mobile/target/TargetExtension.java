@@ -1052,7 +1052,7 @@ public class TargetExtension extends Extension {
         connection.close();
 
         if (responseJson == null) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRequestResponse - (%s) " + TargetErrors.NULL_RESPONSE_JSON);
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "processTargetRequestResponse - (%s)", TargetErrors.NULL_RESPONSE_JSON);
             runDefaultCallbacks(batchRequests, event);
             return;
         }
