@@ -569,18 +569,18 @@ class TargetRequestBuilder {
 				final JSONObject newVisitorIDNode = new JSONObject();
 
 				// Add CustomerId's Id
-				String id = DataReader.optString(visitorID, TargetConstants.Identity.VISITOR_IDS_KEY_ID, null);
+				final String id = DataReader.optString(visitorID, TargetConstants.Identity.VISITOR_IDS_KEY_ID, null);
 				if (StringUtils.isNullOrEmpty(id)) {
-					continue; // id is a mandatory field ignore populating this customerId if not available
+					continue; // id is a mandatory field, ignore populating this customerId if not available
 				}
-				newVisitorIDNode .put(TargetJson.CustomerIds.ID, id);
+				newVisitorIDNode.put(TargetJson.CustomerIds.ID, id);
 
 				// Add CustomerId's IntegrationCode
-				String type = DataReader.optString(visitorID, TargetConstants.Identity.VISITOR_IDS_ID_KEY_TYPE, null);
+				final String type = DataReader.optString(visitorID, TargetConstants.Identity.VISITOR_IDS_ID_KEY_TYPE, null);
 				if (StringUtils.isNullOrEmpty(type)) {
-					continue;  // integrationCode is a mandatory field ignoring customerId if not available
+					continue;  // integrationCode is a mandatory field, ignoring customerId if not available
 				}
-				newVisitorIDNode .put(TargetJson.CustomerIds.INTEGRATION_CODE, type);
+				newVisitorIDNode.put(TargetJson.CustomerIds.INTEGRATION_CODE, type);
 
 				// Add CustomerId's AuthenticationState
 				final int authenticationStateInt = DataReader.optInt(visitorID, TargetConstants.Identity.VISITOR_IDS_KEY_AUTHENTICATION_STATE, -1);
