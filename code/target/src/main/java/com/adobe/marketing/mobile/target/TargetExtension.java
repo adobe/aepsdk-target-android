@@ -1384,8 +1384,16 @@ public class TargetExtension extends Extension {
      */
     void dispatchIdentity(final Event event) {
         final Map<String, Object> responseEventData = new HashMap<>();
-        responseEventData.put(TargetConstants.EventDataKeys.THIRD_PARTY_ID, targetState.getThirdPartyId());
-        responseEventData.put(TargetConstants.EventDataKeys.TNT_ID, targetState.getTntId());
+
+        // attach thirdPartyId to response event only if there is valid value
+        if (!StringUtils.isNullOrEmpty(targetState.getThirdPartyId())) {
+            responseEventData.put(TargetConstants.EventDataKeys.THIRD_PARTY_ID, targetState.getThirdPartyId());
+        }
+
+        // attach tntId to response event only if there is valid value
+        if (!StringUtils.isNullOrEmpty(targetState.getTntId())) {
+            responseEventData.put(TargetConstants.EventDataKeys.TNT_ID, targetState.getTntId());
+        }
         responseEventData.put(TargetConstants.EventDataKeys.SESSION_ID, targetState.getSessionId());
         final Event responseEvent = new Event.Builder(TargetConstants.EventName.IDENTITY_RESPONSE,
                 EventType.TARGET, EventSource.RESPONSE_IDENTITY)
