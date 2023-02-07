@@ -275,7 +275,7 @@ public class MainActivity extends AppCompatActivity {
 
 		// click metrics are enabled for MBOX3
 		if (mboxList.contains(MBOX3)) {
-			Target.locationClicked(MBOX3, targetParameters);
+			Target.clickedLocation(MBOX3, targetParameters);
 		}
 	}
 
@@ -285,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		}
 
-		Target.locationsDisplayed(mboxList, targetParameters);
+		Target.displayedLocations(mboxList, targetParameters);
 	}
 	
 	public void prefetchRequests(View view) throws Exception {
