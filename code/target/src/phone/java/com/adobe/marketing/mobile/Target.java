@@ -253,7 +253,7 @@ public class Target {
      * before the location content is retrieved.
      * <p>
      * Note: If any mboxes have been prefetched before calling this method, please call one of the
-     * {@code locationsDisplayed()} methods after the content returned by this method has been displayed.
+     * {@code displayedLocations()} methods after the content returned by this method has been displayed.
      *
      * @param mboxRequestList a {@code List<TargetRequest>} to retrieve content for
      * @param parameters a {@link TargetParameters} object containing parameters for all mboxes in the request list
