@@ -7,8 +7,8 @@ Refer to the [Getting Started Guide](getting-started.md).
 ## API reference
 
 - [clearPrefetchCache](#clearPrefetchCache)
-- [locationClicked](#locationClicked)
-- [locationsDisplayed](#locationsDisplayed)
+- [clickedLocation](#clickedLocation)
+- [displayedLocations](#displayedLocations)
 - [extensionVersion](#extensionVersion)
 - [getSessionId](#getSessionId)
 - [getThirdPartyId](#getThirdPartyId)
@@ -51,7 +51,7 @@ public static void clearPrefetchCache()
 Target.clearPrefetchCache();
 ```
 
-### locationClicked
+### clickedLocation
 
 This API sends a location click notification for an mbox to the configured Target server and can be invoked in the following cases:
 
@@ -61,7 +61,7 @@ This API sends a location click notification for an mbox to the configured Targe
 **Syntax**
 
 ```java
-public static void locationClicked(final String mboxName, final TargetParameters parameters)
+public static void clickedLocation(final String mboxName, final TargetParameters parameters)
 ```
 
 * _mboxName_ is a String that contains the mbox location for which the click notification will be sent to Target.
@@ -96,17 +96,17 @@ TargetParameters targetParameters = new TargetParameters.Builder(mboxParameters)
                                 .product(targetProduct)
                                 .build();
 
-Target.locationClicked("cartLocation", targetParameters);
+Target.clickedLocation("cartLocation", targetParameters);
 ```
 
-### locationsDisplayed
+### displayedLocations
 
 This API sends a location display notification for an mbox to the configured Target server. The API should be invoked for a prefetched mbox after the mbox content is retrieved using the `retrieveLocationContent` API. If no previous prefetch request is made, and the mbox content is retrieved using the `retrieveLocationContent` API, calling this API does not trigger a notification request to the Target server.
 
 **Syntax**
 
 ```java
-public static void locationsDisplayed(final List<String> mboxNames, final TargetParameters targetParameters)
+public static void displayedLocations(final List<String> mboxNames, final TargetParameters targetParameters)
 ```
 
 * _mboxNames_ is a list of the mbox locations for which the display notification will be sent to Target.
@@ -132,7 +132,7 @@ TargetParameters targetParameters = new TargetParameters.Builder()
 List<String> mboxList = new ArrayList<>();
 mboxList.add("mboxName1");
 
-Target.locationsDisplayed(mboxList, targetParameters);
+Target.displayedLocations(mboxList, targetParameters);
 ```
 
 ### extensionVersion
