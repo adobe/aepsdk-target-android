@@ -442,7 +442,7 @@ public class TargetTests {
     }
 
     @Test
-    public void testLocationsDisplayed_validMboxesList() {
+    public void testDisplayedLocations_validMboxesList() {
         try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
             // test
             final List<String> mboxes = new ArrayList<String>();
@@ -455,7 +455,7 @@ public class TargetTests {
                             put("mbox_parameter_key", "mbox_parameter_value");
                         }
                     }).build();
-            Target.locationsDisplayed(mboxes, targetParameters);
+            Target.displayedLocations(mboxes, targetParameters);
 
             // verify
             final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
@@ -483,7 +483,7 @@ public class TargetTests {
     }
 
     @Test
-    public void testLocationsDisplayed_nullMboxesList() {
+    public void testDisplayedLocations_nullMboxesList() {
         try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
             // test
             final List<String> mboxes = null;
@@ -493,7 +493,7 @@ public class TargetTests {
                             put("mbox_parameter_key", "mbox_parameter_value");
                         }
                     }).build();
-            Target.locationsDisplayed(mboxes, targetParameters);
+            Target.displayedLocations(mboxes, targetParameters);
 
             // verify
             logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
@@ -501,7 +501,7 @@ public class TargetTests {
     }
 
     @Test
-    public void testLocationsDisplayed_emptyMboxesList() {
+    public void testDisplayedLocations_emptyMboxesList() {
         try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
             // test
             final List<String> mboxes = new ArrayList<>();
@@ -511,7 +511,7 @@ public class TargetTests {
                             put("mbox_parameter_key", "mbox_parameter_value");
                         }
                     }).build();
-            Target.locationsDisplayed(mboxes, targetParameters);
+            Target.displayedLocations(mboxes, targetParameters);
 
             // verify
             logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
@@ -519,7 +519,7 @@ public class TargetTests {
     }
 
     @Test
-    public void testLocationClicked_validMbox() {
+    public void testClickedLocation_validMbox() {
         try (MockedStatic<MobileCore> mobileCoreMockedStatic = Mockito.mockStatic(MobileCore.class)) {
             // test
             final String mbox = "mbox1";
@@ -529,7 +529,7 @@ public class TargetTests {
                             put("mbox_parameter_key", "mbox_parameter_value");
                         }
                     }).build();
-            Target.locationClicked(mbox, targetParameters);
+            Target.clickedLocation(mbox, targetParameters);
 
             // verify
             final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
@@ -556,7 +556,7 @@ public class TargetTests {
     }
 
     @Test
-    public void testLocationClicked_nullMbox() {
+    public void testClickedLocation_nullMbox() {
         try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
             // test
             final String mbox = null;
@@ -566,7 +566,7 @@ public class TargetTests {
                             put("mbox_parameter_key", "mbox_parameter_value");
                         }
                     }).build();
-            Target.locationClicked(mbox, targetParameters);
+            Target.clickedLocation(mbox, targetParameters);
 
             // verify
             logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));
@@ -574,7 +574,7 @@ public class TargetTests {
     }
 
     @Test
-    public void testLocationClicked_emptyMbox() {
+    public void testClickedLocation_emptyMbox() {
         try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
             // test
             final String mbox = "";
@@ -584,7 +584,7 @@ public class TargetTests {
                             put("mbox_parameter_key", "mbox_parameter_value");
                         }
                     }).build();
-            Target.locationClicked(mbox, targetParameters);
+            Target.clickedLocation(mbox, targetParameters);
 
             // verify
             logMockedStatic.verify(() -> Log.warning(anyString(), anyString(), anyString(), any()));

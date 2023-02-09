@@ -253,7 +253,7 @@ public class Target {
      * before the location content is retrieved.
      * <p>
      * Note: If any mboxes have been prefetched before calling this method, please call one of the
-     * {@code locationsDisplayed()} methods after the content returned by this method has been displayed.
+     * {@code displayedLocations()} methods after the content returned by this method has been displayed.
      *
      * @param mboxRequestList a {@code List<TargetRequest>} to retrieve content for
      * @param parameters a {@link TargetParameters} object containing parameters for all mboxes in the request list
@@ -335,7 +335,7 @@ public class Target {
      * @param mboxNames (required) a list of displayed {@code String} location names
      * @param targetParameters {@link TargetParameters} for the displayed locations
      */
-    public static void locationsDisplayed(@NonNull final List<String> mboxNames, @Nullable final TargetParameters targetParameters) {
+    public static void displayedLocations(@NonNull final List<String> mboxNames, @Nullable final TargetParameters targetParameters) {
 
         if (mboxNames == null || mboxNames.size() == 0) {
             Log.warning(LOG_TAG, CLASS_NAME,
@@ -369,7 +369,7 @@ public class Target {
      * @param mboxName  (required) a {@code String} representing the location name
      * @param parameters {@link TargetParameters} object for the location clicked
      */
-    public static void locationClicked(@NonNull final String mboxName, @Nullable final TargetParameters parameters) {
+    public static void clickedLocation(@NonNull final String mboxName, @Nullable final TargetParameters parameters) {
         if (StringUtils.isNullOrEmpty(mboxName)) {
             Log.warning(LOG_TAG, CLASS_NAME,
                     "Failed to send click notification (%s).",

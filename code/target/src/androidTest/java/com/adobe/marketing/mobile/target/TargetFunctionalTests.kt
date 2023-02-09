@@ -939,7 +939,7 @@ class TargetFunctionalTests {
     // Test Case No : 26
     @Test
     @Throws(Exception::class)
-    fun test_Functional_Happy_Target_targetLocationClicked() {
+    fun test_Functional_Happy_Target_targetClickedLocation() {
         // setup
         prefetchContent("mbox1")
 
@@ -954,7 +954,7 @@ class TargetFunctionalTests {
 
         // test
         resetNetworkMonitor()
-        Target.locationClicked("mbox1", targetParameters)
+        Target.clickedLocation("mbox1", targetParameters)
         waitForNetworkCall?.await(5, TimeUnit.SECONDS)
 
         // verify location click
@@ -992,7 +992,7 @@ class TargetFunctionalTests {
     // Test Case No : 29
     @Test
     @Throws(Exception::class)
-    fun test_Functional_Target_targetLocationClicked_WithoutTargetParameters() {
+    fun test_Functional_Target_targetClickedLocation_WithoutTargetParameters() {
         // setup
         prefetchContent("mbox1")
 
@@ -1003,7 +1003,7 @@ class TargetFunctionalTests {
 
         // test
         resetNetworkMonitor()
-        Target.locationClicked("mbox1", null)
+        Target.clickedLocation("mbox1", null)
         waitForNetworkCall?.await(5, TimeUnit.SECONDS)
 
         // verify location click network request
@@ -1028,7 +1028,7 @@ class TargetFunctionalTests {
     // Test Case No : 32
     @Test
     @Throws(Exception::class)
-    fun test_Functional_Happy_Target_targetLocationDisplayed() {
+    fun test_Functional_Happy_Target_targetDisplayedLocations() {
         prefetchContent("mbox1")
 
         val prefetchJson= JSONObject(networkRequestBody)
@@ -1056,7 +1056,7 @@ class TargetFunctionalTests {
         resetNetworkMonitor()
 
         // test
-        Target.locationsDisplayed(arrayOf("mbox1").toMutableList(), targetParameters)
+        Target.displayedLocations(arrayOf("mbox1").toMutableList(), targetParameters)
         waitForNetworkCall?.await(3, TimeUnit.SECONDS)
 
         // verify location display network call
@@ -1090,7 +1090,7 @@ class TargetFunctionalTests {
     // Test Case No : 38
     @Test
     @Throws(Exception::class)
-    fun test_Functional_Target_targetPrefetchContentWith_targetLocationDisplayed_For_Different_MBox() {
+    fun test_Functional_Target_targetPrefetchContentWith_targetDisplayedLocations_For_Different_MBox() {
         // setup
         prefetchContent("mbox1")
         val prefetchJson= JSONObject(networkRequestBody)
@@ -1100,7 +1100,7 @@ class TargetFunctionalTests {
         resetNetworkMonitor()
 
         // test
-        Target.locationsDisplayed(arrayOf("mbox2").toMutableList(), targetParameters)
+        Target.displayedLocations(arrayOf("mbox2").toMutableList(), targetParameters)
         waitForNetworkCall?.await(2, TimeUnit.SECONDS)
 
         // verify location display network call is not made
@@ -1109,7 +1109,7 @@ class TargetFunctionalTests {
 
     // Test Case No : 39
     @Test
-    fun test_Functional_targetLocationDisplayed_After_RetrieveLocationContent_WithTargetParameter() {
+    fun test_Functional_targetDisplayedLocations_After_RetrieveLocationContent_WithTargetParameter() {
         // setup
         retrieveLocationContent("mbox2")
         val networkResponse = JSONObject(networkRequestBody)
@@ -1119,7 +1119,7 @@ class TargetFunctionalTests {
         resetNetworkMonitor()
 
         // test
-        Target.locationsDisplayed(arrayOf("mbox2").toMutableList(), targetParameters)
+        Target.displayedLocations(arrayOf("mbox2").toMutableList(), targetParameters)
         waitForNetworkCall?.await(2, TimeUnit.SECONDS)
 
         // verify location display network call is not made

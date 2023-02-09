@@ -44,7 +44,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     implementation project(':target')
-    implementation 'com.adobe.marketing.mobile:core:2.0.0'
+    implementation 'com.adobe.marketing.mobile:core:2.0.1'
     implementation 'com.adobe.marketing.mobile:identity:2.0.0'
     implementation 'com.adobe.marketing.mobile:lifecycle:2.0.0'
     implementation 'com.adobe.marketing.mobile:assurance:2.0.0'
