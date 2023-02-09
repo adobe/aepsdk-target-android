@@ -47,11 +47,6 @@ class TargetPreviewFullscreenDelegate implements FullscreenMessageDelegate {
 	}
 
 	@Override
-	public boolean shouldShowMessage(final FullscreenMessage var1) {
-		return true;
-	}
-
-	@Override
 	public void onShowFailure() {
 		Log.debug(TargetConstants.LOG_TAG,  CLASS_NAME, "onShowFailure - Failed to display Target preview selection screen.");
 	}
