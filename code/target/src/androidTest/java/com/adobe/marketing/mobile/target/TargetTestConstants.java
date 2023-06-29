@@ -14,7 +14,7 @@ package com.adobe.marketing.mobile.target;
 
 public class TargetTestConstants {
 
-    static final String EXTENSION_VERSION = "2.0.0";
+    static final String EXTENSION_VERSION = "2.0.1";
 
     public final static class EventType {
         public static final String TARGET = "com.adobe.eventType.target";
