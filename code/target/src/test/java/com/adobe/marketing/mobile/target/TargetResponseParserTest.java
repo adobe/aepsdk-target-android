@@ -573,6 +573,42 @@ public class TargetResponseParserTest {
 	}
 
 	@Test
+	public void testExtractMboxContent_JsonArrayContent() throws Exception {
+		// setup
+		String serverResponse = "{\n" +
+				"     \"index\" : \"1\" ,  \n" +
+				"     \"options\" : [{\n" +
+				"      \"content\" : [\"one\", \"two\", \"three\"] , \n" +
+				"      \"type\" : \"json\"" +
+				"  }]\n" +
+				"}";
+		// test
+		JSONObject jsonObject = new JSONObject(serverResponse);
+		String extractMboxContent = responseParser.extractMboxContent(jsonObject);
+		// verify
+		assertNotNull(extractMboxContent);
+		assertEquals("[\"one\",\"two\",\"three\"]", extractMboxContent);
+	}
+
+	@Test
+	public void testExtractMboxContent_MixedJsonArrayContent() throws Exception {
+		// setup
+		String serverResponse = "{\n" +
+				"     \"index\" : \"1\" ,  \n" +
+				"     \"options\" : [{\n" +
+				"      \"content\" : [[\"one\", 1], true, 23] , \n" +
+				"      \"type\" : \"json\"" +
+				"  }]\n" +
+				"}";
+		// test
+		JSONObject jsonObject = new JSONObject(serverResponse);
+		String extractMboxContent = responseParser.extractMboxContent(jsonObject);
+		// verify
+		assertNotNull(extractMboxContent);
+		assertEquals("[[\"one\",1],true,23]", extractMboxContent);
+	}
+
+	@Test
 	public void testExtractMboxContentHappy_For_StringContent() throws Exception {
 		// setup
 		String serverResponse = "{\n" +
