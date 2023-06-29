@@ -425,10 +425,9 @@ class TargetResponseParser {
 			if (optionType.equals(TargetJson.HTML)) {
 				optionContent = option.optString(TargetJson.Option.CONTENT, "");
 			} else if (optionType.equals(TargetJson.JSON)) {
-				final JSONObject contentJSON = option.optJSONObject(TargetJson.Option.CONTENT);
-
-				if (contentJSON != null) {
-					optionContent = contentJSON.toString();
+				final Object content = option.opt(TargetJson.Option.CONTENT);
+				if (content != null) {
+					optionContent = content.toString();
 				}
 			}
 
