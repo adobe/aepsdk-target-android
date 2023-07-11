@@ -4,6 +4,8 @@
 # Gradle files
 .gradle/
 build/
+code/.gradle/
+code/gradle/
 
 # Generated files
 bin/
