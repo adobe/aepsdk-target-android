@@ -1699,8 +1699,8 @@ public class TargetExtension extends Extension {
             return sdkBase;
         }
 
-        final String wrapperFriendlyName = DataReader.optString(wrapperMap, TargetConstants.EventHub.WRAPPER_FRIENDLY_NAME, "None");
-        if (wrapperFriendlyName.equals("None")) {
+        final String wrapperFriendlyName = DataReader.optString(wrapperMap, TargetConstants.EventHub.WRAPPER_FRIENDLY_NAME, TargetConstants.DEFAULT_WRAPPER_FRIENDLY_NAME);
+        if (wrapperFriendlyName.equals(TargetConstants.DEFAULT_WRAPPER_FRIENDLY_NAME)) {
             return sdkBase;
         }
 

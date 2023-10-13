@@ -34,6 +34,8 @@ final class TargetConstants {
     static final String HEADER_X_EXC_SDK_VERSION = "X-EXC-SDK-Version";
     static final String HEADER_X_EXC_SDK_BASE_TARGET_MOBILE_ANDROID = "AdobeTargetMobile-Android";
 
+    static final String DEFAULT_WRAPPER_FRIENDLY_NAME = "None";
+
     private TargetConstants() {}
 
     static final HashMap<String, String> MAP_TO_CONTEXT_DATA_KEYS = createMap();
