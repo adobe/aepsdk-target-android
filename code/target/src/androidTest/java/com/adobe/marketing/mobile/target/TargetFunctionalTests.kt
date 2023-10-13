@@ -124,6 +124,7 @@ class TargetFunctionalTests {
         private var mockedNetworkResponse: InputStream? = null
         private var networkRequestUrl: String? = null
         private var networkRequestBody: String? = null
+        private var networkRequestHeaders: Map<String, String>? = null
 
         // callback result captures
         private var retrievedLocationResponse: String? = null
@@ -177,6 +178,7 @@ class TargetFunctionalTests {
             mockedNetworkResponse = null
             networkRequestUrl = null
             networkRequestBody = null
+            networkRequestHeaders = null
         }
 
         private fun resetCallbackResponses() {
@@ -213,7 +215,7 @@ class TargetFunctionalTests {
 
         // Configuration
         val configurationLatch = CountDownLatch(1)
-        configurationAwareness { configurationLatch.countDown() }
+        stateAwareness("com.adobe.module.configuration") { configurationLatch.countDown() }
         MobileCore.updateConfiguration(getConfigurationData())
         assertTrue(configurationLatch.await(1000, TimeUnit.MILLISECONDS))
 
@@ -223,6 +225,7 @@ class TargetFunctionalTests {
         // setup network capturer
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
     }
@@ -275,6 +278,11 @@ class TargetFunctionalTests {
         val profileParams = mbox.getJSONObject("profileParameters")
         assertEquals("profile_parameter_value", profileParams.getString("profile_parameter_key"))
         assertEquals(defaultContent, retrievedLocationResponse)
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 2
@@ -284,6 +292,7 @@ class TargetFunctionalTests {
         // setup
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
 
@@ -312,6 +321,11 @@ class TargetFunctionalTests {
             "[\"no1\",\"no2\",\"no3\"]",
             orderParams.getString("purchasedProductIds")
         )
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 3
@@ -340,6 +354,11 @@ class TargetFunctionalTests {
         assertEquals("764334", productParams.getString("id"))
         assertEquals("Online", productParams.getString("categoryId"))
         assertEquals(defaultContent, retrievedLocationResponse)
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 4
@@ -349,6 +368,7 @@ class TargetFunctionalTests {
         // setup
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
 
@@ -381,6 +401,11 @@ class TargetFunctionalTests {
         assertEquals(2, productParams.length().toLong())
         assertEquals("764334", productParams.getString("id"))
         assertEquals("Online", productParams.getString("categoryId"))
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 5
@@ -390,6 +415,7 @@ class TargetFunctionalTests {
         // setup
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
         val thirdPartyID = "testID"
@@ -413,6 +439,11 @@ class TargetFunctionalTests {
         val id = json.getJSONObject("id")
         assertEquals(thirdPartyID, id.getString("thirdPartyId"))
         assertEquals(defaultContent, retrievedLocationResponse)
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 6
@@ -422,6 +453,7 @@ class TargetFunctionalTests {
         // setup
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
 
@@ -447,6 +479,11 @@ class TargetFunctionalTests {
         val id = json.getJSONObject("id")
         assertFalse(id.has("thirdPartyId"))
         assertEquals(defaultContent, retrievedLocationResponse)
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 7
@@ -458,6 +495,7 @@ class TargetFunctionalTests {
         // setup network
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
         mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, mboxNames,
@@ -493,6 +531,11 @@ class TargetFunctionalTests {
             mbox2.getJSONObject("parameters").getString("mbox_parameter_key")
         )
         assertNull(prefetchErrorStatus)
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 8
@@ -511,6 +554,11 @@ class TargetFunctionalTests {
         val id = json.getJSONObject("id")
         assertFalse(id.has("thirdPartyId"))
         assertEquals(defaultContent, retrievedLocationResponse)
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 9
@@ -594,6 +642,7 @@ class TargetFunctionalTests {
         waitForNetworkCall = CountDownLatch(1)
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
 
@@ -631,6 +680,11 @@ class TargetFunctionalTests {
         assertEquals("type3", ids.getJSONArray("customerIds").getJSONObject(2).getString("integrationCode"))
         assertEquals("value3", ids.getJSONArray("customerIds").getJSONObject(2).getString("id"))
         assertEquals(defaultContent, retrievedLocationResponse)
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 13
@@ -648,6 +702,11 @@ class TargetFunctionalTests {
         assertEquals(mboxName, mbox.getString("name"))
         assertEquals("4455", json.getString("environmentId"))
         assertEquals(defaultContent, retrievedLocationResponse)
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 14
@@ -677,6 +736,7 @@ class TargetFunctionalTests {
 
         // verify
         assertNull(networkRequestBody);
+        assertNull(networkRequestHeaders)
         assertEquals("prefetchedContent", retrievedLocationResponse)
 
         // test
@@ -691,6 +751,11 @@ class TargetFunctionalTests {
         val loadedRequest = loadedRequests.getJSONObject(0)
         assertEquals("mbox1", loadedRequest.getString("name"))
         assertEquals("0", loadedRequest.getString("index"))
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 18
@@ -713,7 +778,8 @@ class TargetFunctionalTests {
         var requestString = ""
         val networkCountDownLatch = CountDownLatch(1)
         networkMonitor = { request ->
-            requestString = String(request.body, Charsets.UTF_8)
+            networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             networkCountDownLatch.countDown()
         }
 
@@ -727,7 +793,7 @@ class TargetFunctionalTests {
         networkCountDownLatch.await(5, TimeUnit.SECONDS)
 
         // verify
-        val json = JSONObject(requestString)
+        val json = JSONObject(networkRequestBody)
         val prefetch = json.getJSONObject("prefetch").getJSONArray("mboxes")
         val mbox = prefetch.getJSONObject(0)
         assertEquals(1, prefetch.length().toLong())
@@ -749,6 +815,11 @@ class TargetFunctionalTests {
         assertEquals("764334", mbox.getJSONObject("product").getString("id"))
         assertEquals("Online", mbox.getJSONObject("product").getString("categoryId"))
         assertNull(prefetchErrorStatus)
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 19
@@ -772,7 +843,8 @@ class TargetFunctionalTests {
         var prefetchRequestString = ""
         val networkCountDownLatch = CountDownLatch(1)
         networkMonitor = { request ->
-            prefetchRequestString = String(request.body, Charsets.UTF_8)
+            networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             networkCountDownLatch.countDown()
         }
 
@@ -786,7 +858,7 @@ class TargetFunctionalTests {
         prefetchCountdownLatch.await(5, TimeUnit.SECONDS)
 
         // verify
-        var json = JSONObject(prefetchRequestString)
+        var json = JSONObject(networkRequestBody)
         val prefetch = json.getJSONObject("prefetch").getJSONArray("mboxes")
         assertEquals(1, prefetch.length().toLong())
         val mbox = prefetch.getJSONObject(0)
@@ -805,12 +877,16 @@ class TargetFunctionalTests {
         assertEquals("Online", mbox.getJSONObject("product").getString("categoryId"))
         assertNull(callbackErrorStatus)
 
+        // verify request headers
+        var coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+
         // setup
         val retrieveLocationCountdownLatch = CountDownLatch(1)
         val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { status ->
             retrieveLocationCountdownLatch.countDown()
         })
-        var retrieveLocationRequestString = ""
         val locationContentTargetParameters: TargetParameters = TargetParameters.Builder()
             .product(TargetProduct.fromEventData(productParameters2))
             .order(TargetOrder.fromEventData(orderParameters2))
@@ -819,7 +895,8 @@ class TargetFunctionalTests {
             .build()
         val networkCountDownLatch2 = CountDownLatch(1)
         networkMonitor = { request ->
-            retrieveLocationRequestString = String(request.body, Charsets.UTF_8)
+            networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             networkCountDownLatch2.countDown()
         }
 
@@ -829,7 +906,7 @@ class TargetFunctionalTests {
         retrieveLocationCountdownLatch.await(5, TimeUnit.SECONDS)
 
         // verify
-        json = JSONObject(retrieveLocationRequestString)
+        json = JSONObject(networkRequestBody)
         assertFalse(json.has("notifications"))
         val loadedRequests = json.getJSONObject("execute").getJSONArray("mboxes")
         assertEquals(1, loadedRequests.length().toLong())
@@ -851,6 +928,11 @@ class TargetFunctionalTests {
             "Offline",
             loadedRequest.getJSONObject("product").getString("categoryId")
         )
+
+        // verify request headers
+        coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 24
@@ -877,6 +959,7 @@ class TargetFunctionalTests {
         val networkCountDownLatch = CountDownLatch(1)
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             networkCountDownLatch.countDown()
         }
 
@@ -898,6 +981,11 @@ class TargetFunctionalTests {
         assertEquals("2", mbox3.getString("index"))
         assertEquals(defaultContent, retrieveLocationRequestString1)
         assertEquals(defaultContent, retrieveLocationRequestString2)
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 25
@@ -909,10 +997,10 @@ class TargetFunctionalTests {
         val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { data ->
             retrieveLocationCountdownLatch.countDown()
         })
-        var retrieveLocationRequestString = ""
         val networkCountDownLatch = CountDownLatch(1)
         networkMonitor = { request ->
-            retrieveLocationRequestString = String(request.body, Charsets.UTF_8)
+            networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             networkCountDownLatch.countDown()
         }
 
@@ -922,7 +1010,7 @@ class TargetFunctionalTests {
         retrieveLocationCountdownLatch.await(5, TimeUnit.SECONDS)
 
         // verify
-        val json = JSONObject(retrieveLocationRequestString)
+        val json = JSONObject(networkRequestBody)
         val mboxes = json.getJSONObject("execute").getJSONArray("mboxes")
         assertEquals(1, mboxes.length().toLong())
         val mbox = mboxes.getJSONObject(0)
@@ -931,6 +1019,11 @@ class TargetFunctionalTests {
         assertFalse(mbox.has("order"))
         assertFalse(mbox.has("product"))
         assertFalse(mbox.has("profileParameters"))
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     //**********************************************************************************************
@@ -951,6 +1044,10 @@ class TargetFunctionalTests {
         val mbox = prefetch.getJSONObject(0)
         assertEquals("mbox1", mbox.getString("name"))
         assertNull(prefetchErrorStatus)
+
+        var coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // test
         resetNetworkMonitor()
@@ -987,6 +1084,11 @@ class TargetFunctionalTests {
         var profileParams = mbox.getJSONObject("profileParameters")
         profileParams = notificationObject.getJSONObject("profileParameters")
         assertEquals("profile_parameter_value", profileParams.getString("profile_parameter_key"))
+
+        // verify request headers
+        coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 29
@@ -1019,6 +1121,11 @@ class TargetFunctionalTests {
         assertFalse(notificationObject.has("order"))
         assertFalse(notificationObject.has("product"))
         assertFalse(notificationObject.has("profileParameters"))
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
 
@@ -1051,6 +1158,11 @@ class TargetFunctionalTests {
         var profileParams = mbox.getJSONObject("profileParameters")
         assertEquals("profile_parameter_value", profileParams.getString("profile_parameter_key"))
         assertNull(prefetchErrorStatus)
+
+        // verify request headers
+        var coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // reset
         resetNetworkMonitor()
@@ -1085,6 +1197,11 @@ class TargetFunctionalTests {
         assertEquals("mbox_parameter_value", mboxParams.getString("mbox_parameter_key"))
         profileParams = notificationObject.getJSONObject("profileParameters")
         assertEquals("profile_parameter_value", profileParams.getString("profile_parameter_key"))
+
+        // verify request headers
+        coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 38
@@ -1105,6 +1222,7 @@ class TargetFunctionalTests {
 
         // verify location display network call is not made
         assertNull(networkRequestBody)
+        assertNull(networkRequestHeaders)
     }
 
     // Test Case No : 39
@@ -1124,6 +1242,7 @@ class TargetFunctionalTests {
 
         // verify location display network call is not made
         assertNull(networkRequestBody)
+        assertNull(networkRequestHeaders)
     }
 
 
@@ -1293,6 +1412,11 @@ class TargetFunctionalTests {
         var json = JSONObject(networkRequestBody)
         assertNotNull(json)
         assertEquals("9093c11c-accd-41a1-9fa7-ea8c50882c41.32_0", json.getJSONObject("id").getString("tntId"))
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     //**********************************************************************************************
@@ -1328,6 +1452,7 @@ class TargetFunctionalTests {
         networkMonitor = { request ->
             networkRequestUrl = request.url
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
 
@@ -1434,6 +1559,11 @@ class TargetFunctionalTests {
         assertEquals(2, metricsAnalyticsPayloadForMbox1!!.size.toLong())
         assertEquals("tnt", metricsAnalyticsPayloadForMbox1["pe"])
         assertEquals("333911:0:0|32767", metricsAnalyticsPayloadForMbox1["tnta"])
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     @Test
@@ -1471,6 +1601,7 @@ class TargetFunctionalTests {
         // verify
         assertNull(responseData)
         assertNull(networkRequestUrl)
+        assertNull(networkRequestHeaders)
     }
 
     @Test
@@ -1513,6 +1644,7 @@ class TargetFunctionalTests {
         networkMonitor = { request ->
             networkRequestUrl = request.url
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
 
@@ -1528,6 +1660,7 @@ class TargetFunctionalTests {
         // Verify server response
         assertNull(responseData)
         assertNull(networkRequestUrl)
+        assertNull(networkRequestHeaders)
     }
 
     @Test
@@ -1672,6 +1805,11 @@ class TargetFunctionalTests {
         assertEquals(2, productParameters2.length().toLong())
         assertEquals("765432", productParameters2.getString("id"))
         assertEquals("Offline", productParameters2.getString("categoryId"))
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     @Test
@@ -1709,6 +1847,7 @@ class TargetFunctionalTests {
         networkMonitor = { request ->
             networkRequestUrl = request.url
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
 
@@ -1821,6 +1960,11 @@ class TargetFunctionalTests {
         assertEquals(2, productParameters2.length().toLong())
         assertEquals("765432", productParameters2.getString("id"))
         assertEquals("Offline", productParameters2.getString("categoryId"))
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     @Test
@@ -1852,6 +1996,7 @@ class TargetFunctionalTests {
 
         // verify no request is sent
         assertNull(networkRequestBody)
+        assertNull(networkRequestHeaders)
     }
 
     @Test
@@ -1863,6 +2008,7 @@ class TargetFunctionalTests {
 
         // verify
         assertNull(networkRequestBody)
+        assertNull(networkRequestHeaders)
     }
 
     @Test
@@ -1912,6 +2058,11 @@ class TargetFunctionalTests {
         assertEquals("RandomClickTrackEventToken", tokenArray.getString(0))
         val parameters2 = notificationObject.getJSONObject("parameters")
         assertEquals("mbox_parameter_value2", parameters2.getString("mbox_parameter_key2"))
+
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     @Test
@@ -1954,6 +2105,11 @@ class TargetFunctionalTests {
         assertEquals(1, propertyObject.length().toLong())
         assertEquals("configPropertyToken", propertyObject.getString("token"))
 
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+
         // reset the updated configuration
         // so that it doesn't get carry forwarded to other tests
         updateConfiguration(mapOf(
@@ -1994,6 +2150,11 @@ class TargetFunctionalTests {
         assertEquals("male", profileParams.getString("gender"))
         assertEquals("targetContent", retrievedLocationResponse)
 
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+
         // clear the rules
         resetRules()
     }
@@ -2031,6 +2192,11 @@ class TargetFunctionalTests {
         assertEquals("female", profileParams.getString("gender"))
         assertEquals("targetContent", retrievedLocationResponse)
 
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+
         // clear the rules
         resetRules()
     }
@@ -2065,6 +2231,11 @@ class TargetFunctionalTests {
         assertEquals("male", profileParams.getString("gender"))
         assertNull(prefetchErrorStatus)
 
+        // verify request headers
+        val coreVersion = getLastValidSharedState("com.adobe.module.eventHub")?.get("version")
+        assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
+        assertEquals(String.format("%s+%s", coreVersion, TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+
         // clear the rules
         resetRules()
     }
@@ -2074,7 +2245,7 @@ class TargetFunctionalTests {
     //**********************************************************************************************
     private fun updateConfiguration(config:  Map<String,Any?>) {
         val configurationLatch = CountDownLatch(1)
-        configurationAwareness { configurationLatch.countDown() }
+        stateAwareness("com.adobe.module.configuration") { configurationLatch.countDown() }
         MobileCore.updateConfiguration(config)
         assertTrue(configurationLatch.await(5, TimeUnit.SECONDS))
     }
@@ -2137,18 +2308,33 @@ class TargetFunctionalTests {
         )
     }
 
-    private fun configurationAwareness(callback: ConfigurationMonitor) {
-        MonitorExtension.configurationAwareness(callback)
+    private fun getLastValidSharedState(extensionName: String): Map<String, Any>? {
+        val latch = CountDownLatch(1)
+        var eventHubState: Map<String, Any>? = null
+        MonitorExtension.stateAwareness("com.adobe.module.eventHub") {
+            latch.countDown()
+            eventHubState = it
+        }
+        val event = Event.Builder("test_event", "type_test", "source_test")
+                .build()
+        MobileCore.dispatchEvent(event)
+        latch.await(1000, TimeUnit.MILLISECONDS)
+        return eventHubState
+    }
+    private fun stateAwareness(stateOwner:String, callback: StateMonitor) {
+        MonitorExtension.stateAwareness(stateOwner, callback)
     }
 
     private fun resetNetworkMonitor() {
         waitForNetworkCall = CountDownLatch(1)
         networkRequestBody = null
+        networkRequestHeaders = null
         networkRequestUrl = null
 
         networkMonitor = { request ->
             networkRequestUrl = request.url
             networkRequestBody = String(request.body, Charsets.UTF_8)
+            networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
     }

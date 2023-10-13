@@ -16,13 +16,15 @@ import com.adobe.marketing.mobile.EventSource
 import com.adobe.marketing.mobile.EventType
 import com.adobe.marketing.mobile.SharedStateResolution
 
-internal typealias ConfigurationMonitor = (firstValidConfiguration: Map<String, Any>) -> Unit
+internal typealias StateMonitor = (validState: Map<String, Any>) -> Unit
 
 internal class MonitorExtension(extensionApi: ExtensionApi) : Extension(extensionApi) {
     companion object {
-        private var configurationMonitor: ConfigurationMonitor? = null
-        internal fun configurationAwareness(callback: ConfigurationMonitor) {
-            configurationMonitor = callback
+        private var stateMonitor: StateMonitor? = null
+        private var stateOwner: String? = null
+        internal fun stateAwareness(stateOwner:String, callback: StateMonitor) {
+            this.stateOwner = stateOwner
+            stateMonitor = callback
         }
     }
 
@@ -32,15 +34,17 @@ internal class MonitorExtension(extensionApi: ExtensionApi) : Extension(extensio
 
     override fun onRegistered() {
         api.registerEventListener(EventType.WILDCARD, EventSource.WILDCARD) { event ->
-            val result = api.getSharedState(
-                "com.adobe.module.configuration",
-                event,
-                false,
-                SharedStateResolution.LAST_SET
-            )
-            val configuration = result?.value
-            configuration?.let {
-                configurationMonitor?.let { it(configuration) }
+            val result = stateOwner?.let {
+                api.getSharedState(
+                        it,
+                    event,
+                    false,
+                    SharedStateResolution.ANY
+                )
+            }
+            val state = result?.value
+            state?.let {
+                stateMonitor?.let { it(state) }
             }
         }
     }
