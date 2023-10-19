@@ -211,13 +211,13 @@ class TargetFunctionalTests {
         ) {
             waitForRegistration.countDown()
         }
-        assertTrue(waitForRegistration.await(1000, TimeUnit.MILLISECONDS))
+        assertTrue(waitForRegistration.await(2000, TimeUnit.MILLISECONDS))
 
         // Configuration
         val configurationLatch = CountDownLatch(1)
         stateAwareness("com.adobe.module.configuration") { configurationLatch.countDown() }
         MobileCore.updateConfiguration(getConfigurationData())
-        assertTrue(configurationLatch.await(1000, TimeUnit.MILLISECONDS))
+        assertTrue(configurationLatch.await(2000, TimeUnit.MILLISECONDS))
 
         // set latches
         resetLatches()
@@ -240,6 +240,7 @@ class TargetFunctionalTests {
         TargetTestHelper.cleanCacheDir()
         SDKHelper.resetSDK()
         SDKHelper.resetTargetListener()
+        MonitorExtension.reset()
     }
 
     //1
@@ -775,7 +776,6 @@ class TargetFunctionalTests {
             targetClientCode, "prefetchedContent", null, null, null,
             null, true, true)
 
-        var requestString = ""
         val networkCountDownLatch = CountDownLatch(1)
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
@@ -840,7 +840,6 @@ class TargetFunctionalTests {
             null, true, true)
 
         var callbackErrorStatus: String? = null
-        var prefetchRequestString = ""
         val networkCountDownLatch = CountDownLatch(1)
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
@@ -884,7 +883,7 @@ class TargetFunctionalTests {
 
         // setup
         val retrieveLocationCountdownLatch = CountDownLatch(1)
-        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { status ->
+        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { _ ->
             retrieveLocationCountdownLatch.countDown()
         })
         val locationContentTargetParameters: TargetParameters = TargetParameters.Builder()
@@ -994,7 +993,7 @@ class TargetFunctionalTests {
     fun test_Functional_Happy_Target_targetRetrieveLocationContent_VerifyWithoutTargetParameters() {
         // setup
         val retrieveLocationCountdownLatch = CountDownLatch(1)
-        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { data ->
+        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { _ ->
             retrieveLocationCountdownLatch.countDown()
         })
         val networkCountDownLatch = CountDownLatch(1)
@@ -1067,22 +1066,18 @@ class TargetFunctionalTests {
         assertNotNull(tokenArray)
         assertEquals(1, tokenArray.length().toLong())
         assertEquals("RandomClickTrackEventToken", tokenArray.getString(0))
-        var orderParams: org.json.JSONObject? = mbox.getJSONObject("order")
-        orderParams = notificationObject.getJSONObject("order")
+        val orderParams = notificationObject.getJSONObject("order")
         assertEquals(3, orderParams.length().toLong())
         assertEquals("SomeOrderID", orderParams.getString("id"))
         assertEquals(4445.12, orderParams.getDouble("total"), 0.001)
         assertEquals("[\"no1\",\"no2\",\"no3\"]", orderParams.getString("purchasedProductIds"))
-        var productParams = mbox.getJSONObject("product")
-        productParams = notificationObject.getJSONObject("product")
+        val productParams = notificationObject.getJSONObject("product")
         assertEquals(2, productParams.length().toLong())
         assertEquals("764334", productParams.getString("id"))
         assertEquals("Online", productParams.getString("categoryId"))
-        var mboxParams = mbox.getJSONObject("parameters")
-        mboxParams = notificationObject.getJSONObject("parameters")
+        val mboxParams = notificationObject.getJSONObject("parameters")
         assertEquals("mbox_parameter_value", mboxParams.getString("mbox_parameter_key"))
-        var profileParams = mbox.getJSONObject("profileParameters")
-        profileParams = notificationObject.getJSONObject("profileParameters")
+        val profileParams = notificationObject.getJSONObject("profileParameters")
         assertEquals("profile_parameter_value", profileParams.getString("profile_parameter_key"))
 
         // verify request headers
@@ -1256,8 +1251,8 @@ class TargetFunctionalTests {
         val sessionId = "66E5C681-4F70-41A2-86AE-F1E151443B10"
         var retrievedSessionId = ""
 
-        Target.getSessionId() { sessionId ->
-            retrievedSessionId = sessionId
+        Target.getSessionId() { newSessionId ->
+            retrievedSessionId = newSessionId
             waitForCallback?.countDown()
         }
         waitForCallback?.await(5, TimeUnit.SECONDS)
@@ -1273,8 +1268,8 @@ class TargetFunctionalTests {
 
         // verify the newly set sessionId
         waitForCallback = CountDownLatch(1)
-        Target.getSessionId() { sessionId ->
-            retrievedSessionId = sessionId
+        Target.getSessionId() { newSessionId ->
+            retrievedSessionId = newSessionId
             waitForCallback?.countDown()
         }
         waitForCallback?.await(5, TimeUnit.SECONDS)
@@ -1828,7 +1823,7 @@ class TargetFunctionalTests {
             "product" to productParameters)
         val executeMboxes: MutableList<Map<String, Any>> = ArrayList()
         executeMboxes.add(executeMbox1)
-        val request = mapOf(
+        val requestMap = mapOf(
             "execute" to mapOf(
                 "mboxes" to executeMboxes
             ))
@@ -1853,7 +1848,7 @@ class TargetFunctionalTests {
 
         // test
         Target.executeRawRequest(
-            request
+                requestMap
         ) { responseData ->
             responseDataList.add(responseData)
             localLatch.countDown()
@@ -2310,16 +2305,16 @@ class TargetFunctionalTests {
 
     private fun getLastValidSharedState(extensionName: String): Map<String, Any>? {
         val latch = CountDownLatch(1)
-        var eventHubState: Map<String, Any>? = null
-        MonitorExtension.stateAwareness("com.adobe.module.eventHub") {
+        var sharedState: Map<String, Any>? = null
+        MonitorExtension.stateAwareness(extensionName) {
+            sharedState = it
             latch.countDown()
-            eventHubState = it
         }
         val event = Event.Builder("test_event", "type_test", "source_test")
                 .build()
         MobileCore.dispatchEvent(event)
-        latch.await(1000, TimeUnit.MILLISECONDS)
-        return eventHubState
+        latch.await(2, TimeUnit.SECONDS)
+        return sharedState
     }
     private fun stateAwareness(stateOwner:String, callback: StateMonitor) {
         MonitorExtension.stateAwareness(stateOwner, callback)

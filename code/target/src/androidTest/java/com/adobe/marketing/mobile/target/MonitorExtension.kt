@@ -26,6 +26,11 @@ internal class MonitorExtension(extensionApi: ExtensionApi) : Extension(extensio
             this.stateOwner = stateOwner
             stateMonitor = callback
         }
+
+        internal fun reset() {
+            stateOwner = null
+            stateMonitor = null
+        }
     }
 
     override fun getName(): String {
