@@ -221,7 +221,7 @@ public class TargetExtensionTests {
     public void test_getVersion() {
         // test
         final String extensionVersion = extension.getVersion();
-        assertEquals("getVersion should return the correct extension version.", "2.0.1", extensionVersion);
+        assertEquals("getVersion should return the correct extension version.", "2.0.2", extensionVersion);
     }
 
     //**********************************************************************************************
@@ -410,7 +410,7 @@ public class TargetExtensionTests {
         verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
         assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
-        assertEquals(1, networkRequestCaptor.getValue().getHeaders().size());
+        assertEquals(3, networkRequestCaptor.getValue().getHeaders().size());
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
     }
@@ -1032,7 +1032,7 @@ public class TargetExtensionTests {
         verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
         assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
-        assertEquals(1, networkRequestCaptor.getValue().getHeaders().size());
+        assertEquals(3, networkRequestCaptor.getValue().getHeaders().size());
         assertEquals(json.toString(), new String(networkRequestCaptor.getValue().getBody(), StandardCharsets.UTF_8));
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
@@ -1473,7 +1473,7 @@ public class TargetExtensionTests {
         verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
         assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
-        assertEquals(1, networkRequestCaptor.getValue().getHeaders().size());
+        assertEquals(3, networkRequestCaptor.getValue().getHeaders().size());
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
     }
@@ -1656,7 +1656,7 @@ public class TargetExtensionTests {
         verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
         assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
-        assertEquals(1, networkRequestCaptor.getValue().getHeaders().size());
+        assertEquals(3, networkRequestCaptor.getValue().getHeaders().size());
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
     }
@@ -1839,7 +1839,7 @@ public class TargetExtensionTests {
         verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
         assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
-        assertEquals(1, networkRequestCaptor.getValue().getHeaders().size());
+        assertEquals(3, networkRequestCaptor.getValue().getHeaders().size());
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
     }
