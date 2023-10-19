@@ -33,10 +33,10 @@ internal class MonitorExtension(extensionApi: ExtensionApi) : Extension(extensio
     override fun onRegistered() {
         api.registerEventListener(EventType.WILDCARD, EventSource.WILDCARD) { event ->
             val result = api.getSharedState(
-                    "com.adobe.module.configuration",
-                    event,
-                    false,
-                    SharedStateResolution.LAST_SET
+                "com.adobe.module.configuration",
+                event,
+                false,
+                SharedStateResolution.LAST_SET
             )
             val configuration = result?.value
             configuration?.let {

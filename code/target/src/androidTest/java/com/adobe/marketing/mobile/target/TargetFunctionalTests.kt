@@ -211,7 +211,7 @@ class TargetFunctionalTests {
         ) {
             waitForRegistration.countDown()
         }
-        assertTrue(waitForRegistration.await(2000, TimeUnit.MILLISECONDS))
+        assertTrue(waitForRegistration.await(1000, TimeUnit.MILLISECONDS))
 
         // Configuration
         val configurationLatch = CountDownLatch(1)
