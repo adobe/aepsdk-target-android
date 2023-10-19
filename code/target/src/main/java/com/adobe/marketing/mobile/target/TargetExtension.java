@@ -1681,7 +1681,7 @@ public class TargetExtension extends Extension {
     }
 
     /**
-     * Runs the Target SDK info containing platform and wrapper details in the format {@literal AdobeTargetMobile-Android<-wrapperFriendlyName>}.
+     * Returns the Target SDK info containing platform and wrapper details in the format {@literal AdobeTargetMobile-Android<-wrapperFriendlyName>}.
      * <p>
      * If EventHub shared state is not available, or if an SDK wrapper is not used, the information will omit the wrapper details.
      *
@@ -1744,8 +1744,8 @@ public class TargetExtension extends Extension {
     /**
      * Gets the latest valid {@code EventHub} shared state at the given {@code event} version.
      *
-     * @param event the {@code EventHub} state version to retrieve
-     * @return the last known valid {@code EventHub} state, may be null if no valid state was found
+     * @param event for which the {@code EventHub} state version is to be retrieved.
+     * @return the last known valid {@code EventHub} state, may be null if no valid state was found.
      */
     private Map<String, Object> retrieveEventHubSharedState(final Event event) {
         final SharedStateResult eventHubSharedState = getApi().getSharedState(TargetConstants.EventHub.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
