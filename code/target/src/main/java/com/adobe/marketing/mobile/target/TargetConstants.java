@@ -22,12 +22,19 @@ final class TargetConstants {
     static final String API_URL_HOST_BASE 		= "%s.tt.omtrdc.net";
     static final String EDGE_HOST_BASE = "mboxedge%s";
     static final String DELIVERY_API_URL_BASE = "https://%s/rest/v1/delivery/?client=%s&sessionId=%s";
-    static final String REQUEST_CONTENT_TYPE  	= "application/json";
     static final String MBOX_AT_PROPERTY_KEY  		= "at_property";
     static final String A4T_ACTION_NAME = "AnalyticsForTarget";
 
     static final int DEFAULT_NETWORK_TIMEOUT = 2;
     static final int DEFAULT_TARGET_SESSION_TIMEOUT_SEC = 30 * 60; // 30 mins
+
+    static final String HEADER_CONTENT_TYPE = "Content-Type";
+    static final String HEADER_CONTENT_TYPE_JSON = "application/json";
+    static final String HEADER_X_EXC_SDK = "X-EXC-SDK";
+    static final String HEADER_X_EXC_SDK_VERSION = "X-EXC-SDK-Version";
+    static final String HEADER_X_EXC_SDK_BASE_TARGET_MOBILE_ANDROID = "AdobeTargetMobile-Android";
+
+    static final String DEFAULT_WRAPPER_FRIENDLY_NAME = "None";
 
     private TargetConstants() {}
 
@@ -239,6 +246,16 @@ final class TargetConstants {
         static final String UPGRADE_EVENT           = "upgradeevent";
 
         private Lifecycle() {}
+    }
+
+    static final class EventHub {
+        static final String EXTENSION_NAME = "com.adobe.module.eventhub";
+
+        static final String VERSION = "version";
+        static final String WRAPPER = "wrapper";
+        static final String WRAPPER_FRIENDLY_NAME = "friendlyName";
+
+        private EventHub() {}
     }
 
     static class PreviewKeys {

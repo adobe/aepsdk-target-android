@@ -72,7 +72,7 @@ public class TargetTests {
     public void test_extensionVersion() {
         // test
         final String extensionVersion = Target.extensionVersion();
-        assertEquals("extensionVersion API should return the correct version string.", "2.0.1",
+        assertEquals("extensionVersion API should return the correct version string.", "2.0.2",
                 extensionVersion);
     }
 

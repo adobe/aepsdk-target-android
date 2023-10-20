@@ -109,6 +109,18 @@ public class TargetExtensionTests {
         }
     };
 
+    private static HashMap<String, Object> eventHubSharedState = new HashMap() {
+        {
+            put("version", "x.y.z");
+            put("wrapper", new HashMap<String, Object>() {
+                {
+                    put("friendlyName", "None");
+                    put("type", "N");
+                }
+            });
+        }
+    };
+
     private static Map<String, String> responseTokens = new HashMap() {{
         put("responseTokens.Key", "responseTokens.Value");
     }};
@@ -221,7 +233,7 @@ public class TargetExtensionTests {
     public void test_getVersion() {
         // test
         final String extensionVersion = extension.getVersion();
-        assertEquals("getVersion should return the correct extension version.", "2.0.1", extensionVersion);
+        assertEquals("getVersion should return the correct extension version.", "2.0.2", extensionVersion);
     }
 
     //**********************************************************************************************
@@ -396,6 +408,7 @@ public class TargetExtensionTests {
 
     @Test
     public void testLoadRequests_makesCorrectNetworkRequest() throws Exception {
+        setEventHubSharedState();
         final JSONObject jsonObject = new JSONObject("{\n" +
                 "\"name\": \"mbox1\",\n" +
                 "\"options\": [{\"eventToken\":\"displayEventToken\"}]\n" +
@@ -410,7 +423,74 @@ public class TargetExtensionTests {
         verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
         assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
-        assertEquals(1, networkRequestCaptor.getValue().getHeaders().size());
+        final Map<String, String> headers = networkRequestCaptor.getValue().getHeaders();
+        assertEquals(3, headers.size());
+        assertEquals("application/json", headers.get("Content-Type"));
+        assertEquals("AdobeTargetMobile-Android", headers.get("X-EXC-SDK"));
+        assertEquals(String.format("%s+%s", "x.y.z", extension.getVersion()), headers.get("X-EXC-SDK-Version"));
+        assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
+        assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
+    }
+
+    @Test
+    public void testLoadRequests_makesNetworkRequest_wrapperInfoAvailable() throws Exception {
+        final Map<String, Object> eventHubState = new HashMap<String, Object>() {
+            {
+                put("version", "x.y.z");
+                put("wrapper", new HashMap<String, Object>() {
+                    {
+                        put("friendlyName", "Flutter");
+                        put("type", "F");
+                    }
+                });
+            }
+        };
+        setEventHubSharedState(eventHubState);
+        final JSONObject jsonObject = new JSONObject("{\n" +
+                "\"name\": \"mbox1\",\n" +
+                "\"options\": [{\"eventToken\":\"displayEventToken\"}]\n" +
+                "}\n");
+        when(requestBuilder.getRequestPayload(any(), any(), any(), any(), any(), any(), any())).thenReturn(jsonObject);
+
+        // test
+        final Event event = loadRequestEvent(getTargetRequestList(1), null);
+        extension.handleTargetRequestContentEvent(event);
+
+        // verify
+        verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
+        assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
+        assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
+        final Map<String, String> headers = networkRequestCaptor.getValue().getHeaders();
+        assertEquals(3, headers.size());
+        assertEquals("application/json", headers.get("Content-Type"));
+        assertEquals("AdobeTargetMobile-Android-Flutter", headers.get("X-EXC-SDK"));
+        assertEquals(String.format("%s+%s", "x.y.z", extension.getVersion()), headers.get("X-EXC-SDK-Version"));
+        assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
+        assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
+    }
+
+    @Test
+    public void testLoadRequests_makesNetworkRequest_eventHubSharedStateNotAvailable() throws Exception {
+        setEventHubSharedState(null);
+        final JSONObject jsonObject = new JSONObject("{\n" +
+                "\"name\": \"mbox1\",\n" +
+                "\"options\": [{\"eventToken\":\"displayEventToken\"}]\n" +
+                "}\n");
+        when(requestBuilder.getRequestPayload(any(), any(), any(), any(), any(), any(), any())).thenReturn(jsonObject);
+
+        // test
+        final Event event = loadRequestEvent(getTargetRequestList(1), null);
+        extension.handleTargetRequestContentEvent(event);
+
+        // verify
+        verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
+        assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
+        assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
+        final Map<String, String> headers = networkRequestCaptor.getValue().getHeaders();
+        assertEquals(3, headers.size());
+        assertEquals("application/json", headers.get("Content-Type"));
+        assertEquals("AdobeTargetMobile-Android", headers.get("X-EXC-SDK"));
+        assertEquals("", headers.get("X-EXC-SDK-Version"));
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
     }
@@ -1022,6 +1102,7 @@ public class TargetExtensionTests {
     @Test
     public void testHandleRawRequest_SendRequest_When_RequestPayloadIsValid_sendsCorrectNetworkRequest() throws Exception {
         // setup
+        setEventHubSharedState();
         JSONObject json = new JSONObject("{\"test\":\"value\"}");
         when(requestBuilder.getRequestPayload(any(), any(), any(), any(), any())).thenReturn(json);
 
@@ -1032,7 +1113,11 @@ public class TargetExtensionTests {
         verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
         assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
-        assertEquals(1, networkRequestCaptor.getValue().getHeaders().size());
+        final Map<String, String> headers = networkRequestCaptor.getValue().getHeaders();
+        assertEquals(3, headers.size());
+        assertEquals("application/json", headers.get("Content-Type"));
+        assertEquals("AdobeTargetMobile-Android", headers.get("X-EXC-SDK"));
+        assertEquals(String.format("%s+%s", "x.y.z", extension.getVersion()), headers.get("X-EXC-SDK-Version"));
         assertEquals(json.toString(), new String(networkRequestCaptor.getValue().getBody(), StandardCharsets.UTF_8));
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
@@ -1466,6 +1551,9 @@ public class TargetExtensionTests {
 
     @Test
     public void testHandlePrefetchContent_makesCorrectNetworkRequest() {
+        //setup
+        setEventHubSharedState();
+
         // test
         extension.handleTargetRequestContentEvent(prefetchContentEvent(getTargetPrefetchList(1), null));
 
@@ -1473,7 +1561,11 @@ public class TargetExtensionTests {
         verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
         assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
-        assertEquals(1, networkRequestCaptor.getValue().getHeaders().size());
+        final Map<String, String> headers = networkRequestCaptor.getValue().getHeaders();
+        assertEquals(3, headers.size());
+        assertEquals("application/json", headers.get("Content-Type"));
+        assertEquals("AdobeTargetMobile-Android", headers.get("X-EXC-SDK"));
+        assertEquals(String.format("%s+%s", "x.y.z", extension.getVersion()), headers.get("X-EXC-SDK-Version"));
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
     }
@@ -1640,6 +1732,7 @@ public class TargetExtensionTests {
     @Test
     public void testHandleLocationsDisplayed_sendsCorrectNetworkRequest() throws JSONException {
         // setup
+        setEventHubSharedState();
         when(targetState.getPrefetchedMbox()).thenReturn(getMboxData(3));
         when(targetState.getLoadedMbox()).thenReturn(getMboxData(1));
         when(responseParser.getAnalyticsForTargetPayload(any(), any())).thenReturn(a4tParams);
@@ -1656,7 +1749,11 @@ public class TargetExtensionTests {
         verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
         assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
-        assertEquals(1, networkRequestCaptor.getValue().getHeaders().size());
+        final Map<String, String> headers = networkRequestCaptor.getValue().getHeaders();
+        assertEquals(3, headers.size());
+        assertEquals("application/json", headers.get("Content-Type"));
+        assertEquals("AdobeTargetMobile-Android", headers.get("X-EXC-SDK"));
+        assertEquals(String.format("%s+%s", "x.y.z", extension.getVersion()), headers.get("X-EXC-SDK-Version"));
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
     }
@@ -1822,6 +1919,7 @@ public class TargetExtensionTests {
     @Test
     public void testHandleLocationsClicked_sendsCorrectData() throws JSONException {
         // setup
+        setEventHubSharedState();
         when(targetState.getPrefetchedMbox()).thenReturn(getMboxData(1));
         when(responseParser.getClickMetric(any())).thenReturn(validJSONObject());
         when(requestBuilder.getClickNotificationJsonObject(any(), any(), anyLong(), any())).thenReturn(validJSONObject());
@@ -1839,7 +1937,11 @@ public class TargetExtensionTests {
         verify(networkService).connectAsync(networkRequestCaptor.capture(), networkCallbackCaptor.capture());
         assertEquals("https://" + MOCKED_TARGET_SERVER + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         assertEquals(HttpMethod.POST, networkRequestCaptor.getValue().getMethod());
-        assertEquals(1, networkRequestCaptor.getValue().getHeaders().size());
+        final Map<String, String> headers = networkRequestCaptor.getValue().getHeaders();
+        assertEquals(3, headers.size());
+        assertEquals("application/json", headers.get("Content-Type"));
+        assertEquals("AdobeTargetMobile-Android", headers.get("X-EXC-SDK"));
+        assertEquals(String.format("%s+%s", "x.y.z", extension.getVersion()), headers.get("X-EXC-SDK-Version"));
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getReadTimeout(), 0);
         assertEquals(MOCK_NETWORK_TIMEOUT, networkRequestCaptor.getValue().getConnectTimeout(), 0);
     }
@@ -1957,6 +2059,15 @@ public class TargetExtensionTests {
     private void setIdentitySharedState() {
         when(mockExtensionApi.getSharedState(eq("com.adobe.module.identity"), any(), anyBoolean(), any()))
                 .thenReturn(new SharedStateResult(SharedStateStatus.SET, identitySharedState));
+    }
+
+    private void setEventHubSharedState() {
+        setEventHubSharedState(eventHubSharedState);
+    }
+
+    private void setEventHubSharedState(final Map<String, Object> sharedState) {
+        when(mockExtensionApi.getSharedState(eq("com.adobe.module.eventhub"), any(), anyBoolean(), any()))
+                .thenReturn(new SharedStateResult(SharedStateStatus.SET, sharedState));
     }
 
     Map<String, Object> getTargetRawRequestForExecute(final int count) {
