@@ -44,10 +44,10 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     implementation project(':target')
-    implementation 'com.adobe.marketing.mobile:core:2.0.1'
-    implementation 'com.adobe.marketing.mobile:identity:2.0.0'
-    implementation 'com.adobe.marketing.mobile:lifecycle:2.0.0'
-    implementation 'com.adobe.marketing.mobile:assurance:2.0.0'
+    implementation 'com.adobe.marketing.mobile:core:2.5.0'
+    implementation 'com.adobe.marketing.mobile:identity:2.0.3'
+    implementation 'com.adobe.marketing.mobile:lifecycle:2.0.4'
+    implementation 'com.adobe.marketing.mobile:assurance:2.1.1'
 
     implementation 'androidx.appcompat:appcompat:1.6.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'

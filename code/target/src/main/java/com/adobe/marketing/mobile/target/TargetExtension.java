@@ -33,7 +33,6 @@ import com.adobe.marketing.mobile.services.NamedCollection;
 import com.adobe.marketing.mobile.services.NetworkCallback;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
-import com.adobe.marketing.mobile.services.NetworkingConstants;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.services.ui.UIService;
 import com.adobe.marketing.mobile.util.DataReader;
@@ -414,11 +413,15 @@ public class TargetExtension extends Extension {
                 return;
             }
 
+            final Map<String, Object> eventHubData = retrieveEventHubSharedState(event);
+            final Map<String, String> headers = new HashMap<>();
+            headers.put(TargetConstants.HEADER_CONTENT_TYPE, TargetConstants.HEADER_CONTENT_TYPE_JSON);
+            headers.put(TargetConstants.HEADER_X_EXC_SDK, getSdkInfo(eventHubData));
+            headers.put(TargetConstants.HEADER_X_EXC_SDK_VERSION, getSdkVersion(eventHubData));
+
             final String url = getTargetRequestUrl();
             final String payloadJsonString = payloadJson.toString();
             final byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);
-            final Map<String, String> headers = new HashMap<>();
-            headers.put(NetworkingConstants.Headers.CONTENT_TYPE, NetworkingConstants.HeaderValues.CONTENT_TYPE_JSON_APPLICATION);
             final int timeout = targetState.getNetworkTimeout();
             final NetworkRequest networkRequest = new NetworkRequest(url, HttpMethod.POST, payload, headers, timeout, timeout);
 
@@ -914,8 +917,12 @@ public class TargetExtension extends Extension {
             return TargetErrors.REQUEST_GENERATION_FAILED;
         }
 
+        final Map<String, Object> eventHubData = retrieveEventHubSharedState(event);
         final Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", TargetConstants.REQUEST_CONTENT_TYPE);
+        headers.put(TargetConstants.HEADER_CONTENT_TYPE, TargetConstants.HEADER_CONTENT_TYPE_JSON);
+        headers.put(TargetConstants.HEADER_X_EXC_SDK, getSdkInfo(eventHubData));
+        headers.put(TargetConstants.HEADER_X_EXC_SDK_VERSION, getSdkVersion(eventHubData));
+
         final int timeout = targetState.getNetworkTimeout();
         final String url = getTargetRequestUrl();
         final String payloadJsonString = payloadJson.toString();
@@ -1654,6 +1661,54 @@ public class TargetExtension extends Extension {
     }
 
     /**
+     * Returns the version info by concatenating Mobile Core and Target SDK versions.
+     * <p>
+     * If EventHub shared state is not available, or if version info is not present in the shared state, {@literal unknown}
+     * will be returned for Mobile Core version.
+     *
+     * @param eventHubData {@code Map<String, Object>} containing shared state data for EventHub.
+     * @return {@link String} containing Mobile Core and Target SDK versions.
+     */
+    private String getSdkVersion(final Map<String, Object> eventHubData) {
+        if (TargetUtils.isNullOrEmpty(eventHubData)) {
+            return "";
+        }
+
+        final String coreVersion = DataReader.optString(eventHubData, TargetConstants.EventHub.VERSION, "unknown");
+
+        // sdkVersion is a combination of Mobile Core+Target SDK version
+        return  String.format("%s+%s",coreVersion,Target.extensionVersion());
+    }
+
+    /**
+     * Returns the Target SDK info containing platform and wrapper details in the format {@literal AdobeTargetMobile-Android<-wrapperFriendlyName>}.
+     * <p>
+     * If EventHub shared state is not available, or if an SDK wrapper is not used, the information will omit the wrapper details.
+     *
+     * @param eventHubData {@code Map<String, Object>} containing shared state data for EventHub.
+     * @return {@link String} containing SDK info.
+     */
+    private String getSdkInfo(final Map<String, Object> eventHubData) {
+        final String sdkBase = TargetConstants.HEADER_X_EXC_SDK_BASE_TARGET_MOBILE_ANDROID;
+        if (TargetUtils.isNullOrEmpty(eventHubData)) {
+            return sdkBase;
+        }
+
+        final Map<String, Object> wrapperMap = DataReader.optTypedMap(Object.class, eventHubData, TargetConstants.EventHub.WRAPPER, null);
+        if (TargetUtils.isNullOrEmpty(wrapperMap)) {
+            return sdkBase;
+        }
+
+        final String wrapperFriendlyName = DataReader.optString(wrapperMap, TargetConstants.EventHub.WRAPPER_FRIENDLY_NAME, TargetConstants.DEFAULT_WRAPPER_FRIENDLY_NAME);
+        if (wrapperFriendlyName.equals(TargetConstants.DEFAULT_WRAPPER_FRIENDLY_NAME)) {
+            return sdkBase;
+        }
+
+        // sdkVersion is a combination of Mobile Core+Target SDK version
+        return  String.format("%s-%s",sdkBase,wrapperFriendlyName);
+    }
+
+    /**
      * Gets the latest valid {@code Lifecycle} shared state at the given {@code event} version.
      *
      * @param event the {@code Lifecycle} state version to retrieve
@@ -1684,5 +1739,16 @@ public class TargetExtension extends Extension {
     private Map<String, Object> retrieveConfigurationSharedState(final Event event) {
         final SharedStateResult configSharedState = getApi().getSharedState(TargetConstants.Configuration.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
         return configSharedState != null ? configSharedState.getValue() : null;
+    }
+
+    /**
+     * Gets the latest valid {@code EventHub} shared state at the given {@code event} version.
+     *
+     * @param event for which the {@code EventHub} state version is to be retrieved.
+     * @return the last known valid {@code EventHub} state, may be null if no valid state was found.
+     */
+    private Map<String, Object> retrieveEventHubSharedState(final Event event) {
+        final SharedStateResult eventHubSharedState = getApi().getSharedState(TargetConstants.EventHub.EXTENSION_NAME, event, false, SharedStateResolution.ANY);
+        return eventHubSharedState != null ? eventHubSharedState.getValue() : null;
     }
 }
