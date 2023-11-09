@@ -99,34 +99,13 @@ public class TargetPreviewManagerTest  {
     private UriOpening uriService;
 
 	@Mock
-	private Application application;
-
-	@Mock
-	private Activity activity;
-
-	@Mock
 	private Bitmap floatingButtonImage;
-
-    @Mock
-    private FloatingButtonSettings floatingButtonSettings;
 
 	@Mock
 	private Presentable<FloatingButton> floatingButton;
 
-    @Mock
-    private InAppMessageSettings inAppMessageSettings;
-
 	@Mock
 	private Presentable<InAppMessage> fullscreenMessage;
-
-	@Mock
-	private TargetPreviewFullscreenEventListener fullscreenEventListener;
-
-    @Mock
-    private PresentationUtilityProvider presentationUtilityProvider;
-
-	@Mock
-	private BitmapFactory bitmapFactory;
 
 	@Mock
 	private HttpConnecting connecting;
