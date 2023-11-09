@@ -30,33 +30,33 @@ class TargetPreviewButtonEventListener implements FloatingButtonEventListener {
 	}
 
 	@Override
-	public void onTapDetected(@NonNull Presentable<FloatingButton> presentable) {
+	public void onTapDetected(@NonNull final Presentable<FloatingButton> presentable) {
 		Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Target preview button was clicked");
 		previewManager.fetchWebView();
 	}
 
 	@Override
-	public void onPanDetected(@NonNull Presentable<FloatingButton> presentable) {
+	public void onPanDetected(@NonNull final Presentable<FloatingButton> presentable) {
 
 	}
 
 	@Override
-	public void onDismiss(@NonNull Presentable<FloatingButton> presentable) {
+	public void onDismiss(@NonNull final Presentable<FloatingButton> presentable) {
 		Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Target preview button was dismissed");
 	}
 
 	@Override
-	public void onError(@NonNull Presentable<FloatingButton> presentable, @NonNull PresentationError presentationError) {
+	public void onError(@NonNull final Presentable<FloatingButton> presentable, @NonNull final PresentationError presentationError) {
 		Log.debug(TargetConstants.LOG_TAG,  CLASS_NAME, "onError - Failed to display Target preview button");
 	}
 
 	@Override
-	public void onHide(@NonNull Presentable<FloatingButton> presentable) {
+	public void onHide(@NonNull final Presentable<FloatingButton> presentable) {
 
 	}
 
 	@Override
-	public void onShow(@NonNull Presentable<FloatingButton> presentable) {
+	public void onShow(@NonNull final Presentable<FloatingButton> presentable) {
 		Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Target preview button was shown");
 	}
 }

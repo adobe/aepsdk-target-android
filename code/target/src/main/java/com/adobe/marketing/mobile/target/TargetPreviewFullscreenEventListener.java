@@ -29,32 +29,32 @@ class TargetPreviewFullscreenEventListener implements InAppMessageEventListener 
 	}
 
 	@Override
-	public void onDismiss(@NonNull Presentable<InAppMessage> presentable) {
+	public void onDismiss(@NonNull final Presentable<InAppMessage> presentable) {
 		Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Target preview selection screen was dismissed");
 	}
 
 	@Override
-	public void onError(@NonNull Presentable<InAppMessage> presentable, @NonNull PresentationError presentationError) {
+	public void onError(@NonNull final Presentable<InAppMessage> presentable, @NonNull final PresentationError presentationError) {
 		Log.debug(TargetConstants.LOG_TAG,  CLASS_NAME, "onError - Failed to display Target preview selection screen.");
 	}
 
 	@Override
-	public void onHide(@NonNull Presentable<InAppMessage> presentable) {
+	public void onHide(@NonNull final Presentable<InAppMessage> presentable) {
 
 	}
 
 	@Override
-	public void onShow(@NonNull Presentable<InAppMessage> presentable) {
+	public void onShow(@NonNull final Presentable<InAppMessage> presentable) {
 		Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Target preview selection screen was displayed");
 	}
 
 	@Override
-	public void onBackPressed(@NonNull Presentable<InAppMessage> presentable) {
+	public void onBackPressed(@NonNull final Presentable<InAppMessage> presentable) {
 
 	}
 
 	@Override
-	public boolean onUrlLoading(@NonNull Presentable<InAppMessage> presentable, @NonNull String url) {
+	public boolean onUrlLoading(@NonNull final Presentable<InAppMessage> presentable, @NonNull final String url) {
 		Log.debug(TargetConstants.LOG_TAG,  CLASS_NAME, String.format("Target preview override url received: %s", url));
 		targetPreviewManager.previewConfirmedWithUrl(presentable, url);
 		return true;
