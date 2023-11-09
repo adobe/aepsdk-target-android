@@ -220,11 +220,16 @@ task platformFunctionalTestJacocoReport(type: JacocoReport, dependsOn: "createPh
 
 apply from: '../checkstyle.gradle'
 
+configurations.configureEach {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 dependencies {
     implementation "androidx.annotation:annotation:1.0.0"
 
     // Adobe Mobile SDK Core
-    implementation 'com.adobe.marketing.mobile:core:2.0.1'
+    // TODO change once Core is released
+    implementation ("com.github.adobe.aepsdk-core-android:core:feature~uiservice-SNAPSHOT") {}
 
     testImplementation "androidx.test.ext:junit:${rootProject.ext.junitVersion}"
     testImplementation "org.mockito:mockito-core:${rootProject.ext.mockitoCoreVersion}"

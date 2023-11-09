@@ -21,19 +21,25 @@ import org.mockito.junit.MockitoJUnitRunner;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.adobe.marketing.mobile.services.ui.FloatingButton;
+import com.adobe.marketing.mobile.services.ui.Presentable;
+
 
 @RunWith(MockitoJUnitRunner.Silent.class)
-public class TargetPreviewButtonListenerTest {
+public class TargetPreviewButtonEventListenerTest {
 
     @Mock
     private TargetPreviewManager mockTargetPreviewManager;
 
-	TargetPreviewButtonListener previewButtonListener;
+    @Mock
+    private Presentable<FloatingButton> mockFloatingButton;
+
+	TargetPreviewButtonEventListener previewButtonListener;
 
 
 	@Before()
 	public void beforeEach() {
-		previewButtonListener = new TargetPreviewButtonListener(mockTargetPreviewManager);
+		previewButtonListener = new TargetPreviewButtonEventListener(mockTargetPreviewManager);
 	}
 
 	// ===================================
@@ -42,7 +48,7 @@ public class TargetPreviewButtonListenerTest {
 	@Test
 	public void test_OnTapDetected() {
 		// test
-		previewButtonListener.onTapDetected();
+		previewButtonListener.onTapDetected(mockFloatingButton);
 
 		// verify
 		verify(mockTargetPreviewManager, times(1)).fetchWebView();
@@ -54,7 +60,7 @@ public class TargetPreviewButtonListenerTest {
 	@Test
 	public void test_OnPanDetected() {
 		// test
-		previewButtonListener.onPanDetected();
+		previewButtonListener.onPanDetected(mockFloatingButton);
 
 		// verify
 		// nothing to verify for now

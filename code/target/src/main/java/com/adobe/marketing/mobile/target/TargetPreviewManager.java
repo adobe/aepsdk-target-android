@@ -11,20 +11,29 @@
 
 package com.adobe.marketing.mobile.target;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
 import com.adobe.marketing.mobile.services.NetworkingConstants;
 import com.adobe.marketing.mobile.services.ui.FloatingButton;
-import com.adobe.marketing.mobile.services.ui.FullscreenMessage;
-import com.adobe.marketing.mobile.services.ui.MessageSettings;
+import com.adobe.marketing.mobile.services.ui.InAppMessage;
+import com.adobe.marketing.mobile.services.ui.Presentable;
 import com.adobe.marketing.mobile.services.ui.UIService;
+import com.adobe.marketing.mobile.services.ui.floatingbutton.FloatingButtonSettings;
+import com.adobe.marketing.mobile.services.ui.message.InAppMessageSettings;
+import com.adobe.marketing.mobile.services.uri.UriOpening;
+import com.adobe.marketing.mobile.util.DefaultPresentationUtilityProvider;
 import com.adobe.marketing.mobile.util.StreamUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
 import com.adobe.marketing.mobile.util.URLBuilder;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -36,8 +45,6 @@ class TargetPreviewManager {
 
     private static final String CLASS_NAME = "TargetPreviewManager";
     static final String CHARSET_UTF_8 = "UTF-8";
-    private final static int FILL_DEVICE_DISPLAY = 100;
-
 
     // ========================================================================================
     // private fields
@@ -45,6 +52,7 @@ class TargetPreviewManager {
 
     final private Networking networkService;
     final private UIService uiService;
+    final private UriOpening uriService;
     protected String previewParams;
     protected String token;
     protected String endPoint;
@@ -53,18 +61,20 @@ class TargetPreviewManager {
     private Boolean fetchingWebView;
     private String clientCode;
 
-    protected FloatingButton floatingButton;
+    protected Presentable<FloatingButton> floatingButtonPresentable;
 
     /**
      * Constructor, returns an instance of the {@code TargetPreviewManager}.
      *
      * @param networkService an instance of {@link Networking} to be used by the extension
      * @param uiService an instance of {@link UIService} to be used by the extension
+     * @param uriService an instance of {@link UriOpening} to be used by the extension
      * @see com.adobe.marketing.mobile.services.ServiceProvider
      */
-    TargetPreviewManager(final Networking networkService, final UIService uiService) {
+    TargetPreviewManager(final Networking networkService, final UIService uiService, final UriOpening uriService) {
         this.networkService = networkService;
         this.uiService = uiService;
+        this.uriService = uriService;
         fetchingWebView = false;
     }
 
@@ -124,6 +134,11 @@ class TargetPreviewManager {
             return;
         }
 
+        if (uriService == null) {
+            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "enterPreviewModeWithDeepLinkParams - Unable to enter preview mode, UriOpening is not available.");
+            return;
+        }
+
         this.clientCode = clientCode;
 
         // bail out on null/empty deepLink
@@ -162,16 +177,16 @@ class TargetPreviewManager {
     }
 
     /**
-     * This method will be called by the {@code TargetPreviewFullscreenDelegate} to process given url.
+     * This method will be called by the {@code TargetPreviewFullscreenEventListener} to process given url.
      * <p>
      * If it is a cancel url, it dismisses the message and exits preview mode.
      * If it is a confirm url, it dismisses the message, updates preview parameters and starts a
      * new view if preview restart url is set.
      *
-     * @param message A target preview {@link FullscreenMessage} instance
+     * @param message A target preview {@link Presentable<InAppMessage>} instance
      * @param stringUrl A {@link String} url associated with the clicked button
      */
-    protected void previewConfirmedWithUrl(final FullscreenMessage message, final String stringUrl) {
+    protected void previewConfirmedWithUrl(final Presentable<InAppMessage> message, final String stringUrl) {
 
         // dismiss the message without exiting preview mode.
         // remove the message no matter what the clicked URL is.
@@ -228,7 +243,7 @@ class TargetPreviewManager {
             // open the restart url if it exists
             if (StringUtils.isNullOrEmpty(restartUrl)) {
                 Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "previewConfirmedWithUrl - Empty Preview restart url");
-            } else if (!uiService.showUrl(restartUrl)) {
+            } else if (!uriService.openUri(restartUrl)) {
                 Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,"previewConfirmedWithUrl - Failed to load given preview restart url %s", restartUrl);
             }
         }
@@ -298,9 +313,9 @@ class TargetPreviewManager {
         previewParams = null;
 
         // remove preview button
-        if (floatingButton != null) {
-            floatingButton.remove();
-            floatingButton = null;
+        if (floatingButtonPresentable != null) {
+            floatingButtonPresentable.dismiss();
+            floatingButtonPresentable = null;
         }
     }
 
@@ -362,20 +377,26 @@ class TargetPreviewManager {
      *
      */
     private void createAndShowFloatingButton() {
-        if (floatingButton != null) {
+        if (floatingButtonPresentable != null) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "createAndShowFloatingButton - Floating button already exists");
             return;
         }
 
-        TargetPreviewButtonListener targetPreviewButtonListener = new TargetPreviewButtonListener(this);
-        floatingButton = uiService.createFloatingButton(targetPreviewButtonListener);
+        try {
+            final byte[] backgroundImage =
+                    Base64.decode(TargetConstants.PreviewKeys.ENCODED_BUTTON_BACKGROUND_PNG, Base64.DEFAULT);
+            final Bitmap floatingButtonImage = BitmapFactory.decodeStream(new ByteArrayInputStream(backgroundImage));
 
-        if (floatingButton != null) {
-            floatingButton.display();
-        } else {
+            floatingButtonPresentable = uiService.create(
+                    new FloatingButton(new FloatingButtonSettings.Builder().initialGraphic(floatingButtonImage).build(),
+                            new TargetPreviewButtonEventListener(this)),
+                    new DefaultPresentationUtilityProvider());
+            floatingButtonPresentable.show();
+        } catch (final Exception e) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "createAndShowFloatingButton - Unable to instantiate the floating button for target preview");
+                    "createAndShowFloatingButton - Unable to instantiate the floating button for target preview %s", e.getMessage());
         }
+
     }
 
     /**
@@ -388,26 +409,23 @@ class TargetPreviewManager {
      *
      */
     private void createAndShowMessage() {
-
-        final TargetPreviewFullscreenDelegate previewFullscreenListener = new TargetPreviewFullscreenDelegate(this);
-        final MessageSettings messageSettings = new MessageSettings();
         // Target fullscreen messages are displayed at 100% scale
-        messageSettings.setHeight(FILL_DEVICE_DISPLAY);
-        messageSettings.setWidth(FILL_DEVICE_DISPLAY);
-        messageSettings.setParent(this);
-        messageSettings.setVerticalAlign(MessageSettings.MessageAlignment.TOP);
-        messageSettings.setHorizontalAlign(MessageSettings.MessageAlignment.CENTER);
-        messageSettings.setDisplayAnimation(MessageSettings.MessageAnimation.NONE);
-        messageSettings.setDismissAnimation(MessageSettings.MessageAnimation.NONE);
-        messageSettings.setBackdropColor("#FFFFFF"); // html code for white
-        messageSettings.setBackdropOpacity(1);
-        final FullscreenMessage message = uiService.createFullscreenMessage(webViewHtml, previewFullscreenListener, false , messageSettings);
+        final InAppMessageSettings inAppMessageSettings = new InAppMessageSettings.Builder()
+                .content(webViewHtml)
+                .verticalAlignment(InAppMessageSettings.MessageAlignment.TOP)
+                .backgroundColor("#FFFFFFF")
+                .shouldTakeOverUi(false)
+                .backdropOpacity(1)
+                .build();
 
-        if (message != null) {
-            message.show();
-        } else {
+        try {
+            final Presentable<InAppMessage> inAppMessagePresentable = uiService.create(
+                    new InAppMessage(inAppMessageSettings, new TargetPreviewFullscreenEventListener(this)),
+                    new DefaultPresentationUtilityProvider());
+            inAppMessagePresentable.show();
+        } catch (final Exception e) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,
-                    "createAndShowMessage - Unable to instantiate the full screen message for target preview");
+                    "createAndShowMessage - Unable to instantiate the full screen message for target preview %s", e.getMessage());
         }
     }
 

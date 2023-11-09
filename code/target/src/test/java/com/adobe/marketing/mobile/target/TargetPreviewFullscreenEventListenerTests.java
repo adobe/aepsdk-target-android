@@ -21,22 +21,24 @@ import org.mockito.junit.MockitoJUnitRunner;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
-import com.adobe.marketing.mobile.services.ui.FullscreenMessage;
+import com.adobe.marketing.mobile.services.ui.InAppMessage;
+import com.adobe.marketing.mobile.services.ui.Presentable;
+
 
 @RunWith(MockitoJUnitRunner.Silent.class)
-public class TargetPreviewFullScreenListenerTest {
+public class TargetPreviewFullscreenEventListenerTests {
 
-	TargetPreviewFullscreenDelegate fullscreenListener;
+	TargetPreviewFullscreenEventListener fullscreenListener;
 
     @Mock
 	TargetPreviewManager mockTargetPreviewManager;
 
 	@Mock
-	FullscreenMessage fullScreenMessage;
+	Presentable<InAppMessage> fullScreenMessage;
 
 	@Before
 	public void beforeEach() {
-		fullscreenListener = new TargetPreviewFullscreenDelegate(mockTargetPreviewManager);
+		fullscreenListener = new TargetPreviewFullscreenEventListener(mockTargetPreviewManager);
 	}
 
 	// ===================================
@@ -63,7 +65,7 @@ public class TargetPreviewFullScreenListenerTest {
 	@Test
 	public void test_overrideUrlLoad() {
 		// test
-		fullscreenListener.overrideUrlLoad(fullScreenMessage, "testdeeplink");
+		fullscreenListener.onUrlLoading(fullScreenMessage, "testdeeplink");
 
 		// verify
 		verify(mockTargetPreviewManager).previewConfirmedWithUrl(eq(fullScreenMessage), eq("testdeeplink"));

@@ -29,6 +29,7 @@ import com.adobe.marketing.mobile.services.NetworkCallback;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
 import com.adobe.marketing.mobile.services.ui.UIService;
+import com.adobe.marketing.mobile.services.uri.UriOpening;
 import com.adobe.marketing.mobile.util.DataReader;
 
 import org.json.JSONException;
@@ -153,6 +154,9 @@ public class TargetExtensionTests {
     UIService uiService;
 
     @Mock
+    UriOpening uriService;
+
+    @Mock
     ExtensionApi mockExtensionApi;
 
     @Mock
@@ -175,7 +179,7 @@ public class TargetExtensionTests {
 
     @Before
     public void setup() throws Exception {
-        extension = new TargetExtension(mockExtensionApi, deviceInforming, networkService, uiService, targetState, targetPreviewManager, requestBuilder, responseParser);
+        extension = new TargetExtension(mockExtensionApi, deviceInforming, networkService, uiService, uriService, targetState, targetPreviewManager, requestBuilder, responseParser);
         when(targetState.getClientCode()).thenReturn(MOCKED_CLIENT_CODE);
         when(targetState.getNetworkTimeout()).thenReturn(MOCK_NETWORK_TIMEOUT);
         when(targetState.getTargetServer()).thenReturn(MOCKED_TARGET_SERVER);
@@ -288,7 +292,7 @@ public class TargetExtensionTests {
     public void test_readyForEvent_returnsTrueWhenConfigurationIsSet() {
         // setup
         setConfigurationSharedState(MOCKED_CLIENT_CODE, 5, "optedin", false, "targetServer");
-        extension = new TargetExtension(mockExtensionApi, deviceInforming, networkService, uiService, new TargetState(datastore), targetPreviewManager, requestBuilder, responseParser);
+        extension = new TargetExtension(mockExtensionApi, deviceInforming, networkService, uiService, uriService, new TargetState(datastore), targetPreviewManager, requestBuilder, responseParser);
 
         // test
         assertTrue(extension.readyForEvent(noEventDataEvent()));
@@ -345,7 +349,7 @@ public class TargetExtensionTests {
     @Test
     public void testLoadRequests_NoRequest_When_NetworkServiceIsNotAvailable() {
         // setup
-        extension = new TargetExtension(mockExtensionApi, deviceInforming, null, uiService, targetState, targetPreviewManager, requestBuilder, responseParser);
+        extension = new TargetExtension(mockExtensionApi, deviceInforming, null, uiService, uriService, targetState, targetPreviewManager, requestBuilder, responseParser);
         final Event event = loadRequestEvent(getTargetRequestList(1), null);
 
         // test
@@ -1058,7 +1062,7 @@ public class TargetExtensionTests {
     @Test
     public void testHandleRawRequest_NoRequest_When_NetworkServiceIsNotAvailable() {
         // setup
-        extension = new TargetExtension(mockExtensionApi, deviceInforming, null, uiService, targetState, targetPreviewManager, requestBuilder, responseParser);
+        extension = new TargetExtension(mockExtensionApi, deviceInforming, null, uiService, uriService, targetState, targetPreviewManager, requestBuilder, responseParser);
 
         // test
         extension.handleTargetRequestContentEvent(rawRequestExecuteEvent(1));
@@ -1072,7 +1076,7 @@ public class TargetExtensionTests {
     @Test
     public void testHandleRawRequest_TargetRequestBuilder_isNull() {
         // setup
-        extension = new TargetExtension(mockExtensionApi, deviceInforming, networkService, uiService, targetState, targetPreviewManager, null, responseParser);
+        extension = new TargetExtension(mockExtensionApi, deviceInforming, networkService, uiService, uriService, targetState, targetPreviewManager, null, responseParser);
 
         // test
         extension.handleTargetRequestContentEvent(rawRequestExecuteEvent(1));
@@ -1474,7 +1478,7 @@ public class TargetExtensionTests {
     @Test
     public void testHandlePrefetchContent_NoRequest_When_NetworkServiceIsNotAvailable() {
         // setup
-        extension = new TargetExtension(mockExtensionApi, deviceInforming, null, uiService, targetState, targetPreviewManager, requestBuilder, responseParser);
+        extension = new TargetExtension(mockExtensionApi, deviceInforming, null, uiService, uriService, targetState, targetPreviewManager, requestBuilder, responseParser);
 
         // test
         final Event event = prefetchContentEvent(getTargetPrefetchList(1), null);
@@ -1490,7 +1494,7 @@ public class TargetExtensionTests {
     @Test
     public void testHandlePrefetchContent_NoRequest_When_TargetRequestBuilderIsNotAvailable() {
         // setup
-        extension = new TargetExtension(mockExtensionApi, deviceInforming, networkService, uiService, targetState, targetPreviewManager, null, responseParser);
+        extension = new TargetExtension(mockExtensionApi, deviceInforming, networkService, uiService, uriService, targetState, targetPreviewManager, null, responseParser);
 
         // test
         final Event event = prefetchContentEvent(getTargetPrefetchList(1), null);
@@ -1694,7 +1698,7 @@ public class TargetExtensionTests {
     @Test
     public void testHandleLocationsDisplayed_NoRequest_When_networkServicesIsNotAvailable() {
         // setup
-        extension = new TargetExtension(mockExtensionApi, deviceInforming, null, uiService, targetState, targetPreviewManager, requestBuilder, responseParser);
+        extension = new TargetExtension(mockExtensionApi, deviceInforming, null, uiService, uriService, targetState, targetPreviewManager, requestBuilder, responseParser);
 
         // test
         extension.handleTargetRequestContentEvent(locationsDisplayedEvent(1));
@@ -1708,7 +1712,7 @@ public class TargetExtensionTests {
     @Test
     public void testHandleLocationsDisplayed_NoRequest_When_TargetRequestBuilderIsNotAvailable() {
         // setup
-        extension = new TargetExtension(mockExtensionApi, deviceInforming, networkService, uiService, targetState, targetPreviewManager, null, responseParser);
+        extension = new TargetExtension(mockExtensionApi, deviceInforming, networkService, uiService, uriService, targetState, targetPreviewManager, null, responseParser);
 
         // test
         extension.handleTargetRequestContentEvent(locationsDisplayedEvent(1));

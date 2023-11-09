@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId "com.adobe.targettestapp"
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion 33
         versionCode 1
         versionName "1.0"
@@ -40,14 +40,25 @@ android {
     }
 }
 
+configurations.configureEach {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     implementation project(':target')
-    implementation 'com.adobe.marketing.mobile:core:2.5.0'
-    implementation 'com.adobe.marketing.mobile:identity:2.0.3'
-    implementation 'com.adobe.marketing.mobile:lifecycle:2.0.4'
-    implementation 'com.adobe.marketing.mobile:assurance:2.1.1'
+    // TODO change once Core is released
+    implementation ("com.github.adobe.aepsdk-core-android:core:feature~uiservice-SNAPSHOT") {}
+    implementation ('com.adobe.marketing.mobile:identity:2.0.3') {
+        exclude group: 'com.adobe.marketing.mobile', module: 'core'
+    }
+    implementation ('com.adobe.marketing.mobile:lifecycle:2.0.4') {
+        exclude group: 'com.adobe.marketing.mobile', module: 'core'
+    }
+    implementation ('com.adobe.marketing.mobile:assurance:2.1.1') {
+        exclude group: 'com.adobe.marketing.mobile', module: 'core'
+    }
 
     implementation 'androidx.appcompat:appcompat:1.6.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'

@@ -16,22 +16,31 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+
+import android.app.Activity;
+import android.app.Application;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 
 import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.services.HttpConnecting;
@@ -40,9 +49,13 @@ import com.adobe.marketing.mobile.services.NetworkCallback;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
 import com.adobe.marketing.mobile.services.ui.FloatingButton;
-import com.adobe.marketing.mobile.services.ui.FullscreenMessage;
-import com.adobe.marketing.mobile.services.ui.MessageSettings;
+import com.adobe.marketing.mobile.services.ui.InAppMessage;
+import com.adobe.marketing.mobile.services.ui.Presentable;
+import com.adobe.marketing.mobile.services.ui.PresentationUtilityProvider;
 import com.adobe.marketing.mobile.services.ui.UIService;
+import com.adobe.marketing.mobile.services.ui.floatingbutton.FloatingButtonSettings;
+import com.adobe.marketing.mobile.services.ui.message.InAppMessageSettings;
+import com.adobe.marketing.mobile.services.uri.UriOpening;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class TargetPreviewManagerTest  {
@@ -76,21 +89,44 @@ public class TargetPreviewManagerTest  {
 	String TEST_CONFIRM_DEEPLINK   = "adbinapp://confirm?" + TEST_QUERY_PARAMS;
 	String TEST_RESTART_URL        = "adbinapp://somepage";
 
-
 	@Mock
 	private Networking networkService;
 
 	@Mock
 	private UIService uiService;
 
-	@Mock
-	private FloatingButton floatingButton;
+    @Mock
+    private UriOpening uriService;
 
 	@Mock
-	private FullscreenMessage fullscreenMessage;
+	private Application application;
 
 	@Mock
-	private TargetPreviewFullscreenDelegate fullscreenDelegate;
+	private Activity activity;
+
+	@Mock
+	private Bitmap floatingButtonImage;
+
+    @Mock
+    private FloatingButtonSettings floatingButtonSettings;
+
+	@Mock
+	private Presentable<FloatingButton> floatingButton;
+
+    @Mock
+    private InAppMessageSettings inAppMessageSettings;
+
+	@Mock
+	private Presentable<InAppMessage> fullscreenMessage;
+
+	@Mock
+	private TargetPreviewFullscreenEventListener fullscreenEventListener;
+
+    @Mock
+    private PresentationUtilityProvider presentationUtilityProvider;
+
+	@Mock
+	private BitmapFactory bitmapFactory;
 
 	@Mock
 	private HttpConnecting connecting;
@@ -98,18 +134,26 @@ public class TargetPreviewManagerTest  {
 	@Mock
 	private TargetPreviewManager previewManager;
 
-	private MockedConstruction<TargetPreviewButtonListener> buttonListenerMockedConstruction;
-
 	@Before()
 	public void beforeEach() {
 		mockFullScreenAndFloatingButton();
-		previewManager = new TargetPreviewManager(networkService, uiService);
+		previewManager = new TargetPreviewManager(networkService, uiService, uriService);
 	}
 
+	void runUsingMockedServiceProvider(final Runnable runnable) {
+		try (MockedStatic<Base64> base64MockedStatic = Mockito.mockStatic(Base64.class);
+			 MockedStatic<BitmapFactory> bitmapFactoryMockedStatic = Mockito.mockStatic(BitmapFactory.class)) {
+			base64MockedStatic.when(() -> Base64.decode(ArgumentMatchers.anyString(), ArgumentMatchers.anyInt()))
+					.thenAnswer((Answer<byte[]>) invocation -> java.util.Base64.getDecoder().decode((String) invocation.getArguments()[0]));
+			bitmapFactoryMockedStatic.when(() -> BitmapFactory.decodeStream(any(InputStream.class)))
+					.thenReturn(floatingButtonImage);
+			runnable.run();
+		}
+	}
 
 	void mockFullScreenAndFloatingButton() {
-		when(uiService.createFloatingButton(any(TargetPreviewButtonListener.class))).thenReturn(floatingButton);
-		when(uiService.createFullscreenMessage(any(String.class), any(TargetPreviewFullscreenDelegate.class), any(Boolean.class), any(MessageSettings.class))).thenReturn(fullscreenMessage);
+        when(uiService.create(any(FloatingButton.class), any(PresentationUtilityProvider.class))).thenReturn(floatingButton);
+        when(uiService.create(any(InAppMessage.class), any(PresentationUtilityProvider.class))).thenReturn(fullscreenMessage);
 	}
 
 	void setMockConnectionResponse(final String response, final int responseCode) {
@@ -126,192 +170,246 @@ public class TargetPreviewManagerTest  {
 	// ===================================
 	@Test
 	public void test_enterPreviewModeWithDeepLinkParams_ValidDeepLink() {
-		// setup
-		ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
-		String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
-		String expectedUrl = "https://" + PREVIEW_DEFAULT_EP + "/ui/admin/" + CLIENT_CODE + "/preview?token=abcd";
-		setMockConnectionResponse("TestHTML", 200);
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
+			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
+			String expectedUrl = "https://" + PREVIEW_DEFAULT_EP + "/ui/admin/" + CLIENT_CODE + "/preview?token=abcd";
+			setMockConnectionResponse("TestHTML", 200);
 
-		// test
-		previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
 
-		// verify floating button created and displayed
-		verifyFloatingButtonDisplayed();
+			// verify floating button created and displayed
+			verifyFloatingButtonDisplayed();
 
-		// verify network call
-		verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
-		assertEquals("network request has the correct httpcommand", HttpMethod.GET,
-				networkResponseCapture.getValue().getMethod());
-		assertEquals("network request has the correct read timeout", 2,
-				networkResponseCapture.getValue().getReadTimeout());
-		assertEquals("network request has the correct URL",
-				expectedUrl, networkResponseCapture.getValue().getUrl());
-		assertEquals("network request has the correct request property", 2, networkResponseCapture.getValue().getHeaders().size());
-		assertEquals("network request has the correct request property", "text/html", networkResponseCapture.getValue().getHeaders().get("Accept"));
-		assertEquals("network request has the correct request property", "application/x-www-form-urlencoded", networkResponseCapture.getValue().getHeaders().get("Content-Type"));
+			// verify network call
+			verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
+			assertEquals("network request has the correct httpcommand", HttpMethod.GET,
+					networkResponseCapture.getValue().getMethod());
+			assertEquals("network request has the correct read timeout", 2,
+					networkResponseCapture.getValue().getReadTimeout());
+			assertEquals("network request has the correct URL",
+					expectedUrl, networkResponseCapture.getValue().getUrl());
+			assertEquals("network request has the correct request property", 2, networkResponseCapture.getValue().getHeaders().size());
+			assertEquals("network request has the correct request property", "text/html", networkResponseCapture.getValue().getHeaders().get("Accept"));
+			assertEquals("network request has the correct request property", "application/x-www-form-urlencoded", networkResponseCapture.getValue().getHeaders().get("Content-Type"));
 
 
-		// verify fullscreen message created and displayed
-		verifyFullScreenMessageDisplayed();
+			// verify fullscreen message created and displayed
+			verifyFullScreenMessageDisplayed();
 
-		// verify local variables
-		assertEquals("abcd", previewManager.getPreviewToken());
+			// verify local variables
+			assertEquals("abcd", previewManager.getPreviewToken());
+		});
 	}
 
 	@Test
 	public void test_EnterPreviewModeWithDeepLinkParams_NullDeepLink() {
-		// test
-		previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, null);
+		runUsingMockedServiceProvider(() -> {
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, null);
 
-		// verify no FullScreenMessage or floating button is created
-		verifyNoInteractions(uiService);
+			// verify no FullScreenMessage or floating button is created
+			verifyNoInteractions(uiService);
 
-		// verify no network call
-		verifyNoInteractions(networkService);
+			// verify no network call
+			verifyNoInteractions(networkService);
 
-		// verify local variables
-		assertNull(previewManager.getPreviewToken());
+			// verify local variables
+			assertNull(previewManager.getPreviewToken());
+		});
 	}
 
 
 	@Test
 	public void test_EnterPreviewModeWithDeepLinkParams_EmptyDeepLink() {
-		// test
-		previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, "");
+		runUsingMockedServiceProvider(() -> {
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, "");
 
-		// verify no fullScreenMessage or floating button is created
-		verifyNoInteractions(uiService);
+			// verify no fullScreenMessage or floating button is created
+			verifyNoInteractions(uiService);
 
-		// verify no network call
-		verifyNoInteractions(networkService);
+			// verify no network call
+			verifyNoInteractions(networkService);
 
-		// verify local variables
-		assertNull(previewManager.getPreviewToken());
+			// verify local variables
+			assertNull(previewManager.getPreviewToken());
+		});
 	}
 
 	@Test
 	public void test_EnterPreviewModeWithDeepLinkParams_ValidDeepLink_Without_Double_Decoding() {
-		// Validate fix for AMSDK-8272 Preview Link getting re-encoded from %2B to %20
-		// setup
-		ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
-		String testDeeplink = "test://path?at_preview_token=olDho0%2Blkfr8LaHURjiCAnu1xIVRkvN3UqdXwawRz3E%3D&key1=val1";
-		String expectedUrl = "https://" + PREVIEW_DEFAULT_EP + "/ui/admin/" + CLIENT_CODE +
-				"/preview?token=olDho0%2Blkfr8LaHURjiCAnu1xIVRkvN3UqdXwawRz3E%3D";
-		setMockConnectionResponse("TestHTML", 200);
+		runUsingMockedServiceProvider(() -> {
+			// Validate fix for AMSDK-8272 Preview Link getting re-encoded from %2B to %20
+			// setup
+			ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
+			String testDeeplink = "test://path?at_preview_token=olDho0%2Blkfr8LaHURjiCAnu1xIVRkvN3UqdXwawRz3E%3D&key1=val1";
+			String expectedUrl = "https://" + PREVIEW_DEFAULT_EP + "/ui/admin/" + CLIENT_CODE +
+					"/preview?token=olDho0%2Blkfr8LaHURjiCAnu1xIVRkvN3UqdXwawRz3E%3D";
+			setMockConnectionResponse("TestHTML", 200);
 
-		// test
-		previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
 
-		// verify floating button
-		verifyFloatingButtonDisplayed();
+			// verify floating button
+			verifyFloatingButtonDisplayed();
 
-		// verify network call
-		verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
-		assertEquals("network request has the correct URL",
-				expectedUrl, networkResponseCapture.getValue().getUrl());
+			// verify network call
+			verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
+			assertEquals("network request has the correct URL",
+					expectedUrl, networkResponseCapture.getValue().getUrl());
 
-		// verify fullscreen message created and displayed
-		verifyFullScreenMessageDisplayed();
+			// verify fullscreen message created and displayed
+			verifyFullScreenMessageDisplayed();
 
-		// verify local variables
-		assertEquals("olDho0+lkfr8LaHURjiCAnu1xIVRkvN3UqdXwawRz3E=", previewManager.getPreviewToken());
+			// verify local variables
+			assertEquals("olDho0+lkfr8LaHURjiCAnu1xIVRkvN3UqdXwawRz3E=", previewManager.getPreviewToken());
+		});
 	}
 
 	@Test
 	public void test_EnterPreviewModeWithDeepLinkParams_DeepLinkMissingToken() {
-		// setup
-		String testDeeplink = "test://path?somethingelse=abcd&key1=val1";
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			String testDeeplink = "test://path?somethingelse=abcd&key1=val1";
 
-		// test
-		previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
 
-		// verify no fullScreenMessage or floating button is created
-		verifyNoInteractions(uiService);
+			// verify no fullScreenMessage or floating button is created
+			verifyNoInteractions(uiService);
 
-		// verify no network call
-		verifyNoInteractions(networkService);
+			// verify no network call
+			verifyNoInteractions(networkService);
 
-		// verify local variables
-		assertNull(previewManager.getPreviewToken());
+			// verify no deeplink opened
+			verifyNoInteractions(uriService);
+
+			// verify local variables
+			assertNull(previewManager.getPreviewToken());
+		});
 	}
 
 	@Test
 	public void test_EnterPreviewModeWithDeepLinkParams_InValidDeeplink() {
-		// setup
-		String testDeeplink = "NotAValidDeeplink";
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			String testDeeplink = "NotAValidDeeplink";
 
-		// test
-		previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
 
-		// verify no fullScreenMessage or floating button is created
-		verifyNoInteractions(uiService);
+			// verify no fullScreenMessage or floating button is created
+			verifyNoInteractions(uiService);
 
-		// verify no network call
-		verifyNoInteractions(networkService);
+			// verify no network call
+			verifyNoInteractions(networkService);
 
-		// verify local variables
-		assertNull(previewManager.getPreviewToken());
+			// verify no deeplink opened
+			verifyNoInteractions(uriService);
+
+			// verify local variables
+			assertNull(previewManager.getPreviewToken());
+		});
 	}
 
 	@Test
 	public void test_EnterPreviewModeWithDeepLinkParams_NullUIService() {
-		// setup
-		String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
-		previewManager = new TargetPreviewManager(networkService, null);
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
+			previewManager = new TargetPreviewManager(networkService, null, uriService);
 
-		// test
-		previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
 
-		// verify no fullScreenMessage or floating button is created
-		verifyNoInteractions(uiService);
+			// verify no fullScreenMessage or floating button is created
+			verifyNoInteractions(uiService);
 
-		// verify no network call
-		verifyNoInteractions(networkService);
+			// verify no network call
+			verifyNoInteractions(networkService);
 
-		// verify local variables
-		assertNull(previewManager.getPreviewToken());
+			// verify no deeplink opened
+			verifyNoInteractions(uriService);
+
+			// verify local variables
+			assertNull(previewManager.getPreviewToken());
+		});
 	}
+
+    @Test
+    public void test_EnterPreviewModeWithDeepLinkParams_NullUriService() {
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
+			previewManager = new TargetPreviewManager(networkService, uiService, null);
+
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+
+			// verify no fullScreenMessage or floating button is created
+			verifyNoInteractions(uiService);
+
+			// verify no network call
+			verifyNoInteractions(networkService);
+
+			// verify no deeplink opened
+			verifyNoInteractions(uriService);
+
+			// verify local variables
+			assertNull(previewManager.getPreviewToken());
+		});
+    }
 
 	@Test
 	public void test_EnterPreviewModeWithDeepLinkParams_NullNetworkService() {
-		// setup
-		String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
-		previewManager = new TargetPreviewManager(null, uiService);
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
+			previewManager = new TargetPreviewManager(null, uiService, uriService);
 
-		// test
-		previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
 
-		// verify no fullScreenMessage or floating button is created
-		verifyNoInteractions(uiService);
+			// verify no fullScreenMessage or floating button is created
+			verifyNoInteractions(uiService);
 
-		// verify no network call
-		verifyNoInteractions(networkService);
+			// verify no network call
+			verifyNoInteractions(networkService);
 
-		// verify local variables
-		assertNull(previewManager.getPreviewToken());
+			// verify no deeplink opened
+			verifyNoInteractions(uriService);
+
+			// verify local variables
+			assertNull(previewManager.getPreviewToken());
+		});
 	}
 
 	@Test
 	public void test_EnterPreviewModeWithDeepLinkParams_DifferentEndpoint() {
-		// setup
-		ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
-		String testDeeplink = "test://path?at_preview_token=abcd&key1=val1&" + PREVIEW_ENDPOINT + "=newEndPoint";
-		String expectedUrl = "https://newEndPoint/ui/admin/" + CLIENT_CODE + "/preview?token=abcd";
-		setMockConnectionResponse("TestHTML", 200);
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
+			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1&" + PREVIEW_ENDPOINT + "=newEndPoint";
+			String expectedUrl = "https://newEndPoint/ui/admin/" + CLIENT_CODE + "/preview?token=abcd";
+			setMockConnectionResponse("TestHTML", 200);
 
-		// test
-		previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
 
-		// verify floating button
-		verifyFloatingButtonDisplayed();
+			// verify floating button
+			verifyFloatingButtonDisplayed();
 
-		// verify message displayed
-		verifyFullScreenMessageDisplayed();
+			// verify message displayed
+			verifyFullScreenMessageDisplayed();
 
-		// verify network call
-		verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
-		assertEquals("network request has the correct URL",
-				expectedUrl, networkResponseCapture.getValue().getUrl());
+			// verify network call
+			verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
+			assertEquals("network request has the correct URL",
+					expectedUrl, networkResponseCapture.getValue().getUrl());
+		});
 	}
 
 	// ===================================
@@ -319,25 +417,27 @@ public class TargetPreviewManagerTest  {
 	// ===================================
 	@Test
 	public void test_resetTargetPreviewProperties() {
-		// setup
-		previewManager.token = "token";
-		previewManager.webViewHtml = "html";
-		previewManager.previewParams = "params";
-		previewManager.endPoint = "endPoint";
-		previewManager.restartUrl = "restartURL";
-		previewManager.floatingButton = floatingButton;
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			previewManager.token = "token";
+			previewManager.webViewHtml = "html";
+			previewManager.previewParams = "params";
+			previewManager.endPoint = "endPoint";
+			previewManager.restartUrl = "restartURL";
+			previewManager.floatingButtonPresentable = floatingButton;
 
-		// test
-		previewManager.resetTargetPreviewProperties();
+			// test
+			previewManager.resetTargetPreviewProperties();
 
-		//verify
-		assertNull(previewManager.token);
-		assertNull(previewManager.webViewHtml);
-		assertNull(previewManager.previewParams);
-		assertNull(previewManager.endPoint);
-		assertNull(previewManager.restartUrl);
-		assertNull(previewManager.floatingButton);
-		verify(floatingButton).remove();
+			//verify
+			assertNull(previewManager.token);
+			assertNull(previewManager.webViewHtml);
+			assertNull(previewManager.previewParams);
+			assertNull(previewManager.endPoint);
+			assertNull(previewManager.restartUrl);
+			assertNull(previewManager.floatingButtonPresentable);
+			verify(floatingButton).dismiss();
+		});
 	}
 
 	// ===================================
@@ -345,110 +445,127 @@ public class TargetPreviewManagerTest  {
 	// ===================================
 	@Test
 	public void test_previewConfirmedWithUrl_When_Confirm() {
-		// setup
-		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-		previewManager.floatingButton = floatingButton;
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+			previewManager.floatingButtonPresentable = floatingButton;
 
-		// test
-		previewManager.previewConfirmedWithUrl(fullscreenMessage, TEST_CONFIRM_DEEPLINK);
+			// test
+			previewManager.previewConfirmedWithUrl(fullscreenMessage, TEST_CONFIRM_DEEPLINK);
 
-		//verify
-		verify(fullscreenMessage).dismiss();
-		assertEquals(JSON_PREVIEW_PARAMS, previewManager.getPreviewParameters().replaceAll("\\s+", ""));
+			//verify
+			verify(fullscreenMessage).dismiss();
+			assertEquals(JSON_PREVIEW_PARAMS, previewManager.getPreviewParameters().replaceAll("\\s+", ""));
+		});
 	}
 
 	@Test
 	public void test_previewConfirmedWithUrl_When_Cancel() {
-		// setup
-		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-		previewManager.floatingButton = floatingButton;
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+			previewManager.floatingButtonPresentable = floatingButton;
 
-		// test
-		previewManager.previewConfirmedWithUrl(fullscreenMessage, "adbinapp://cancel");
+			// test
+			previewManager.previewConfirmedWithUrl(fullscreenMessage, "adbinapp://cancel");
 
-		//verify
-		verify(fullscreenMessage).dismiss();
-		assertNull(previewManager.getPreviewParameters());
+			//verify
+			verify(fullscreenMessage).dismiss();
+			assertNull(previewManager.getPreviewParameters());
+		});
 	}
 
 	@Test
 	public void test_previewConfirmedWithUrl_ConfirmPreviewParamsEmpty() {
-		// setup
-		previewManager.floatingButton = floatingButton;
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			previewManager.floatingButtonPresentable = floatingButton;
 
-		// test
-		previewManager.previewConfirmedWithUrl(fullscreenMessage, "adbinapp://confirm?abc=def");
+			// test
+			previewManager.previewConfirmedWithUrl(fullscreenMessage, "adbinapp://confirm?abc=def");
 
-		//verify
-		verify(fullscreenMessage).dismiss();
-		assertNull(previewManager.getPreviewParameters());
+			//verify
+			verify(fullscreenMessage).dismiss();
+			assertNull(previewManager.getPreviewParameters());
+		});
 	}
 
 	@Test
 	public void test_previewConfirmedWithUrl_InvalidURI() {
-		// setup
-		previewManager.floatingButton = floatingButton;
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			previewManager.floatingButtonPresentable = floatingButton;
 
-		// test
-		previewManager.previewConfirmedWithUrl(fullscreenMessage, "Invalid");
+			// test
+			previewManager.previewConfirmedWithUrl(fullscreenMessage, "Invalid");
 
-		//verify
-		verify(fullscreenMessage).dismiss();
-		assertNull(previewManager.getPreviewParameters());
+			//verify
+			verify(fullscreenMessage).dismiss();
+			assertNull(previewManager.getPreviewParameters());
+		});
 	}
 
 	@Test
 	public void test_previewConfirmedWithUrl_InvalidScheme() {
-		// setup
-		previewManager.floatingButton = floatingButton;
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			previewManager.floatingButtonPresentable = floatingButton;
 
-		// test
-		previewManager.previewConfirmedWithUrl(fullscreenMessage, "notAppScheme://confirm?abc=def");
+			// test
+			previewManager.previewConfirmedWithUrl(fullscreenMessage, "notAppScheme://confirm?abc=def");
 
-		//verify
-		verify(fullscreenMessage).dismiss();
-		assertNull(previewManager.getPreviewParameters());
+			//verify
+			verify(fullscreenMessage).dismiss();
+			assertNull(previewManager.getPreviewParameters());
+		});
 	}
 
 	@Test
 	public void test_previewConfirmedWithUrl_When_RestartDeepLink() {
-		// setup
-		previewManager.floatingButton = floatingButton;
-		previewManager.restartUrl = "restartURL";
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			previewManager.floatingButtonPresentable = floatingButton;
+			previewManager.restartUrl = "restartURL";
 
-		// test
-		previewManager.previewConfirmedWithUrl(fullscreenMessage, TEST_CONFIRM_DEEPLINK);
+			// test
+			previewManager.previewConfirmedWithUrl(fullscreenMessage, TEST_CONFIRM_DEEPLINK);
 
-		//verify
-		verify(fullscreenMessage).dismiss();
-		verify(uiService).showUrl("restartURL");
+			//verify
+			verify(fullscreenMessage).dismiss();
+			verify(uriService).openUri("restartURL");
+		});
 	}
 
 	@Test
 	public void test_previewConfirmedWithUrl_When_RestartDeepLinkUnAvailable() {
-		// setup
-		previewManager.floatingButton = floatingButton;
-		previewManager.restartUrl = null;
+		runUsingMockedServiceProvider(() -> {
 
-		// test
-		previewManager.previewConfirmedWithUrl(fullscreenMessage, TEST_CONFIRM_DEEPLINK);
+			// setup
+			previewManager.floatingButtonPresentable = floatingButton;
+			previewManager.restartUrl = null;
 
-		//verify
-		verify(fullscreenMessage).dismiss();
-		verify(uiService, times(0)).showUrl(any(String.class));
+			// test
+			previewManager.previewConfirmedWithUrl(fullscreenMessage, TEST_CONFIRM_DEEPLINK);
+
+			//verify
+			verify(fullscreenMessage).dismiss();
+			verify(uriService, times(0)).openUri(any(String.class));
+		});
 	}
 
 	@Test
 	public void test_previewConfirmedWithUrl_ConfirmPreviewParamsEmpty_Should_Not_Dispatch_TargetResponseEvent() {
-		// setup
-		previewManager.floatingButton = floatingButton;
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			previewManager.floatingButtonPresentable = floatingButton;
 
-		// test
-		previewManager.previewConfirmedWithUrl(fullscreenMessage, "adbinapp://confirm?");
+			// test
+			previewManager.previewConfirmedWithUrl(fullscreenMessage, "adbinapp://confirm?");
 
-		//verify
-		verify(fullscreenMessage).dismiss();
-		assertNull(previewManager.getPreviewParameters());
+			//verify
+			verify(fullscreenMessage).dismiss();
+			assertNull(previewManager.getPreviewParameters());
+		});
 	}
 
 
@@ -457,104 +574,97 @@ public class TargetPreviewManagerTest  {
 	// ===================================
 	@Test
 	public void test_fetchWebView_Works() {
-		// setup
-		ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
-		previewManager.endPoint = "someEndpoint";
-		setMockConnectionResponse("TestHTML", 200);
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
+			previewManager.endPoint = "someEndpoint";
+			setMockConnectionResponse("TestHTML", 200);
 
-		// test
-		previewManager.fetchWebView();
+			// test
+			previewManager.fetchWebView();
 
-		// verify network call
-		verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
-		assertEquals("network request has the correct httpcommand", HttpMethod.GET,
-				networkResponseCapture.getValue().getMethod());
-		assertEquals("network request has the correct read timeout", 2,
-				networkResponseCapture.getValue().getReadTimeout());
-		assertEquals("network request has the correct URL",
-				"https://someEndpoint/ui/admin/preview", networkResponseCapture.getValue().getUrl());
-		assertEquals("network request has the correct request property", 2, networkResponseCapture.getValue().getHeaders().size());
-		assertEquals("network request has the correct request property", "text/html", networkResponseCapture.getValue().getHeaders().get("Accept"));
-		assertEquals("network request has the correct request property", "application/x-www-form-urlencoded", networkResponseCapture.getValue().getHeaders().get("Content-Type"));
+			// verify network call
+			verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
+			assertEquals("network request has the correct httpcommand", HttpMethod.GET,
+					networkResponseCapture.getValue().getMethod());
+			assertEquals("network request has the correct read timeout", 2,
+					networkResponseCapture.getValue().getReadTimeout());
+			assertEquals("network request has the correct URL",
+					"https://someEndpoint/ui/admin/preview", networkResponseCapture.getValue().getUrl());
+			assertEquals("network request has the correct request property", 2, networkResponseCapture.getValue().getHeaders().size());
+			assertEquals("network request has the correct request property", "text/html", networkResponseCapture.getValue().getHeaders().get("Accept"));
+			assertEquals("network request has the correct request property", "application/x-www-form-urlencoded", networkResponseCapture.getValue().getHeaders().get("Content-Type"));
 
 
-		// verify fullscreen message created and displayed
-		verifyFullScreenMessageDisplayed();
+			// verify fullscreen message created and displayed
+			verifyFullScreenMessageDisplayed();
+		});
 	}
 
 	@Test
 	public void test_fetchWebView_EmptyServerResponse() {
-		// setup
-		ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
-		previewManager.endPoint = "someEndpoint";
-		setMockConnectionResponse("", 200);
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
+			previewManager.endPoint = "someEndpoint";
+			setMockConnectionResponse("", 200);
 
-		// test
-		previewManager.fetchWebView();
+			// test
+			previewManager.fetchWebView();
 
-		// verify network call
-		verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
-		assertEquals("network request has the correct URL",
-				"https://someEndpoint/ui/admin/preview", networkResponseCapture.getValue().getUrl());
+			// verify network call
+			verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
+			assertEquals("network request has the correct URL",
+					"https://someEndpoint/ui/admin/preview", networkResponseCapture.getValue().getUrl());
 
-		// verify message not displayed
-		verifyNoInteractions(uiService);
+			// verify message not displayed
+			verifyNoInteractions(uiService);
+		});
 	}
 
 	@Test
 	public void test_fetchWebView_WhenConnectionNull() {
-		// setup
-		ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
-		previewManager.endPoint = "someEndpoint";
-		doAnswer(invocation -> {
-			((NetworkCallback) invocation.getArguments()[1]).call(null);
-			return null;
-		}).when(networkService).connectAsync(any(), any());
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
+			previewManager.endPoint = "someEndpoint";
+			doAnswer(invocation -> {
+				((NetworkCallback) invocation.getArguments()[1]).call(null);
+				return null;
+			}).when(networkService).connectAsync(any(), any());
 
-		// test
-		previewManager.fetchWebView();
+			// test
+			previewManager.fetchWebView();
 
-		// verify network call
-		verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
-		assertEquals("network request has the correct URL",
-				"https://someEndpoint/ui/admin/preview", networkResponseCapture.getValue().getUrl());
+			// verify network call
+			verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
+			assertEquals("network request has the correct URL",
+					"https://someEndpoint/ui/admin/preview", networkResponseCapture.getValue().getUrl());
 
-		// verify message not displayed
-		verifyNoInteractions(uiService);
+			// verify message not displayed
+			verifyNoInteractions(uiService);
+		});
 	}
 
 	@Test
 	public void test_fetchWebView_ResponseCodeNot200() {
-		// setup
-		ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
-		previewManager.endPoint = "someEndpoint";
-		setMockConnectionResponse("TestHTML", 202);
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
+			previewManager.endPoint = "someEndpoint";
+			setMockConnectionResponse("TestHTML", 202);
 
-		// test
-		previewManager.fetchWebView();
+			// test
+			previewManager.fetchWebView();
 
-		// verify network call
-		verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
-		assertEquals("network request has the correct URL",
-				"https://someEndpoint/ui/admin/preview", networkResponseCapture.getValue().getUrl());
+			// verify network call
+			verify(networkService, times(1)).connectAsync(networkResponseCapture.capture(), any());
+			assertEquals("network request has the correct URL",
+					"https://someEndpoint/ui/admin/preview", networkResponseCapture.getValue().getUrl());
 
-		// verify message not displayed
-		verifyNoInteractions(uiService);
-	}
-
-	@Test
-	public void test_fetchWebView_WhenCreateFullScreenFails() {
-		// setup
-		previewManager.endPoint = "someEndpoint";
-		when(uiService.createFullscreenMessage(any(String.class), any(TargetPreviewFullscreenDelegate.class), any(Boolean.class), any(MessageSettings.class))).thenReturn(null);
-		setMockConnectionResponse("TestHTML", 200);
-
-		// test
-		previewManager.fetchWebView();
-
-		// verify message not displayed
-		verify(networkService, times(1)).connectAsync(any(), any());
-		verifyNoInteractions(fullscreenMessage);
+			// verify message not displayed
+			verifyNoInteractions(uiService);
+		});
 	}
 
 	// ===================================
@@ -562,20 +672,24 @@ public class TargetPreviewManagerTest  {
 	// ===================================
 	@Test
 	public void test_setRestartDeepLink() {
-		// test
-		previewManager.setRestartDeepLink("restartURL");
+		runUsingMockedServiceProvider(() -> {
+			// test
+			previewManager.setRestartDeepLink("restartURL");
 
-		//verify
-		assertEquals("restartURL", previewManager.restartUrl);
+			//verify
+			assertEquals("restartURL", previewManager.restartUrl);
+		});
 	}
 
 	@Test
 	public void test_setRestartDeepLink_Null() {
-		// test
-		previewManager.setRestartDeepLink(null);
+		runUsingMockedServiceProvider(() -> {
+			// test
+			previewManager.setRestartDeepLink(null);
 
-		//verify
-		assertNull(previewManager.restartUrl);
+			//verify
+			assertNull(previewManager.restartUrl);
+		});
 	}
 
 	// ===================================
@@ -583,22 +697,24 @@ public class TargetPreviewManagerTest  {
 	// ===================================
 	@Test
 	public void test_getPreviewParameters() {
-		// setup
-		previewManager.previewParams = "params";
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			previewManager.previewParams = "params";
 
-		// test
-		assertEquals("params", previewManager.getPreviewParameters());
+			// test
+			assertEquals("params", previewManager.getPreviewParameters());
+		});
 	}
 
 
 	private void verifyFullScreenMessageDisplayed() {
-		verify(uiService,times(1)).createFullscreenMessage(eq("TestHTML"), any(TargetPreviewFullscreenDelegate.class), eq(false), any(MessageSettings.class));
+		verify(uiService,times(1)).create(any(InAppMessage.class), any(PresentationUtilityProvider.class));
 		verify(fullscreenMessage).show();
 	}
 
 	private void verifyFloatingButtonDisplayed() {
-		verify(uiService,times(1)).createFloatingButton(any(TargetPreviewButtonListener.class));
-		verify(floatingButton).display();
+		verify(uiService,times(1)).create(any(FloatingButton.class), any(PresentationUtilityProvider.class));
+		verify(floatingButton).show();
 	}
 
 }

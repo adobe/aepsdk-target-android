@@ -35,6 +35,7 @@ import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.services.ui.UIService;
+import com.adobe.marketing.mobile.services.uri.UriOpening;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
 import com.adobe.marketing.mobile.util.JSONUtils;
@@ -91,6 +92,7 @@ public class TargetExtension extends Extension {
     private final DeviceInforming deviceInfoService;
     private final Networking networkService;
     private final UIService uiService;
+    private final UriOpening uriService;
 
     private final TargetState targetState;
     private final TargetResponseParser targetResponseParser;
@@ -111,10 +113,11 @@ public class TargetExtension extends Extension {
         NamedCollection dataStore = ServiceProvider.getInstance().getDataStoreService().getNamedCollection(TargetConstants.DATA_STORE_KEY);
         networkService = ServiceProvider.getInstance().getNetworkService();
         uiService = ServiceProvider.getInstance().getUIService();
+        uriService = ServiceProvider.getInstance().getUriService();
 
         targetState = new TargetState(dataStore);
         targetResponseParser = new TargetResponseParser();
-        targetPreviewManager = new TargetPreviewManager(networkService, uiService);
+        targetPreviewManager = new TargetPreviewManager(networkService, uiService, uriService);
         targetRequestBuilder = getRequestBuilder();
     }
 
@@ -127,12 +130,13 @@ public class TargetExtension extends Extension {
      */
     @VisibleForTesting
     protected TargetExtension(final ExtensionApi extensionApi, final DeviceInforming deviceInfoService, final Networking networkService,
-                              final UIService uiService, final TargetState targetState, final TargetPreviewManager targetPreviewManager,
+                              final UIService uiService, final UriOpening uriService, final TargetState targetState, final TargetPreviewManager targetPreviewManager,
                               final TargetRequestBuilder requestBuilder, final TargetResponseParser responseParser) {
         super(extensionApi);
         this.deviceInfoService = deviceInfoService;
         this.networkService = networkService;
         this.uiService = uiService;
+        this.uriService = uriService;
         this.targetState = targetState;
         this.targetPreviewManager = targetPreviewManager;
         this.targetRequestBuilder = requestBuilder;
