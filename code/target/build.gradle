@@ -237,7 +237,9 @@ dependencies {
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
     testImplementation 'org.json:json:20180813'
 
-    androidTestImplementation 'com.adobe.marketing.mobile:identity:2.0.0'
+    androidTestImplementation ('com.adobe.marketing.mobile:identity:2.0.0') {
+        exclude group: 'com.adobe.marketing.mobile', module: 'core'
+    }
     androidTestImplementation "androidx.test.ext:junit:${rootProject.ext.junitVersion}"
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
