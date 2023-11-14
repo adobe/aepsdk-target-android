@@ -11,6 +11,7 @@
 
 package com.adobe.marketing.mobile.target;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
@@ -53,6 +54,7 @@ class TargetPreviewManager {
     final private Networking networkService;
     final private UIService uiService;
     final private UriOpening uriService;
+    final private Context context;
     protected String previewParams;
     protected String token;
     protected String endPoint;
@@ -71,10 +73,11 @@ class TargetPreviewManager {
      * @param uriService an instance of {@link UriOpening} to be used by the extension
      * @see com.adobe.marketing.mobile.services.ServiceProvider
      */
-    TargetPreviewManager(final Networking networkService, final UIService uiService, final UriOpening uriService) {
+    TargetPreviewManager(final Networking networkService, final UIService uiService, final UriOpening uriService, final Context context) {
         this.networkService = networkService;
         this.uiService = uiService;
         this.uriService = uriService;
+        this.context = context;
         fetchingWebView = false;
     }
 
@@ -382,9 +385,15 @@ class TargetPreviewManager {
             return;
         }
 
+        if (context.getAssets() == null) {
+            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "createAndShowFloatingButton - Unable to instantiate the floating button for target preview, cannot find button image");
+            return;
+        }
+
         try {
+            final String backgroundImageString = StreamUtils.readAsString(context.getAssets().open("encoded_button_image.txt"));
             final byte[] backgroundImage =
-                    Base64.decode(TargetConstants.PreviewKeys.ENCODED_BUTTON_BACKGROUND_PNG, Base64.DEFAULT);
+                    Base64.decode(backgroundImageString, Base64.DEFAULT);
             final Bitmap floatingButtonImage = BitmapFactory.decodeStream(new ByteArrayInputStream(backgroundImage));
 
             floatingButtonPresentable = uiService.create(
@@ -412,7 +421,6 @@ class TargetPreviewManager {
         // Target fullscreen messages are displayed at 100% scale
         final InAppMessageSettings inAppMessageSettings = new InAppMessageSettings.Builder()
                 .content(webViewHtml)
-                .verticalAlignment(InAppMessageSettings.MessageAlignment.TOP)
                 .backgroundColor("#FFFFFFF")
                 .shouldTakeOverUi(false)
                 .backdropOpacity(1)

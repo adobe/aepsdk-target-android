@@ -36,8 +36,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 
-import android.app.Activity;
-import android.app.Application;
+import android.content.Context;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
@@ -53,9 +53,8 @@ import com.adobe.marketing.mobile.services.ui.InAppMessage;
 import com.adobe.marketing.mobile.services.ui.Presentable;
 import com.adobe.marketing.mobile.services.ui.PresentationUtilityProvider;
 import com.adobe.marketing.mobile.services.ui.UIService;
-import com.adobe.marketing.mobile.services.ui.floatingbutton.FloatingButtonSettings;
-import com.adobe.marketing.mobile.services.ui.message.InAppMessageSettings;
 import com.adobe.marketing.mobile.services.uri.UriOpening;
+import com.adobe.marketing.mobile.util.StreamUtils;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class TargetPreviewManagerTest  {
@@ -99,6 +98,12 @@ public class TargetPreviewManagerTest  {
     private UriOpening uriService;
 
 	@Mock
+	private Context context;
+
+	@Mock
+	private AssetManager assetManager;
+
+	@Mock
 	private Bitmap floatingButtonImage;
 
 	@Mock
@@ -116,16 +121,19 @@ public class TargetPreviewManagerTest  {
 	@Before()
 	public void beforeEach() {
 		mockFullScreenAndFloatingButton();
-		previewManager = new TargetPreviewManager(networkService, uiService, uriService);
+		previewManager = new TargetPreviewManager(networkService, uiService, uriService, context);
 	}
 
 	void runUsingMockedServiceProvider(final Runnable runnable) {
 		try (MockedStatic<Base64> base64MockedStatic = Mockito.mockStatic(Base64.class);
-			 MockedStatic<BitmapFactory> bitmapFactoryMockedStatic = Mockito.mockStatic(BitmapFactory.class)) {
+			 MockedStatic<BitmapFactory> bitmapFactoryMockedStatic = Mockito.mockStatic(BitmapFactory.class);
+			 MockedStatic<StreamUtils> streamUtilsMockedStatic = Mockito.mockStatic(StreamUtils.class)) {
 			base64MockedStatic.when(() -> Base64.decode(ArgumentMatchers.anyString(), ArgumentMatchers.anyInt()))
 					.thenAnswer((Answer<byte[]>) invocation -> java.util.Base64.getDecoder().decode((String) invocation.getArguments()[0]));
 			bitmapFactoryMockedStatic.when(() -> BitmapFactory.decodeStream(any(InputStream.class)))
 					.thenReturn(floatingButtonImage);
+			streamUtilsMockedStatic.when(() -> StreamUtils.readAsString(any()))
+					.thenReturn(TargetTestConstants.ENCODED_BUTTON_BACKGROUND_PNG);
 			runnable.run();
 		}
 	}
@@ -133,6 +141,7 @@ public class TargetPreviewManagerTest  {
 	void mockFullScreenAndFloatingButton() {
         when(uiService.create(any(FloatingButton.class), any(PresentationUtilityProvider.class))).thenReturn(floatingButton);
         when(uiService.create(any(InAppMessage.class), any(PresentationUtilityProvider.class))).thenReturn(fullscreenMessage);
+		when(context.getAssets()).thenReturn(assetManager);
 	}
 
 	void setMockConnectionResponse(final String response, final int responseCode) {
@@ -299,7 +308,7 @@ public class TargetPreviewManagerTest  {
 		runUsingMockedServiceProvider(() -> {
 			// setup
 			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
-			previewManager = new TargetPreviewManager(networkService, null, uriService);
+			previewManager = new TargetPreviewManager(networkService, null, uriService, context);
 
 			// test
 			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
@@ -323,7 +332,7 @@ public class TargetPreviewManagerTest  {
 		runUsingMockedServiceProvider(() -> {
 			// setup
 			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
-			previewManager = new TargetPreviewManager(networkService, uiService, null);
+			previewManager = new TargetPreviewManager(networkService, uiService, null, context);
 
 			// test
 			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
@@ -347,7 +356,7 @@ public class TargetPreviewManagerTest  {
 		runUsingMockedServiceProvider(() -> {
 			// setup
 			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
-			previewManager = new TargetPreviewManager(null, uiService, uriService);
+			previewManager = new TargetPreviewManager(null, uiService, uriService, context);
 
 			// test
 			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
@@ -582,7 +591,14 @@ public class TargetPreviewManagerTest  {
 
 	@Test
 	public void test_fetchWebView_EmptyServerResponse() {
-		runUsingMockedServiceProvider(() -> {
+		try (MockedStatic<Base64> base64MockedStatic = Mockito.mockStatic(Base64.class);
+			 MockedStatic<BitmapFactory> bitmapFactoryMockedStatic = Mockito.mockStatic(BitmapFactory.class);
+			 MockedStatic<StreamUtils> streamUtilsMockedStatic = Mockito.mockStatic(StreamUtils.class)) {
+			base64MockedStatic.when(() -> Base64.decode(ArgumentMatchers.anyString(), ArgumentMatchers.anyInt()))
+					.thenAnswer((Answer<byte[]>) invocation -> java.util.Base64.getDecoder().decode((String) invocation.getArguments()[0]));
+			bitmapFactoryMockedStatic.when(() -> BitmapFactory.decodeStream(any(InputStream.class)))
+					.thenReturn(floatingButtonImage);
+			streamUtilsMockedStatic.when(() -> StreamUtils.readAsString(any())).thenReturn(null);
 			// setup
 			ArgumentCaptor<NetworkRequest> networkResponseCapture = ArgumentCaptor.forClass(NetworkRequest.class);
 			previewManager.endPoint = "someEndpoint";
@@ -598,7 +614,7 @@ public class TargetPreviewManagerTest  {
 
 			// verify message not displayed
 			verifyNoInteractions(uiService);
-		});
+		}
 	}
 
 	@Test

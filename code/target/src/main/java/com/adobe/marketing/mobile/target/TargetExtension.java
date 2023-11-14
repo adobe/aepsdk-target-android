@@ -12,6 +12,8 @@
 
 package com.adobe.marketing.mobile.target;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
@@ -93,6 +95,7 @@ public class TargetExtension extends Extension {
     private final Networking networkService;
     private final UIService uiService;
     private final UriOpening uriService;
+    private final Context context;
 
     private final TargetState targetState;
     private final TargetResponseParser targetResponseParser;
@@ -114,10 +117,11 @@ public class TargetExtension extends Extension {
         networkService = ServiceProvider.getInstance().getNetworkService();
         uiService = ServiceProvider.getInstance().getUIService();
         uriService = ServiceProvider.getInstance().getUriService();
+        context = ServiceProvider.getInstance().getAppContextService().getApplicationContext();
 
         targetState = new TargetState(dataStore);
         targetResponseParser = new TargetResponseParser();
-        targetPreviewManager = new TargetPreviewManager(networkService, uiService, uriService);
+        targetPreviewManager = new TargetPreviewManager(networkService, uiService, uriService, context);
         targetRequestBuilder = getRequestBuilder();
     }
 
@@ -130,13 +134,15 @@ public class TargetExtension extends Extension {
      */
     @VisibleForTesting
     protected TargetExtension(final ExtensionApi extensionApi, final DeviceInforming deviceInfoService, final Networking networkService,
-                              final UIService uiService, final UriOpening uriService, final TargetState targetState, final TargetPreviewManager targetPreviewManager,
+                              final UIService uiService, final UriOpening uriService, final Context context,
+                              final TargetState targetState, final TargetPreviewManager targetPreviewManager,
                               final TargetRequestBuilder requestBuilder, final TargetResponseParser responseParser) {
         super(extensionApi);
         this.deviceInfoService = deviceInfoService;
         this.networkService = networkService;
         this.uiService = uiService;
         this.uriService = uriService;
+        this.context = context;
         this.targetState = targetState;
         this.targetPreviewManager = targetPreviewManager;
         this.targetRequestBuilder = requestBuilder;
