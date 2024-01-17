@@ -21,6 +21,7 @@ import com.adobe.marketing.mobile.ExtensionApi;
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.SharedStateResult;
 import com.adobe.marketing.mobile.SharedStateStatus;
+import com.adobe.marketing.mobile.services.AppContextService;
 import com.adobe.marketing.mobile.services.DataStoring;
 import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.HttpConnecting;
@@ -57,6 +58,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -169,6 +171,9 @@ public class TargetExtensionTests {
     UriOpening uriService;
 
     @Mock
+    AppContextService appContextService;
+
+    @Mock
     Context context;
 
     @Mock
@@ -193,9 +198,7 @@ public class TargetExtensionTests {
     NamedCollection datastore;
 
     @Before
-    public void setup() throws Exception {
-        extension = new TargetExtension(mockExtensionApi, targetState, targetPreviewManager, requestBuilder, responseParser);
-
+    public void setup() {
     }
 
     private void runWithMockedServiceProvider (final Runnable testRunnable) {
@@ -207,32 +210,94 @@ public class TargetExtensionTests {
             when(mockServiceProvider.getNetworkService()).thenReturn(networkService);
             when(mockServiceProvider.getUIService()).thenReturn(uiService);
             when(mockServiceProvider.getUriService()).thenReturn(uriService);
+            when(mockServiceProvider.getAppContextService()).thenReturn(appContextService);
+            when(appContextService.getApplicationContext()).thenReturn(context);
+
+            when(targetState.getClientCode()).thenReturn(MOCKED_CLIENT_CODE);
+            when(targetState.getNetworkTimeout()).thenReturn(MOCK_NETWORK_TIMEOUT);
+            when(targetState.getTargetServer()).thenReturn(MOCKED_TARGET_SERVER);
+            when(targetState.getTntId()).thenReturn(MOCK_TNT_ID);
+            when(targetState.getThirdPartyId()).thenReturn(MOCK_THIRD_PARTY_ID);
+            when(targetState.getSessionId()).thenReturn(MOCK_SESSION_ID);
+            when(targetState.getMobilePrivacyStatus()).thenReturn(MobilePrivacyStatus.OPT_IN);
+            when(targetState.generateSharedState()).thenReturn(targetSharedState);
+
+
+            eventArgumentCaptor = ArgumentCaptor.forClass(Event.class);
+            networkRequestCaptor = ArgumentCaptor.forClass(NetworkRequest.class);
+            networkCallbackCaptor = ArgumentCaptor.forClass(NetworkCallback.class);
+
+            when(requestBuilder.getRequestPayload(any(), any(), any(), any(), any(), any(), any())).thenReturn(validJSONObject());
+            when(requestBuilder.getRequestPayload(any(), any(), any(), any(), any())).thenReturn(validJSONObject());
+            when(requestBuilder.getDisplayNotificationJsonObject(any(), any(), any(), anyLong(), any())).thenReturn(validJSONObject());
+
+            final JSONObject validMboxResponse = new JSONObject("{\"options\": [{\"content\": \"mbox0content\", \"type\": \"html\"}]}");
+            when(responseParser.parseResponseToJson(any())).thenReturn(validJSONObject());
+            when(responseParser.parseResponseToJson(any())).thenReturn(validJSONObject());
+            when(responseParser.getTntId(any())).thenReturn(MOCK_TNT_ID);
+            when(responseParser.getEdgeHost(any())).thenReturn(MOCK_EDGE_HOST);
+            when(responseParser.extractBatchedMBoxes(any())).thenReturn(new HashMap<String, JSONObject>() {
+                {
+                    put("mbox0", validMboxResponse);
+                }
+            });
+            when(responseParser.extractMboxContent(eq(validMboxResponse))).thenReturn("mbox0content");
+            when(responseParser.getResponseTokens(eq(validMboxResponse))).thenReturn(responseTokens);
+            when(responseParser.extractClickMetricAnalyticsPayload(eq(validMboxResponse))).thenReturn(clickMetricA4TParams);
+            when(responseParser.getAnalyticsForTargetPayload(any())).thenReturn(a4tParams);
+            when(connecting.getResponseCode()).thenReturn(HttpURLConnection.HTTP_OK);
+
+            extension = new TargetExtension(mockExtensionApi, targetState, targetPreviewManager, requestBuilder, responseParser);
+            testRunnable.run();
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @After
-    public void teardown() {
+    public void tearDown() {
+        reset(mockServiceProvider);
+        reset(networkService);
+        reset(deviceInforming);
+        reset(dataStoring);
+        reset(uiService);
+        reset(uriService);
+        reset(appContextService);
+        reset(context);
+        reset(mockExtensionApi);
+        reset(requestBuilder);
+        reset(responseParser);
+        reset(targetPreviewManager);
+        reset(targetState);
+        reset(connecting);
+        reset(datastore);
     }
 
     @Test
     public void test_getName() {
-        // test
-        final String extensionName = extension.getName();
-        assertEquals("getName should return the correct extension name.", "com.adobe.module.target", extensionName);
+        runWithMockedServiceProvider(() -> {
+            // test
+            final String extensionName = extension.getName();
+            assertEquals("getName should return the correct extension name.", "com.adobe.module.target", extensionName);
+        });
     }
 
     @Test
     public void test_getFriendlyName() {
-        // test
-        final String extensionName = extension.getFriendlyName();
-        assertEquals("getFriendlyName should return the correct extension friendly name.", "Target", extensionName);
+        runWithMockedServiceProvider(() -> {
+            // test
+            final String extensionName = extension.getFriendlyName();
+            assertEquals("getFriendlyName should return the correct extension friendly name.", "Target", extensionName);
+        });
     }
 
     @Test
     public void test_getVersion() {
-        // test
-        final String extensionVersion = extension.getVersion();
-        assertEquals("getVersion should return the correct extension version.", "2.0.2", extensionVersion);
+        runWithMockedServiceProvider(() -> {
+            // test
+            final String extensionVersion = extension.getVersion();
+            assertEquals("getVersion should return the correct extension version.", "2.0.2", extensionVersion);
+        });
     }
 
     //**********************************************************************************************
@@ -251,11 +316,13 @@ public class TargetExtensionTests {
 
     @Test
     public void test_onRegister() {
-        // test
-        extension.onRegistered();
+        runWithMockedServiceProvider(() -> {
+            // test
+            extension.onRegistered();
 
-        // verify that five listeners are registered
-        verify(mockExtensionApi, times(5)).registerEventListener(any(), any(), any());
+            // verify that five listeners are registered
+            verify(mockExtensionApi, times(5)).registerEventListener(any(), any(), any());
+        });
     }
 
     //**********************************************************************************************
@@ -357,6 +424,7 @@ public class TargetExtensionTests {
     public void testLoadRequests_NoRequest_When_NetworkServiceIsNotAvailable() {
         runWithMockedServiceProvider(() -> {
             // setup
+            when(mockServiceProvider.getNetworkService()).thenReturn(null);
             extension = new TargetExtension(mockExtensionApi, targetState, targetPreviewManager, requestBuilder, responseParser);
             final Event event = loadRequestEvent(getTargetRequestList(1), null);
 
@@ -552,7 +620,7 @@ public class TargetExtensionTests {
             extension.handleTargetRequestContentEvent(event);
 
             // verify
-            verify(networkService).connectAsync(networkRequestCaptor.capture(), any());
+            verify(networkService, times(1)).connectAsync(networkRequestCaptor.capture(), any());
             assertEquals("https://" + MOCK_EDGE_HOST + "/rest/v1/delivery/?client=" + MOCKED_CLIENT_CODE + "&sessionId=" + MOCK_SESSION_ID, networkRequestCaptor.getValue().getUrl());
         });
     }
@@ -1186,6 +1254,8 @@ public class TargetExtensionTests {
     public void testHandleRawRequest_NoRequest_When_NetworkServiceIsNotAvailable() {
         runWithMockedServiceProvider(() -> {
             // setup
+            when(mockServiceProvider.getNetworkService()).thenReturn(networkService);
+            when(mockServiceProvider.getNetworkService()).thenReturn(null);
             extension = new TargetExtension(mockExtensionApi, targetState, targetPreviewManager, requestBuilder, responseParser);
 
             // test
@@ -1202,6 +1272,7 @@ public class TargetExtensionTests {
     public void testHandleRawRequest_TargetRequestBuilder_isNull() {
         runWithMockedServiceProvider(() -> {
             // setup
+            when(mockServiceProvider.getDeviceInfoService()).thenReturn(null);
             extension = new TargetExtension(mockExtensionApi, targetState, targetPreviewManager, null, responseParser);
 
             // test
@@ -1665,6 +1736,7 @@ public class TargetExtensionTests {
     public void testHandlePrefetchContent_NoRequest_When_NetworkServiceIsNotAvailable() {
         runWithMockedServiceProvider(() -> {
             // setup
+            when(mockServiceProvider.getNetworkService()).thenReturn(null);
             extension = new TargetExtension(mockExtensionApi, targetState, targetPreviewManager, requestBuilder, responseParser);
 
             // test
@@ -1683,6 +1755,7 @@ public class TargetExtensionTests {
     public void testHandlePrefetchContent_NoRequest_When_TargetRequestBuilderIsNotAvailable() {
         runWithMockedServiceProvider(() -> {
             // setup
+            when(mockServiceProvider.getDeviceInfoService()).thenReturn(null);
             extension = new TargetExtension(mockExtensionApi, targetState, targetPreviewManager, null, responseParser);
 
             // test
