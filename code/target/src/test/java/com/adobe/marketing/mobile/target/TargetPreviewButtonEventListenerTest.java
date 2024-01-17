@@ -16,13 +16,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.ui.FloatingButton;
 import com.adobe.marketing.mobile.services.ui.Presentable;
+import com.adobe.marketing.mobile.services.ui.PresentationError;
 
 
 @RunWith(MockitoJUnitRunner.Silent.class)
@@ -33,6 +38,9 @@ public class TargetPreviewButtonEventListenerTest {
 
     @Mock
     private Presentable<FloatingButton> mockFloatingButton;
+
+	@Mock
+	private PresentationError mockPresentationError;
 
 	TargetPreviewButtonEventListener previewButtonListener;
 
@@ -66,6 +74,45 @@ public class TargetPreviewButtonEventListenerTest {
 		// nothing to verify for now
 	}
 
+	// ===================================
+	// Test onDismiss
+	// ===================================
+	@Test
+	public void test_OnDismiss() {
+		try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+			// test
+			previewButtonListener.onDismiss(mockFloatingButton);
 
+			// verify
+			logMockedStatic.verify(() -> Log.debug(anyString(), anyString(), anyString()));
+		}
+	}
 
+	// ===================================
+	// Test onError
+	// ===================================
+	@Test
+	public void test_OnError() {
+		try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+			// test
+			previewButtonListener.onError(mockFloatingButton, mockPresentationError);
+
+			// verify
+			logMockedStatic.verify(() -> Log.debug(anyString(), anyString(), anyString()));
+		}
+	}
+
+	// ===================================
+	// Test onShow
+	// ===================================
+	@Test
+	public void test_OnShow() {
+		try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
+			// test
+			previewButtonListener.onShow(mockFloatingButton);
+
+			// verify
+			logMockedStatic.verify(() -> Log.debug(anyString(), anyString(), anyString()));
+		}
+	}
 }

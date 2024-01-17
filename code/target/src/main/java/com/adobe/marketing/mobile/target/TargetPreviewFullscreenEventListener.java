@@ -39,9 +39,7 @@ class TargetPreviewFullscreenEventListener implements InAppMessageEventListener 
 	}
 
 	@Override
-	public void onHide(@NonNull final Presentable<InAppMessage> presentable) {
-
-	}
+	public void onHide(@NonNull final Presentable<InAppMessage> presentable) {}
 
 	@Override
 	public void onShow(@NonNull final Presentable<InAppMessage> presentable) {
@@ -49,9 +47,7 @@ class TargetPreviewFullscreenEventListener implements InAppMessageEventListener 
 	}
 
 	@Override
-	public void onBackPressed(@NonNull final Presentable<InAppMessage> presentable) {
-
-	}
+	public void onBackPressed(@NonNull final Presentable<InAppMessage> presentable) {}
 
 	@Override
 	public boolean onUrlLoading(@NonNull final Presentable<InAppMessage> presentable, @NonNull final String url) {

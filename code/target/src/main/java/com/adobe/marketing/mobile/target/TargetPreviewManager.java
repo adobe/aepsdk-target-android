@@ -12,6 +12,7 @@
 package com.adobe.marketing.mobile.target;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
@@ -385,13 +386,14 @@ class TargetPreviewManager {
             return;
         }
 
-        if (context.getAssets() == null) {
+        AssetManager assetManager = context.getAssets();
+        if (assetManager == null) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "createAndShowFloatingButton - Unable to instantiate the floating button for target preview, cannot find button image");
             return;
         }
 
         try {
-            final String backgroundImageString = StreamUtils.readAsString(context.getAssets().open("encoded_button_image.txt"));
+            final String backgroundImageString = StreamUtils.readAsString(assetManager.open(TargetConstants.PREVIEW_FLOATING_BUTTON_ASSET_FILE));
             final byte[] backgroundImage =
                     Base64.decode(backgroundImageString, Base64.DEFAULT);
             final Bitmap floatingButtonImage = BitmapFactory.decodeStream(new ByteArrayInputStream(backgroundImage));
@@ -422,7 +424,6 @@ class TargetPreviewManager {
         final InAppMessageSettings inAppMessageSettings = new InAppMessageSettings.Builder()
                 .content(webViewHtml)
                 .backgroundColor("#FFFFFFF")
-                .shouldTakeOverUi(false)
                 .backdropOpacity(1)
                 .build();
 

@@ -110,19 +110,7 @@ public class TargetExtension extends Extension {
      * @param extensionApi {@link ExtensionApi} instance.
      */
     protected TargetExtension(final ExtensionApi extensionApi) {
-        super(extensionApi);
-
-        deviceInfoService = ServiceProvider.getInstance().getDeviceInfoService();
-        NamedCollection dataStore = ServiceProvider.getInstance().getDataStoreService().getNamedCollection(TargetConstants.DATA_STORE_KEY);
-        networkService = ServiceProvider.getInstance().getNetworkService();
-        uiService = ServiceProvider.getInstance().getUIService();
-        uriService = ServiceProvider.getInstance().getUriService();
-        context = ServiceProvider.getInstance().getAppContextService().getApplicationContext();
-
-        targetState = new TargetState(dataStore);
-        targetResponseParser = new TargetResponseParser();
-        targetPreviewManager = new TargetPreviewManager(networkService, uiService, uriService, context);
-        targetRequestBuilder = getRequestBuilder();
+        this(extensionApi, null, null, null, null);
     }
 
     /**
@@ -133,20 +121,20 @@ public class TargetExtension extends Extension {
      * @param extensionApi {@link ExtensionApi} instance.
      */
     @VisibleForTesting
-    protected TargetExtension(final ExtensionApi extensionApi, final DeviceInforming deviceInfoService, final Networking networkService,
-                              final UIService uiService, final UriOpening uriService, final Context context,
-                              final TargetState targetState, final TargetPreviewManager targetPreviewManager,
+    protected TargetExtension(final ExtensionApi extensionApi, final TargetState targetState, final TargetPreviewManager targetPreviewManager,
                               final TargetRequestBuilder requestBuilder, final TargetResponseParser responseParser) {
         super(extensionApi);
-        this.deviceInfoService = deviceInfoService;
-        this.networkService = networkService;
-        this.uiService = uiService;
-        this.uriService = uriService;
-        this.context = context;
-        this.targetState = targetState;
-        this.targetPreviewManager = targetPreviewManager;
-        this.targetRequestBuilder = requestBuilder;
-        this.targetResponseParser = responseParser;
+        deviceInfoService = ServiceProvider.getInstance().getDeviceInfoService();
+        NamedCollection dataStore = ServiceProvider.getInstance().getDataStoreService().getNamedCollection(TargetConstants.DATA_STORE_KEY);
+        networkService = ServiceProvider.getInstance().getNetworkService();
+        uiService = ServiceProvider.getInstance().getUIService();
+        uriService = ServiceProvider.getInstance().getUriService();
+        context = ServiceProvider.getInstance().getAppContextService().getApplicationContext();
+
+        this.targetState = targetState != null ? targetState : new TargetState(dataStore);
+        this.targetPreviewManager = targetPreviewManager != null ? targetPreviewManager : new TargetPreviewManager(networkService, uiService, uriService, context);
+        this.targetRequestBuilder = requestBuilder != null ? requestBuilder : getRequestBuilder();
+        this.targetResponseParser = responseParser != null ? responseParser : new TargetResponseParser();
     }
 
     /**

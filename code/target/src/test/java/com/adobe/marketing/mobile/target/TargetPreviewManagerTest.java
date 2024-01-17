@@ -33,6 +33,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 
@@ -189,6 +190,8 @@ public class TargetPreviewManagerTest  {
 
 			// verify local variables
 			assertEquals("abcd", previewManager.getPreviewToken());
+
+			// verify floating button not created again
 		});
 	}
 
@@ -398,6 +401,86 @@ public class TargetPreviewManagerTest  {
 			assertEquals("network request has the correct URL",
 					expectedUrl, networkResponseCapture.getValue().getUrl());
 		});
+	}
+
+
+	@Test
+	public void test_EnterPreviewModeWithDeepLinkParams_LaunchingPreviewModeTwice() {
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
+			setMockConnectionResponse("TestHTML", 200);
+
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+
+			// verify floating button
+			verifyFloatingButtonDisplayed();
+
+			// verify fullscreen message created and displayed
+			verifyFullScreenMessageDisplayed();
+
+			// verify local variables
+			assertEquals("abcd", previewManager.getPreviewToken());
+
+			// launch preview again
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+
+			// verify floating button not created again
+			verify(uiService,times(1)).create(any(FloatingButton.class), any(PresentationUtilityProvider.class));
+			verify(floatingButton, times(1)).show();
+		});
+	}
+
+	@Test
+	public void test_EnterPreviewModeWithDeepLinkParams_MissingAssetManagerForFloatingButtonImage() {
+		runUsingMockedServiceProvider(() -> {
+			// setup
+			when(context.getAssets()).thenReturn(null);
+			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
+			setMockConnectionResponse("TestHTML", 200);
+
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+
+			// verify floating button not displayed
+			verify(uiService,times(0)).create(any(FloatingButton.class), any(PresentationUtilityProvider.class));
+			verifyNoMoreInteractions(floatingButton);
+
+			// verify fullscreen message created and displayed
+			verifyFullScreenMessageDisplayed();
+
+			// verify local variables
+			assertEquals("abcd", previewManager.getPreviewToken());
+		});
+	}
+
+	@Test
+	public void test_EnterPreviewModeWithDeepLinkParams_ExceptionInReadingInputStream() {
+		try (MockedStatic<Base64> base64MockedStatic = Mockito.mockStatic(Base64.class);
+			 MockedStatic<BitmapFactory> bitmapFactoryMockedStatic = Mockito.mockStatic(BitmapFactory.class);
+			 MockedStatic<StreamUtils> streamUtilsMockedStatic = Mockito.mockStatic(StreamUtils.class)) {
+			base64MockedStatic.when(() -> Base64.decode(ArgumentMatchers.anyString(), ArgumentMatchers.anyInt()))
+					.thenAnswer((Answer<byte[]>) invocation -> java.util.Base64.getDecoder().decode((String) invocation.getArguments()[0]));
+			bitmapFactoryMockedStatic.when(() -> BitmapFactory.decodeStream(any(InputStream.class)))
+					.thenReturn(floatingButtonImage);
+			streamUtilsMockedStatic.when(() -> StreamUtils.readAsString(any()))
+					.thenReturn(null);
+
+			String testDeeplink = "test://path?at_preview_token=abcd&key1=val1";
+			setMockConnectionResponse("TestHTML", 200);
+
+			// test
+			previewManager.enterPreviewModeWithDeepLinkParams(CLIENT_CODE, testDeeplink);
+
+			// verify floating button and fullscreen message not created and displayed
+			verifyNoMoreInteractions(uiService);
+			verifyNoMoreInteractions(floatingButton);
+			verifyNoMoreInteractions(fullscreenMessage);
+
+			// verify local variables
+			assertEquals("abcd", previewManager.getPreviewToken());
+		}
 	}
 
 	// ===================================
