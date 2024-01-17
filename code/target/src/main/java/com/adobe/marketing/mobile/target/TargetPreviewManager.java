@@ -386,7 +386,7 @@ class TargetPreviewManager {
             return;
         }
 
-        AssetManager assetManager = context.getAssets();
+        final AssetManager assetManager = context.getAssets();
         if (assetManager == null) {
             Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "createAndShowFloatingButton - Unable to instantiate the floating button for target preview, cannot find button image");
             return;
