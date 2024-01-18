@@ -136,23 +136,6 @@ public class Target {
     }
 
     /**
-     * Registers the extension with the Mobile Core.
-     * <p>
-     * Note: This method should be called only once in your application class.
-     */
-    @Deprecated
-    public static void registerExtension() {
-        MobileCore.registerExtension(TargetExtension.class, extensionError -> {
-            if (extensionError == null) {
-                return;
-            }
-
-            Log.warning(LOG_TAG, CLASS_NAME,
-                    "An error occurred while registering the Target extension: (%s) ", extensionError.getErrorName());
-        });
-    }
-
-    /**
      * Prefetches multiple Target mboxes simultaneously.
      * <p>
      * Executes a prefetch request to the configured Target server with the TargetPrefetch list provided

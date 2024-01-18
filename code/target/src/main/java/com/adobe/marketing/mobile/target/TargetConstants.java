@@ -36,6 +36,8 @@ final class TargetConstants {
 
     static final String DEFAULT_WRAPPER_FRIENDLY_NAME = "None";
 
+    static final String PREVIEW_FLOATING_BUTTON_ASSET_FILE = "encoded_button_image.txt";
+
     private TargetConstants() {}
 
     static final HashMap<String, String> MAP_TO_CONTEXT_DATA_KEYS = createMap();
@@ -268,6 +270,7 @@ final class TargetConstants {
         static final String DEEPLINK_SCHEME = "adbinapp";
         static final String DEEPLINK_SCHEME_PATH_CANCEL = "cancel";
         static final String DEEPLINK_SCHEME_PATH_CONFIRM = "confirm";
+
         private PreviewKeys() {}
     }
 }
