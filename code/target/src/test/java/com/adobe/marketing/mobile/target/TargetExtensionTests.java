@@ -239,7 +239,7 @@ public class TargetExtensionTests {
     public void test_getVersion() {
         // test
         final String extensionVersion = extension.getVersion();
-        assertEquals("getVersion should return the correct extension version.", "2.0.2", extensionVersion);
+        assertEquals("getVersion should return the correct extension version.", "2.0.3", extensionVersion);
     }
 
     //**********************************************************************************************
