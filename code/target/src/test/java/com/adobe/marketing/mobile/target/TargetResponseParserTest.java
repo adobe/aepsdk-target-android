@@ -20,6 +20,8 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -758,6 +760,7 @@ public class TargetResponseParserTest {
 				"         \"responseTokens\":{\n" +
 				"            \"geo.connectionSpeed\":\"broadband\",\n" +
 				"            \"geo.state\":\"california\",\n" +
+				"			\"profile.categoryAffinities\":[\"shoes\"],\n" +
 				"         },\n" +
 				"         \"sourceType\":\"target\"\n" +
 				"      }\n" +
@@ -773,12 +776,13 @@ public class TargetResponseParserTest {
 		final JSONObject mBoxPayloadObject = new JSONObject(mboxPayload);
 
 		//Assertions
-		Map<String, String> responseTokens = responseParser.getResponseTokens(mBoxPayloadObject);
+		Map<String, Object> responseTokens = responseParser.getResponseTokens(mBoxPayloadObject);
 
 		assertNotNull(responseTokens);
-		assertEquals(2, responseTokens.size());
+		assertEquals(3, responseTokens.size());
 		assertEquals("broadband", responseTokens.get("geo.connectionSpeed"));
 		assertEquals("california", responseTokens.get("geo.state"));
+		assertEquals(new ArrayList<String>(Arrays.asList("shoes")), responseTokens.get("profile.categoryAffinities"));
 	}
 
 	@Test
@@ -807,7 +811,7 @@ public class TargetResponseParserTest {
 		final JSONObject mBoxPayloadObject = new JSONObject(mboxPayload);
 
 		//Assertions
-		Map<String, String> responseTokens = responseParser.getResponseTokens(mBoxPayloadObject);
+		Map<String, Object> responseTokens = responseParser.getResponseTokens(mBoxPayloadObject);
 		assertNull(responseTokens);
 	}
 

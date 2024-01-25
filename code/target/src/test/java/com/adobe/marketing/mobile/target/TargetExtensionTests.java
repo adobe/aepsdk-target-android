@@ -60,6 +60,7 @@ import static org.mockito.Mockito.when;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,8 +122,13 @@ public class TargetExtensionTests {
         }
     };
 
-    private static Map<String, String> responseTokens = new HashMap() {{
+    private static Map<String, Object> responseTokens = new HashMap() {{
         put("responseTokens.Key", "responseTokens.Value");
+        put("profile.categoryAffinities", new ArrayList<String>(){
+            {
+                add("books");
+            }
+        });
     }};
 
     private static Map<String, String> clickMetricA4TParams = new HashMap() {{
@@ -618,7 +624,10 @@ public class TargetExtensionTests {
 
         // verify the dispatched mbox content event
         assertEquals("mbox0content", extractMboxContentFromEvent(mboxContentEvent));
-        assertEquals(responseTokens, extractResponseToken(mboxContentEvent));
+        final Map<String, Object> responseTokens = extractResponseToken(mboxContentEvent);
+        assertEquals(2, responseTokens.size());
+        assertEquals("responseTokens.Value", responseTokens.get("responseTokens.Key"));
+        assertEquals(new ArrayList<String>(Arrays.asList("books")), responseTokens.get("profile.categoryAffinities"));
         assertEquals(a4tParams, extractAnalyticsPayload(mboxContentEvent));
         assertEquals(clickMetricA4TParams, extractClickMetric(mboxContentEvent));
     }
@@ -2424,7 +2433,7 @@ public class TargetExtensionTests {
                 "");
     }
 
-    private Map<String, String> extractResponseToken(final Event event) {
+    private Map<String, Object> extractResponseToken(final Event event) {
         Map<String, Map> data = DataReader.optTypedMap(Map.class, event.getEventData(), EventDataKeys.TARGET_DATA_PAYLOAD, null);
         return data.get(EventDataKeys.RESPONSE_TOKENS);
     }
