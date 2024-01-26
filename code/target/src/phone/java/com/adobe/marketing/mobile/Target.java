@@ -44,7 +44,7 @@ public class Target {
 
     static final String LOG_TAG = "Target";
     private static final String CLASS_NAME = "Target";
-    static final String EXTENSION_VERSION = "2.0.2";
+    static final String EXTENSION_VERSION = "2.0.3";
 
     static final class EventName {
         static final String PREFETCH_REQUEST = "TargetPrefetchRequest";
@@ -885,7 +885,8 @@ public class Target {
             mboxPayload.put(EventDataKeys.ANALYTICS_PAYLOAD, a4tParams);
         }
 
-        final Map<String, String> responseTokens = DataReader.optStringMap(data,
+        final Map<String, Object> responseTokens = DataReader.optTypedMap(Object.class,
+                data,
                 EventDataKeys.RESPONSE_TOKENS,
                 null);
         if (responseTokens != null) {
