@@ -20,7 +20,7 @@ class MboxPayload {
 	private String content = "";
 	private final Map<String, String> a4tParams;
 	private final Map<String, String> clickMetricA4tParams;
-	private final Map<String, String> responseTokens;
+	private final Map<String, Object> responseTokens;
 
 	public MboxPayload(final String content, final Map<String, Object> payload) {
 		if (content != null) {
@@ -33,7 +33,7 @@ class MboxPayload {
 			this.clickMetricA4tParams = payload.containsKey("clickmetric.analytics.payload") ? (Map<String, String>)
 										payload.get("clickmetric.analytics.payload") :
 										null;
-			this.responseTokens = payload.containsKey("responseTokens") ? (Map<String, String>) payload.get("responseTokens") :
+			this.responseTokens = payload.containsKey("responseTokens") ? (Map<String, Object>) payload.get("responseTokens") :
 								  null;
 		} else {
 			a4tParams = Collections.emptyMap();

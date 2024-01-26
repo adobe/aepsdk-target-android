@@ -885,7 +885,8 @@ public class Target {
             mboxPayload.put(EventDataKeys.ANALYTICS_PAYLOAD, a4tParams);
         }
 
-        final Map<String, String> responseTokens = DataReader.optStringMap(data,
+        final Map<String, Object> responseTokens = DataReader.optTypedMap(Object.class,
+                data,
                 EventDataKeys.RESPONSE_TOKENS,
                 null);
         if (responseTokens != null) {
