@@ -28,6 +28,7 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 import com.adobe.marketing.mobile.services.HttpConnecting;
+import com.adobe.marketing.mobile.util.JSONUtils;
 import com.adobe.marketing.mobile.util.StreamUtils;
 
 public class TargetResponseParserTest {
@@ -813,6 +814,58 @@ public class TargetResponseParserTest {
 		//Assertions
 		Map<String, Object> responseTokens = responseParser.getResponseTokens(mBoxPayloadObject);
 		assertNull(responseTokens);
+	}
+
+	@Test
+	public void testExtractResponseTokens_Will_Return_Null_When_Mbox_Payload_Is_Null() throws JSONException {
+		// setup
+		final JSONObject mBoxPayloadObject = null;
+
+		// test
+		Map<String, Object> responseTokens = responseParser.getResponseTokens(mBoxPayloadObject);
+
+		// verify
+		assertNull(responseTokens);
+	}
+
+	@Test
+	public void testExtractResponseTokens_Will_Return_Null_When_Response_Tokens_Payload_Is_Invalid() throws JSONException {
+		try (MockedStatic<JSONUtils> jsonUtilsMock = Mockito.mockStatic(JSONUtils.class)) {
+			// setup
+			jsonUtilsMock.when(() -> JSONUtils.toMap(Mockito.any()))
+					.thenThrow(new JSONException("Invalid JSON"));
+
+			final String mboxPayload = "{\n" +
+					"   \"index\":0,\n" +
+					"   \"name\":\"ryan_a4t2\",\n" +
+					"   \"options\":[\n" +
+					"      {\n" +
+					"         \"content\":{\n" +
+					"            \"key2\":\"value2\"\n" +
+					"         },\n" +
+					"         \"type\":\"json\",\n" +
+					"         \"responseTokens\":{\n" +
+					"            \"geo.connectionSpeed\":\"broadband\"\n" +
+					"         },\n" +
+					"         \"sourceType\":\"target\"\n" +
+					"      }\n" +
+					"   ],\n" +
+					"   \"analytics\":{\n" +
+					"      \"payload\":{\n" +
+					"         \"pe\":\"tnt\",\n" +
+					"         \"tnta\":\"333911:0:0:0|2|4445.12,333911:0:0:0|1|4445.12\"\n" +
+					"      }\n" +
+					"   }\n" +
+					"}";
+
+			final JSONObject mBoxPayloadObject = new JSONObject(mboxPayload);
+
+			// test
+			Map<String, Object> responseTokens = responseParser.getResponseTokens(mBoxPayloadObject);
+
+			// verify
+			assertNull(responseTokens);
+		}
 	}
 
 	// =====================================
