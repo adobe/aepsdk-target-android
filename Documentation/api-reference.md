@@ -381,8 +381,8 @@ TargetRequest request2 = new TargetRequest("mboxName2", parameters2, "defaultCon
                                                     // and click metric analytics payload, if available
                                                     if (data != null && !data.isEmpty()) {
 
-                                                        Map<String, String> responseTokens = data.containsKey("responseTokens") ? 
-                                                                                            (Map<String, String>) data.get("responseTokens") : 
+                                                        Map<String, Object> responseTokens = data.containsKey("responseTokens") ? 
+                                                                                            (Map<String, Object>) data.get("responseTokens") : 
                                                                                             null;
 
                                                         Map<String, String> analyticsPayload = data.containsKey("analytics.payload") ? 
