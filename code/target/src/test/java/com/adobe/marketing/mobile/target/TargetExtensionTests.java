@@ -61,6 +61,7 @@ import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,38 +72,38 @@ import java.util.UUID;
 public class TargetExtensionTests {
 
     // Mock Constants
-    private static String MOCKED_CLIENT_CODE = "clientCode";
-    private static String MOCKED_TARGET_SERVER = "targetServer";
-    private static String MOCK_EDGE_HOST = "mboxedge35.tt.omtrdc.net";
-    private static String MOCK_THIRD_PARTY_ID = "thirdPartyId";
-    private static String MOCK_THIRD_PARTY_ID_1 = "thirdPartyID_1";
-    private static String MOCK_TNT_ID = "66E5C681-4F70-41A2-86AE-F1E151443B10.35_0";
-    private static String MOCK_TNT_ID_1 = "66E5C681-4F70-41A2-86AE-F1E151443B10.32_0";
-    private static String MOCK_TNT_ID_2 = "4DBCC39D-4ACA-47D4-A7D2-A85C1C0CC382.32_0";
-    private static String MOCK_TNT_ID_INVALID = "66E5C681-4F70-41A2-86AE-F1E151443B10.a1a_0";
-    private static String MOCK_SESSION_ID = "mockSessionID";
-    private static Integer MOCK_NETWORK_TIMEOUT = 5;
+    private static final String MOCKED_CLIENT_CODE = "clientCode";
+    private static final String MOCKED_TARGET_SERVER = "targetServer";
+    private static final String MOCK_EDGE_HOST = "mboxedge35.tt.omtrdc.net";
+    private static final String MOCK_THIRD_PARTY_ID = "thirdPartyId";
+    private static final String MOCK_THIRD_PARTY_ID_1 = "thirdPartyID_1";
+    private static final String MOCK_TNT_ID = "66E5C681-4F70-41A2-86AE-F1E151443B10.35_0";
+    private static final String MOCK_TNT_ID_1 = "66E5C681-4F70-41A2-86AE-F1E151443B10.32_0";
+    private static final String MOCK_TNT_ID_2 = "4DBCC39D-4ACA-47D4-A7D2-A85C1C0CC382.32_0";
+    private static final String MOCK_TNT_ID_INVALID = "66E5C681-4F70-41A2-86AE-F1E151443B10.a1a_0";
+    private static final String MOCK_SESSION_ID = "mockSessionID";
+    private static final Integer MOCK_NETWORK_TIMEOUT = 5;
 
-    private static HashMap<String, Object> targetParameters = new HashMap() {
+    private static final HashMap<String, Object> targetParameters = new HashMap() {
         {
             put("paramKey", "paramValue");
         }
     };
 
-    private static HashMap<String, Object> targetSharedState = new HashMap() {
+    private static final HashMap<String, Object> targetSharedState = new HashMap() {
         {
             put("tntid", MOCK_TNT_ID);
             put("sessionid", MOCK_SESSION_ID);
         }
     };
 
-    private static HashMap<String, String> lifecycleSharedState = new HashMap() {
+    private static final HashMap<String, String> lifecycleSharedState = new HashMap() {
         {
             put("lifecycleKey", "lifecycleValue");
         }
     };
 
-    private static HashMap<String, Object> identitySharedState = new HashMap() {
+    private static final HashMap<String, Object> identitySharedState = new HashMap() {
         {
             put("mid", "samplemid");
             put("blob", "sampleBlob");
@@ -110,7 +111,7 @@ public class TargetExtensionTests {
         }
     };
 
-    private static HashMap<String, Object> eventHubSharedState = new HashMap() {
+    private static final HashMap<String, Object> eventHubSharedState = new HashMap() {
         {
             put("version", "x.y.z");
             put("wrapper", new HashMap<String, Object>() {
@@ -122,21 +123,28 @@ public class TargetExtensionTests {
         }
     };
 
-    private static Map<String, Object> responseTokens = new HashMap() {{
+    private static final Map<String, Object> responseTokens = new HashMap() {{
         put("responseTokens.Key", "responseTokens.Value");
         put("profile.categoryAffinities", new ArrayList<String>(){
             {
                 add("books");
             }
         });
+        put("someKey", new ArrayList<Object>(){
+            {
+                add("someValue");
+                add(true);
+                add(42);
+            }
+        });
     }};
 
-    private static Map<String, String> clickMetricA4TParams = new HashMap() {{
+    private static final Map<String, String> clickMetricA4TParams = new HashMap() {{
         put("pe", "tnt");
         put("tnta", "1234|1234");
     }};
 
-    private static Map<String, String> a4tParams = new HashMap() {{
+    private static final Map<String, String> a4tParams = new HashMap() {{
         put("pe", "tnt");
         put("tnta", "1234|1234");
     }};
@@ -625,9 +633,14 @@ public class TargetExtensionTests {
         // verify the dispatched mbox content event
         assertEquals("mbox0content", extractMboxContentFromEvent(mboxContentEvent));
         final Map<String, Object> responseTokens = extractResponseToken(mboxContentEvent);
-        assertEquals(2, responseTokens.size());
+        assertEquals(3, responseTokens.size());
         assertEquals("responseTokens.Value", responseTokens.get("responseTokens.Key"));
-        assertEquals(new ArrayList<String>(Arrays.asList("books")), responseTokens.get("profile.categoryAffinities"));
+        assertEquals(new ArrayList<String>(Collections.singletonList("books")), responseTokens.get("profile.categoryAffinities"));
+        final List<Object> someList = (List<Object>)responseTokens.get("someKey");
+        assertEquals(3, someList.size());
+        assertEquals("someValue", someList.get(0));
+        assertTrue((Boolean)someList.get(1));
+        assertEquals(42, (int)someList.get(2));
         assertEquals(a4tParams, extractAnalyticsPayload(mboxContentEvent));
         assertEquals(clickMetricA4TParams, extractClickMetric(mboxContentEvent));
     }
@@ -1971,7 +1984,6 @@ public class TargetExtensionTests {
         // verify
         verify(targetState, times(2)).updateEdgeHost(null);
         verify(targetState).resetSession();
-        ;
         verify(targetState).updateTntId(null);
         verify(targetState).updateThirdPartyId(null);
         verify(mockExtensionApi).createSharedState(eq(targetSharedState), eq(event));
@@ -2144,12 +2156,11 @@ public class TargetExtensionTests {
 
         for (int i = 0; i < count; i++) {
             final String notificationId = String.valueOf(i);
-            ;
             final String mboxName = "mbox" + i;
             final Map<String, Object> notification = new HashMap<String, Object>() {
                 {
                     put("id", notificationId);
-                    put("timestamp", (long) (System.currentTimeMillis()));
+                    put("timestamp", System.currentTimeMillis());
                     put("type", "click");
                     put("mbox", new HashMap<String, Object>() {
                         {
