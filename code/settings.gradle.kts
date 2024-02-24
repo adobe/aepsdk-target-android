@@ -29,7 +29,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "aepsdk-places-android"
+rootProject.name = "aepsdk-target-android"
 include (
          ":testapp",
          ":target"
