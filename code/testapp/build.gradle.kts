@@ -42,6 +42,6 @@ dependencies {
     implementation("com.adobe.marketing.mobile:lifecycle:2.+")
     implementation("com.adobe.marketing.mobile:identity:2.+")
 
-    implementation("androidx.appcompat:appcompat:1.5.1")
+    implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 }
