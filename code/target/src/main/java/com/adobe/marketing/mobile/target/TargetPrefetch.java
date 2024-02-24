@@ -19,6 +19,9 @@ import com.adobe.marketing.mobile.util.DataReaderException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Class representing a Target Prefetch request.
+ */
 public class TargetPrefetch {
     private static final String CLASS_NAME = "TargetPrefetch";
 

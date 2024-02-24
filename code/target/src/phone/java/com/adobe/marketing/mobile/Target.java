@@ -40,6 +40,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Public class containing APIs for the Target extension.
  */
 public class Target {
+    /**
+     * Target extension Class
+     */
     public static final Class<? extends Extension> EXTENSION = TargetExtension.class;
 
     static final String LOG_TAG = "Target";
