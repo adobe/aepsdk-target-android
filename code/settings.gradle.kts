@@ -32,5 +32,5 @@ dependencyResolutionManagement {
 rootProject.name = "aepsdk-places-android"
 include (
          ":testapp",
-         ":places"
+         ":target"
 )
