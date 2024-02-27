@@ -40,11 +40,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * Public class containing APIs for the Target extension.
  */
 public class Target {
+    /**
+     * Target extension Class
+     */
     public static final Class<? extends Extension> EXTENSION = TargetExtension.class;
 
     static final String LOG_TAG = "Target";
     private static final String CLASS_NAME = "Target";
-    static final String EXTENSION_VERSION = "2.0.2";
+    static final String EXTENSION_VERSION = "3.0.0";
 
     static final class EventName {
         static final String PREFETCH_REQUEST = "TargetPrefetchRequest";

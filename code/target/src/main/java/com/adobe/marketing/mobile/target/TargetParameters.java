@@ -136,6 +136,9 @@ public class TargetParameters {
                 .build();
     }
 
+    /**
+     * Builder class for {@link TargetParameters}
+     */
     public static class Builder {
         private Map<String, String> parameters;
         private Map<String, String> profileParameters;
