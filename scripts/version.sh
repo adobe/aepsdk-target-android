@@ -9,11 +9,8 @@ LINE="==========================================================================
 VERSION_REGEX="[0-9]+\.[0-9]+\.[0-9]+"
 
 GRADLE_PROPERTIES_FILE=$ROOT_DIR"/code/gradle.properties"
-CONSTANTS_FILE=$ROOT_DIR"/code/target/src/main/java/com/adobe/marketing/mobile/target/Target.java"
-# Java files
+CONSTANTS_FILE=$ROOT_DIR"/code/target/src/main/java/com/adobe/marketing/mobile/Target.java"
 EXTENSION_VERSION_REGEX="^.*String EXTENSION_VERSION *= *"
-# Kotlin files
-#EXTENSION_VERSION_REGEX="^ +const val VERSION *= *"
 
 help()
 {

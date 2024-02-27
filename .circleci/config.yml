@@ -54,7 +54,6 @@ jobs:
 
       - android/save-build-cache
 
-      # Store Lint report
       - store_artifacts:
           path: code/target/build/reports     
   build-and-unit-test:
