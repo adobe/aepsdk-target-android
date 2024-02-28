@@ -7,13 +7,14 @@
   the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
   OF ANY KIND, either express or implied. See the License for the specific language
   governing permissions and limitations under the License.
- */
+*/
 
 package com.adobe.marketing.mobile.target;
 
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.services.NamedCollection;
-
+import java.util.HashMap;
+import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -25,14 +26,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class TargetStateTests {
 
-    @Mock
-    NamedCollection mockedDataStore;
+    @Mock NamedCollection mockedDataStore;
 
     TargetState targetState;
 
@@ -49,12 +46,13 @@ public class TargetStateTests {
         Assert.assertNull(targetState.getStoredConfigurationSharedState());
 
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                    }
+                };
 
         // test
         targetState.updateConfigurationSharedState(configuration);
@@ -66,12 +64,13 @@ public class TargetStateTests {
     @Test
     public void testUpdateConfigurationSharedState_WhenNewClientCode() {
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                    }
+                };
 
         // test
         targetState.updateEdgeHost("edge-host-1");
@@ -86,18 +85,20 @@ public class TargetStateTests {
     @Test
     public void testUpdateConfigurationSharedState_WhenNewClientCode_WithStoredConfiguration() {
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-            }
-        };
-        Map<String, Object> newConfiguration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_456");
-                put("global.privacy", "optedin");
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                    }
+                };
+        Map<String, Object> newConfiguration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_456");
+                        put("global.privacy", "optedin");
+                    }
+                };
 
         // test
         targetState.updateConfigurationSharedState(configuration);
@@ -125,14 +126,16 @@ public class TargetStateTests {
     }
 
     @Test
-    public void testUpdateConfigurationSharedState_WhenConfigurationNullOrEmpty_WithStoredConfiguration() {
+    public void
+            testUpdateConfigurationSharedState_WhenConfigurationNullOrEmpty_WithStoredConfiguration() {
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                    }
+                };
 
         // test
         targetState.updateConfigurationSharedState(configuration);
@@ -159,12 +162,13 @@ public class TargetStateTests {
     @Test
     public void testPrivacyStatus() {
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                    }
+                };
 
         // test
         targetState.updateConfigurationSharedState(configuration);
@@ -173,12 +177,13 @@ public class TargetStateTests {
         Assert.assertEquals(MobilePrivacyStatus.OPT_IN, targetState.getMobilePrivacyStatus());
 
         // setup
-        Map<String, Object> newConfiguration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedout");
-            }
-        };
+        Map<String, Object> newConfiguration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedout");
+                    }
+                };
         targetState.updateConfigurationSharedState(newConfiguration);
 
         // verify
@@ -190,15 +195,18 @@ public class TargetStateTests {
     // ===================================
     @Test
     public void testSessionTimeout() {
-        Assert.assertEquals(TargetTestConstants.DEFAULT_TARGET_SESSION_TIMEOUT_SEC, targetState.getSessionTimeout());
+        Assert.assertEquals(
+                TargetTestConstants.DEFAULT_TARGET_SESSION_TIMEOUT_SEC,
+                targetState.getSessionTimeout());
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-                put("target.sessionTimeout", 1500);
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                        put("target.sessionTimeout", 1500);
+                    }
+                };
 
         // test
         targetState.updateConfigurationSharedState(configuration);
@@ -207,13 +215,14 @@ public class TargetStateTests {
         Assert.assertEquals(1500, targetState.getSessionTimeout());
 
         // setup
-        Map<String, Object> newConfiguration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_456");
-                put("global.privacy", "optedout");
-                put("target.sessionTimeout", 1200);
-            }
-        };
+        Map<String, Object> newConfiguration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_456");
+                        put("global.privacy", "optedout");
+                        put("target.sessionTimeout", 1200);
+                    }
+                };
         targetState.updateConfigurationSharedState(newConfiguration);
 
         // verify
@@ -226,12 +235,13 @@ public class TargetStateTests {
     @Test
     public void testClientCode() {
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                    }
+                };
 
         // test
         targetState.updateConfigurationSharedState(configuration);
@@ -240,12 +250,13 @@ public class TargetStateTests {
         Assert.assertEquals("code_123", targetState.getClientCode());
 
         // setup
-        Map<String, Object> newConfiguration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_456");
-                put("global.privacy", "optedout");
-            }
-        };
+        Map<String, Object> newConfiguration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_456");
+                        put("global.privacy", "optedout");
+                    }
+                };
         targetState.updateConfigurationSharedState(newConfiguration);
 
         // verify
@@ -260,13 +271,14 @@ public class TargetStateTests {
         Assert.assertEquals(0, targetState.getEnvironmentId());
 
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-                put( "target.environmentId", 45);
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                        put("target.environmentId", 45);
+                    }
+                };
 
         // test
         targetState.updateConfigurationSharedState(configuration);
@@ -275,13 +287,14 @@ public class TargetStateTests {
         Assert.assertEquals(45, targetState.getEnvironmentId());
 
         // setup
-        Map<String, Object> newConfiguration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedout");
-                put( "target.environmentId", 50);
-            }
-        };
+        Map<String, Object> newConfiguration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedout");
+                        put("target.environmentId", 50);
+                    }
+                };
         targetState.updateConfigurationSharedState(newConfiguration);
 
         // verify
@@ -296,14 +309,15 @@ public class TargetStateTests {
         Assert.assertEquals("", targetState.getPropertyToken());
 
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-                put( "target.environmentId", 45);
-                put("target.propertyToken", "configAtProperty");
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                        put("target.environmentId", 45);
+                        put("target.propertyToken", "configAtProperty");
+                    }
+                };
 
         // test
         targetState.updateConfigurationSharedState(configuration);
@@ -312,14 +326,15 @@ public class TargetStateTests {
         Assert.assertEquals("configAtProperty", targetState.getPropertyToken());
 
         // setup
-        Map<String, Object> newConfiguration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedout");
-                put( "target.environmentId", 50);
-                put("target.propertyToken", "configAtPropertyNew");
-            }
-        };
+        Map<String, Object> newConfiguration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedout");
+                        put("target.environmentId", 50);
+                        put("target.propertyToken", "configAtPropertyNew");
+                    }
+                };
         targetState.updateConfigurationSharedState(newConfiguration);
 
         // verify
@@ -334,14 +349,15 @@ public class TargetStateTests {
         Assert.assertEquals("", targetState.getTargetServer());
 
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-                put( "target.environmentId", 45);
-                put("target.propertyToken", "configAtProperty");
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                        put("target.environmentId", 45);
+                        put("target.propertyToken", "configAtProperty");
+                    }
+                };
 
         // test
         targetState.updateConfigurationSharedState(configuration);
@@ -350,14 +366,15 @@ public class TargetStateTests {
         Assert.assertEquals("configAtProperty", targetState.getPropertyToken());
 
         // setup
-        Map<String, Object> newConfiguration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedout");
-                put( "target.environmentId", 50);
-                put("target.propertyToken", "configAtPropertyNew");
-            }
-        };
+        Map<String, Object> newConfiguration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedout");
+                        put("target.environmentId", 50);
+                        put("target.propertyToken", "configAtPropertyNew");
+                    }
+                };
         targetState.updateConfigurationSharedState(newConfiguration);
 
         // verify
@@ -369,16 +386,18 @@ public class TargetStateTests {
     // ===================================
     @Test
     public void testNetworkTimeout() {
-        Assert.assertEquals(TargetTestConstants.DEFAULT_NETWORK_TIMEOUT, targetState.getNetworkTimeout());
+        Assert.assertEquals(
+                TargetTestConstants.DEFAULT_NETWORK_TIMEOUT, targetState.getNetworkTimeout());
 
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-                put("target.timeout", 10);
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                        put("target.timeout", 10);
+                    }
+                };
 
         // test
         targetState.updateConfigurationSharedState(configuration);
@@ -387,13 +406,14 @@ public class TargetStateTests {
         Assert.assertEquals(10, targetState.getNetworkTimeout());
 
         // setup
-        Map<String, Object> newConfiguration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedout");
-                put("target.timeout", 5);
-            }
-        };
+        Map<String, Object> newConfiguration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedout");
+                        put("target.timeout", 5);
+                    }
+                };
         targetState.updateConfigurationSharedState(newConfiguration);
 
         // verify
@@ -405,7 +425,8 @@ public class TargetStateTests {
     // ===================================
     @Test
     public void testSessionId() {
-        Assert.assertEquals(TargetTestConstants.DEFAULT_NETWORK_TIMEOUT, targetState.getNetworkTimeout());
+        Assert.assertEquals(
+                TargetTestConstants.DEFAULT_NETWORK_TIMEOUT, targetState.getNetworkTimeout());
 
         // setup
         String sessionId = "mockSessionId";
@@ -416,7 +437,9 @@ public class TargetStateTests {
         // verify
         Assert.assertEquals(sessionId, targetState.getSessionId());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID), Mockito.eq(sessionId));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID),
+                        Mockito.eq(sessionId));
     }
 
     @Test
@@ -430,7 +453,9 @@ public class TargetStateTests {
         // verify
         Assert.assertEquals(sessionId, targetState.getSessionId());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID), Mockito.eq(sessionId));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID),
+                        Mockito.eq(sessionId));
 
         // test
         targetState.updateSessionId(null);
@@ -441,7 +466,9 @@ public class TargetStateTests {
         Assert.assertNotNull(targetState.getSessionId());
         Assert.assertNotEquals("", targetState.getSessionId());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID), AdditionalMatchers.not(Mockito.eq(sessionId)));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID),
+                        AdditionalMatchers.not(Mockito.eq(sessionId)));
     }
 
     @Test
@@ -455,7 +482,9 @@ public class TargetStateTests {
         // verify
         Assert.assertEquals(sessionId, targetState.getSessionId());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID), Mockito.eq(sessionId));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID),
+                        Mockito.eq(sessionId));
 
         // test
         targetState.updateSessionId("");
@@ -466,19 +495,22 @@ public class TargetStateTests {
         Assert.assertNotNull(targetState.getSessionId());
         Assert.assertNotEquals("", targetState.getSessionId());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID), AdditionalMatchers.not(Mockito.eq(sessionId)));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID),
+                        AdditionalMatchers.not(Mockito.eq(sessionId)));
     }
 
     @Test
     public void testSessionId_WhenSessionIsExpired() throws InterruptedException {
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-                put("target.sessionTimeout", 2);
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                        put("target.sessionTimeout", 2);
+                    }
+                };
         targetState.updateConfigurationSharedState(configuration);
 
         // test
@@ -488,7 +520,9 @@ public class TargetStateTests {
         Assert.assertNotNull(firstSessionId);
         Assert.assertNotEquals("", firstSessionId);
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID), Mockito.eq(firstSessionId));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID),
+                        Mockito.eq(firstSessionId));
 
         Thread.sleep(3000L);
 
@@ -500,19 +534,22 @@ public class TargetStateTests {
         Assert.assertNotEquals("", newSessionId);
         Assert.assertNotEquals(firstSessionId, newSessionId);
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID), Mockito.eq(newSessionId));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID),
+                        Mockito.eq(newSessionId));
     }
 
     @Test
     public void testSessionId_WhenSessionIsNotExpired() throws InterruptedException {
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-                put("target.sessionTimeout", 100);
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                        put("target.sessionTimeout", 100);
+                    }
+                };
         targetState.updateConfigurationSharedState(configuration);
 
         // test
@@ -522,7 +559,9 @@ public class TargetStateTests {
         Assert.assertNotNull(firstSessionId);
         Assert.assertNotEquals("", firstSessionId);
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID), Mockito.eq(firstSessionId));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID),
+                        Mockito.eq(firstSessionId));
 
         Thread.sleep(3000L);
 
@@ -532,7 +571,9 @@ public class TargetStateTests {
         // verify
         Assert.assertEquals(firstSessionId, newSessionId);
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID), Mockito.eq(firstSessionId));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_ID),
+                        Mockito.eq(firstSessionId));
     }
 
     // ===================================
@@ -544,7 +585,9 @@ public class TargetStateTests {
         targetState.updateSessionTimestamp(false);
         Assert.assertNull(targetState.getEdgeHost());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .getString(Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST), Mockito.anyString());
+                .getString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST),
+                        Mockito.anyString());
 
         // setup
         String edgeHost = "edge-host-1";
@@ -555,7 +598,9 @@ public class TargetStateTests {
         // verify
         Assert.assertEquals(edgeHost, targetState.getEdgeHost());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST), Mockito.eq(edgeHost));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST),
+                        Mockito.eq(edgeHost));
     }
 
     @Test
@@ -570,7 +615,9 @@ public class TargetStateTests {
         // verify
         Assert.assertEquals(edgeHost, targetState.getEdgeHost());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST), Mockito.eq(edgeHost));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST),
+                        Mockito.eq(edgeHost));
 
         // test
         targetState.updateEdgeHost(null);
@@ -595,7 +642,9 @@ public class TargetStateTests {
         // verify
         Assert.assertEquals(edgeHost, targetState.getEdgeHost());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST), Mockito.eq(edgeHost));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST),
+                        Mockito.eq(edgeHost));
 
         // test
         targetState.updateEdgeHost("");
@@ -603,7 +652,9 @@ public class TargetStateTests {
         // verify
         Assert.assertNull(targetState.getEdgeHost());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .getString(Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST), Mockito.anyString());
+                .getString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST),
+                        Mockito.anyString());
         Mockito.verify(mockedDataStore, Mockito.times(1))
                 .remove(Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST));
     }
@@ -611,13 +662,14 @@ public class TargetStateTests {
     @Test
     public void testEdgeHost_WhenSessionIsExpired() throws InterruptedException {
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-                put("target.sessionTimeout", 2);
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                        put("target.sessionTimeout", 2);
+                    }
+                };
         targetState.updateConfigurationSharedState(configuration);
 
         // setup
@@ -630,7 +682,9 @@ public class TargetStateTests {
         // verify
         Assert.assertEquals(firstEdgeHost, targetState.getEdgeHost());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST), Mockito.eq(firstEdgeHost));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST),
+                        Mockito.eq(firstEdgeHost));
 
         Thread.sleep(3000L);
 
@@ -645,13 +699,14 @@ public class TargetStateTests {
     @Test
     public void testEdgeHost_WhenSessionIsNotExpired() throws InterruptedException {
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.clientCode", "code_123");
-                put("global.privacy", "optedin");
-                put("target.sessionTimeout", 100);
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.clientCode", "code_123");
+                        put("global.privacy", "optedin");
+                        put("target.sessionTimeout", 100);
+                    }
+                };
         targetState.updateConfigurationSharedState(configuration);
 
         // setup
@@ -664,13 +719,15 @@ public class TargetStateTests {
         // verify
         Assert.assertEquals(firstEdgeHost, targetState.getEdgeHost());
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST), Mockito.eq(firstEdgeHost));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST),
+                        Mockito.eq(firstEdgeHost));
 
         Thread.sleep(3000L);
 
         // verify
         String newEdgeHost = targetState.getEdgeHost();
-        Assert.assertEquals(firstEdgeHost,newEdgeHost);
+        Assert.assertEquals(firstEdgeHost, newEdgeHost);
         Mockito.verify(mockedDataStore, Mockito.times(1))
                 .getString(Mockito.eq(TargetTestConstants.DataStoreKeys.EDGE_HOST), Mockito.any());
     }
@@ -685,7 +742,9 @@ public class TargetStateTests {
 
         // verify
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setLong(Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_TIMESTAMP), AdditionalMatchers.not(Mockito.eq(0)));
+                .setLong(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.SESSION_TIMESTAMP),
+                        AdditionalMatchers.not(Mockito.eq(0)));
     }
 
     @Test
@@ -706,16 +765,16 @@ public class TargetStateTests {
         Assert.assertTrue(targetState.isPreviewEnabled());
 
         // setup
-        Map<String, Object> configuration = new HashMap<String, Object>(){
-            {
-                put( "target.previewEnabled", false);
-            }
-        };
+        Map<String, Object> configuration =
+                new HashMap<String, Object>() {
+                    {
+                        put("target.previewEnabled", false);
+                    }
+                };
         targetState.updateConfigurationSharedState(configuration);
 
         // test and verify
         Assert.assertFalse(targetState.isPreviewEnabled());
-
     }
 
     // ===================================
@@ -725,7 +784,10 @@ public class TargetStateTests {
     public void testGetTntId() {
         // setup
         String mockTntId = "mock-tntId";
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID),
+                                Mockito.any()))
                 .thenReturn(mockTntId);
         targetState = new TargetState(mockedDataStore);
 
@@ -737,7 +799,10 @@ public class TargetStateTests {
     public void testUpdateTntId() {
         // setup
         String mockTntId = "mock-tntId";
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID),
+                                Mockito.any()))
                 .thenReturn(mockTntId);
         targetState = new TargetState(mockedDataStore);
 
@@ -750,14 +815,18 @@ public class TargetStateTests {
 
         // verify
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID), Mockito.eq(newTntId));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID), Mockito.eq(newTntId));
     }
 
     @Test
     public void testUpdateTntId_WhenNewTntIdNull() {
         // setup
         String mockTntId = "mock-tntId";
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID),
+                                Mockito.any()))
                 .thenReturn(mockTntId);
         targetState = new TargetState(mockedDataStore);
 
@@ -776,7 +845,10 @@ public class TargetStateTests {
     public void testUpdateTntId_WhenNewTntIdEmpty() {
         // setup
         String mockTntId = "mock-tntId";
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID),
+                                Mockito.any()))
                 .thenReturn(mockTntId);
         targetState = new TargetState(mockedDataStore);
 
@@ -798,7 +870,10 @@ public class TargetStateTests {
     public void testGetThirdPartyId() {
         // setup
         String mockThirdPartyId = "mock-thirdPartyId";
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID),
+                                Mockito.any()))
                 .thenReturn(mockThirdPartyId);
         targetState = new TargetState(mockedDataStore);
 
@@ -810,7 +885,10 @@ public class TargetStateTests {
     public void testUpdateThirdPartyId() {
         // setup
         String mockThirdPartyId = "mock-thirdPartyId";
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID),
+                                Mockito.any()))
                 .thenReturn(mockThirdPartyId);
         targetState = new TargetState(mockedDataStore);
 
@@ -823,14 +901,19 @@ public class TargetStateTests {
 
         // verify
         Mockito.verify(mockedDataStore, Mockito.times(1))
-                .setString(Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID), Mockito.eq(newThirdPartyId));
+                .setString(
+                        Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID),
+                        Mockito.eq(newThirdPartyId));
     }
 
     @Test
     public void testUpdateThirdPartyId_WhenNewTntIdNull() {
         // setup
         String mockThirdPartyId = "mock-thirdPartyId";
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID),
+                                Mockito.any()))
                 .thenReturn(mockThirdPartyId);
         targetState = new TargetState(mockedDataStore);
 
@@ -849,7 +932,10 @@ public class TargetStateTests {
     public void testUpdateThirdPartyId_WhenNewTntIdEmpty() {
         // setup
         String mockThirdPartyId = "mock-thirdPartyId";
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID),
+                                Mockito.any()))
                 .thenReturn(mockThirdPartyId);
         targetState = new TargetState(mockedDataStore);
 
@@ -886,10 +972,16 @@ public class TargetStateTests {
     public void testGenerateSharedState() {
         // setup
         String mockTntId = "mock-tntId";
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID),
+                                Mockito.any()))
                 .thenReturn(mockTntId);
         String mockThirdPartyId = "mock-thirdPartyId";
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID),
+                                Mockito.any()))
                 .thenReturn(mockThirdPartyId);
         targetState = new TargetState(mockedDataStore);
 
@@ -899,15 +991,23 @@ public class TargetStateTests {
         // verify
         Assert.assertEquals(2, sharedState.size());
         Assert.assertEquals(mockTntId, sharedState.get(TargetTestConstants.EventDataKeys.TNT_ID));
-        Assert.assertEquals(mockThirdPartyId, sharedState.get(TargetTestConstants.EventDataKeys.THIRD_PARTY_ID));
+        Assert.assertEquals(
+                mockThirdPartyId,
+                sharedState.get(TargetTestConstants.EventDataKeys.THIRD_PARTY_ID));
     }
 
     @Test
     public void testGenerateSharedState_WhenNullTntIdAndThirdPartyId() {
         // setup
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID),
+                                Mockito.any()))
                 .thenReturn(null);
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID),
+                                Mockito.any()))
                 .thenReturn(null);
         targetState = new TargetState(mockedDataStore);
 
@@ -923,9 +1023,15 @@ public class TargetStateTests {
     @Test
     public void testGenerateSharedState_WhenEmptyTntIdAndThirdPartyId() {
         // setup
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.TNT_ID),
+                                Mockito.any()))
                 .thenReturn("");
-        Mockito.when(mockedDataStore.getString(Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID), Mockito.any()))
+        Mockito.when(
+                        mockedDataStore.getString(
+                                Mockito.eq(TargetTestConstants.DataStoreKeys.THIRD_PARTY_ID),
+                                Mockito.any()))
                 .thenReturn("");
         targetState = new TargetState(mockedDataStore);
 
@@ -944,18 +1050,20 @@ public class TargetStateTests {
         Assert.assertTrue(targetState.getPrefetchedMbox().isEmpty());
 
         // setup
-        String prefetchString = "{\n" +
-                "    \"name\" : \"mboxName\" ,  \n" +
-                "     \"options\" : [{\n" +
-                "      \"content\" : \"myContent\"" +
-                "  }]\n" +
-                "  }";
+        String prefetchString =
+                "{\n"
+                        + "    \"name\" : \"mboxName\" ,  \n"
+                        + "     \"options\" : [{\n"
+                        + "      \"content\" : \"myContent\""
+                        + "  }]\n"
+                        + "  }";
         JSONObject prefetchJsonObject = new JSONObject(prefetchString);
-        final Map<String, JSONObject> prefetchMbox = new HashMap<String, JSONObject>() {
-            {
-                put("mboxName", prefetchJsonObject);
-            }
-        };
+        final Map<String, JSONObject> prefetchMbox =
+                new HashMap<String, JSONObject>() {
+                    {
+                        put("mboxName", prefetchJsonObject);
+                    }
+                };
 
         // test
         targetState.mergePrefetchedMboxJson(prefetchMbox);
@@ -993,19 +1101,21 @@ public class TargetStateTests {
     @Test
     public void testSaveLoadedMbox() throws JSONException {
         // setup
-        String mBoxesResponseString = "{\n" +
-                "    \"name\" : \"mboxName\" ,  \n" +
-                "    \"metrics\" : \"myMetrics\" ,  \n" +
-                "     \"options\" : [{\n" +
-                "      \"content\" : \"myContent\"" +
-                "  }]\n" +
-                "  }";
+        String mBoxesResponseString =
+                "{\n"
+                        + "    \"name\" : \"mboxName\" ,  \n"
+                        + "    \"metrics\" : \"myMetrics\" ,  \n"
+                        + "     \"options\" : [{\n"
+                        + "      \"content\" : \"myContent\""
+                        + "  }]\n"
+                        + "  }";
         JSONObject mboxResponseObject = new JSONObject(mBoxesResponseString);
-        final Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>() {
-            {
-                put("mboxName", mboxResponseObject);
-            }
-        };
+        final Map<String, JSONObject> mboxResponses =
+                new HashMap<String, JSONObject>() {
+                    {
+                        put("mboxName", mboxResponseObject);
+                    }
+                };
 
         // test
         targetState.saveLoadedMbox(mboxResponses);
@@ -1022,20 +1132,22 @@ public class TargetStateTests {
     @Test
     public void testSaveLoadedMbox_WhenEmptyOrNullMboxName() throws JSONException {
         // setup
-        String mBoxesResponseString = "{\n" +
-                "    \"name\" : \"mboxName\" ,  \n" +
-                "    \"metrics\" : \"myMetrics\" ,  \n" +
-                "     \"options\" : [{\n" +
-                "      \"content\" : \"myContent\"" +
-                "  }]\n" +
-                "  }";
+        String mBoxesResponseString =
+                "{\n"
+                        + "    \"name\" : \"mboxName\" ,  \n"
+                        + "    \"metrics\" : \"myMetrics\" ,  \n"
+                        + "     \"options\" : [{\n"
+                        + "      \"content\" : \"myContent\""
+                        + "  }]\n"
+                        + "  }";
         JSONObject mboxResponseObject = new JSONObject(mBoxesResponseString);
-        final Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>() {
-            {
-                put("", mboxResponseObject);
-                put(null, mboxResponseObject);
-            }
-        };
+        final Map<String, JSONObject> mboxResponses =
+                new HashMap<String, JSONObject>() {
+                    {
+                        put("", mboxResponseObject);
+                        put(null, mboxResponseObject);
+                    }
+                };
 
         // test
         targetState.saveLoadedMbox(mboxResponses);
@@ -1062,11 +1174,12 @@ public class TargetStateTests {
     @Test
     public void testSaveLoadedMbox_WhenEmptyJsonInMboxResponse() {
         // setup
-        final Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>() {
-            {
-                put("mboxName", new JSONObject());
-            }
-        };
+        final Map<String, JSONObject> mboxResponses =
+                new HashMap<String, JSONObject>() {
+                    {
+                        put("mboxName", new JSONObject());
+                    }
+                };
 
         // test
         targetState.saveLoadedMbox(mboxResponses);
@@ -1079,11 +1192,12 @@ public class TargetStateTests {
     @Test
     public void testSaveLoadedMbox_WhenNullJsonInMboxResponse() {
         // setup
-        final Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>() {
-            {
-                put("mboxName", null);
-            }
-        };
+        final Map<String, JSONObject> mboxResponses =
+                new HashMap<String, JSONObject>() {
+                    {
+                        put("mboxName", null);
+                    }
+                };
 
         // test
         targetState.saveLoadedMbox(mboxResponses);
@@ -1095,32 +1209,36 @@ public class TargetStateTests {
     @Test
     public void testSaveLoadedMbox_WithPrefetchedMbox() throws JSONException {
         // setup
-        String prefetchString = "{\n" +
-                "    \"name\" : \"mboxName\" ,  \n" +
-                "    \"metrics\" : \"myMetrics\" ,  \n" +
-                "     \"options\" : [{\n" +
-                "      \"content\" : \"myContent\"" +
-                "  }]\n" +
-                "  }";
+        String prefetchString =
+                "{\n"
+                        + "    \"name\" : \"mboxName\" ,  \n"
+                        + "    \"metrics\" : \"myMetrics\" ,  \n"
+                        + "     \"options\" : [{\n"
+                        + "      \"content\" : \"myContent\""
+                        + "  }]\n"
+                        + "  }";
         JSONObject prefetchJsonObject = new JSONObject(prefetchString);
-        final Map<String, JSONObject> prefetchMbox = new HashMap<String, JSONObject>() {
-            {
-                put("mboxName", prefetchJsonObject);
-            }
-        };
+        final Map<String, JSONObject> prefetchMbox =
+                new HashMap<String, JSONObject>() {
+                    {
+                        put("mboxName", prefetchJsonObject);
+                    }
+                };
         targetState.mergePrefetchedMboxJson(prefetchMbox);
 
-        String mBoxesResponseString = "{\n" +
-                "    \"name\" : \"mboxName1\" ,  \n" +
-                "    \"metrics\" : \"myMetrics1\" \n" +
-                "  }";
+        String mBoxesResponseString =
+                "{\n"
+                        + "    \"name\" : \"mboxName1\" ,  \n"
+                        + "    \"metrics\" : \"myMetrics1\" \n"
+                        + "  }";
         JSONObject mboxResponseObject = new JSONObject(mBoxesResponseString);
-        final Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>() {
-            {
-                put("mboxName", prefetchJsonObject);
-                put("mboxName1", mboxResponseObject);
-            }
-        };
+        final Map<String, JSONObject> mboxResponses =
+                new HashMap<String, JSONObject>() {
+                    {
+                        put("mboxName", prefetchJsonObject);
+                        put("mboxName1", mboxResponseObject);
+                    }
+                };
 
         // test
         targetState.saveLoadedMbox(mboxResponses);
@@ -1140,28 +1258,31 @@ public class TargetStateTests {
     @Test
     public void testRemoveDuplicateLoadedMboxes() throws JSONException {
         // setup
-        String mboxString = "{\n" +
-                "    \"name\" : \"mboxName\" ,  \n" +
-                "    \"metrics\" : \"myMetrics\" ,  \n" +
-                "     \"options\" : [{\n" +
-                "      \"content\" : \"myContent\"" +
-                "  }]\n" +
-                "  }";
+        String mboxString =
+                "{\n"
+                        + "    \"name\" : \"mboxName\" ,  \n"
+                        + "    \"metrics\" : \"myMetrics\" ,  \n"
+                        + "     \"options\" : [{\n"
+                        + "      \"content\" : \"myContent\""
+                        + "  }]\n"
+                        + "  }";
         JSONObject mboxJsonObject = new JSONObject(mboxString);
 
-        final Map<String, JSONObject> mboxResponses = new HashMap<String, JSONObject>() {
-            {
-                put("mboxName", mboxJsonObject);
-            }
-        };
+        final Map<String, JSONObject> mboxResponses =
+                new HashMap<String, JSONObject>() {
+                    {
+                        put("mboxName", mboxJsonObject);
+                    }
+                };
 
         targetState.saveLoadedMbox(mboxResponses);
 
-        final Map<String, JSONObject> prefetchMbox = new HashMap<String, JSONObject>() {
-            {
-                put("mboxName", mboxJsonObject);
-            }
-        };
+        final Map<String, JSONObject> prefetchMbox =
+                new HashMap<String, JSONObject>() {
+                    {
+                        put("mboxName", mboxJsonObject);
+                    }
+                };
         targetState.mergePrefetchedMboxJson(prefetchMbox);
 
         // test
@@ -1179,20 +1300,22 @@ public class TargetStateTests {
         Assert.assertTrue(targetState.getNotifications().isEmpty());
 
         // setup
-        String mboxString = "{\n" +
-                "    \"name\" : \"mboxName\" ,  \n" +
-                "    \"metrics\" : \"myMetrics\" ,  \n" +
-                "     \"options\" : [{\n" +
-                "      \"content\" : \"myContent\"" +
-                "  }]\n" +
-                "  }";
+        String mboxString =
+                "{\n"
+                        + "    \"name\" : \"mboxName\" ,  \n"
+                        + "    \"metrics\" : \"myMetrics\" ,  \n"
+                        + "     \"options\" : [{\n"
+                        + "      \"content\" : \"myContent\""
+                        + "  }]\n"
+                        + "  }";
         JSONObject mboxJsonObject = new JSONObject(mboxString);
 
         // test
         targetState.addNotification(mboxJsonObject);
 
         // verify
-        Assert.assertEquals(mboxJsonObject.toString(), targetState.getNotifications().get(0).toString());
+        Assert.assertEquals(
+                mboxJsonObject.toString(), targetState.getNotifications().get(0).toString());
 
         // test
         targetState.clearNotifications();

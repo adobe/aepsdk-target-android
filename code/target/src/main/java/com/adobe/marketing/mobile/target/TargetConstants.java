@@ -1,14 +1,13 @@
 /*
- Copyright 2022 Adobe. All rights reserved.
- This file is licensed to you under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License. You may obtain a copy
- of the License at http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software distributed under
- the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
- OF ANY KIND, either express or implied. See the License for the specific language
- governing permissions and limitations under the License.
- */
+  Copyright 2022 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile.target;
 
@@ -19,10 +18,11 @@ final class TargetConstants {
     static final String EXTENSION_NAME = "com.adobe.module.target";
     static final String FRIENDLY_NAME = "Target";
 
-    static final String API_URL_HOST_BASE 		= "%s.tt.omtrdc.net";
+    static final String API_URL_HOST_BASE = "%s.tt.omtrdc.net";
     static final String EDGE_HOST_BASE = "mboxedge%s";
-    static final String DELIVERY_API_URL_BASE = "https://%s/rest/v1/delivery/?client=%s&sessionId=%s";
-    static final String MBOX_AT_PROPERTY_KEY  		= "at_property";
+    static final String DELIVERY_API_URL_BASE =
+            "https://%s/rest/v1/delivery/?client=%s&sessionId=%s";
+    static final String MBOX_AT_PROPERTY_KEY = "at_property";
     static final String A4T_ACTION_NAME = "AnalyticsForTarget";
 
     static final int DEFAULT_NETWORK_TIMEOUT = 2;
@@ -41,6 +41,7 @@ final class TargetConstants {
     private TargetConstants() {}
 
     static final HashMap<String, String> MAP_TO_CONTEXT_DATA_KEYS = createMap();
+
     static HashMap<String, String> createMap() {
         final HashMap<String, String> map = new HashMap<>();
         map.put(Identity.ADVERTISING_IDENTIFIER, ContextDataKeys.ADVERTISING_IDENTIFIER);
@@ -72,30 +73,30 @@ final class TargetConstants {
     }
 
     static final class ContextDataKeys {
-        static final String INSTALL_EVENT_KEY         = "a.InstallEvent";
-        static final String LAUNCH_EVENT_KEY          = "a.LaunchEvent";
-        static final String CRASH_EVENT_KEY           = "a.CrashEvent";
-        static final String UPGRADE_EVENT_KEY         = "a.UpgradeEvent";
-        static final String DAILY_ENGAGED_EVENT_KEY   = "a.DailyEngUserEvent";
+        static final String INSTALL_EVENT_KEY = "a.InstallEvent";
+        static final String LAUNCH_EVENT_KEY = "a.LaunchEvent";
+        static final String CRASH_EVENT_KEY = "a.CrashEvent";
+        static final String UPGRADE_EVENT_KEY = "a.UpgradeEvent";
+        static final String DAILY_ENGAGED_EVENT_KEY = "a.DailyEngUserEvent";
         static final String MONTHLY_ENGAGED_EVENT_KEY = "a.MonthlyEngUserEvent";
-        static final String INSTALL_DATE              = "a.InstallDate";
-        static final String LAUNCHES                  = "a.Launches";
-        static final String PREVIOUS_SESSION_LENGTH   = "a.PrevSessionLength";
-        static final String DAYS_SINCE_FIRST_LAUNCH   = "a.DaysSinceFirstUse";
-        static final String DAYS_SINCE_LAST_LAUNCH    = "a.DaysSinceLastUse";
-        static final String HOUR_OF_DAY               = "a.HourOfDay";
-        static final String DAY_OF_WEEK               = "a.DayOfWeek";
-        static final String OPERATING_SYSTEM          = "a.OSVersion";
-        static final String APPLICATION_IDENTIFIER    = "a.AppID";
-        static final String DAYS_SINCE_LAST_UPGRADE   = "a.DaysSinceLastUpgrade";
-        static final String LAUNCHES_SINCE_UPGRADE    = "a.LaunchesSinceUpgrade";
-        static final String ADVERTISING_IDENTIFIER    = "a.adid";
-        static final String DEVICE_NAME               = "a.DeviceName";
-        static final String DEVICE_RESOLUTION         = "a.Resolution";
-        static final String CARRIER_NAME              = "a.CarrierName";
-        static final String LOCALE                    = "a.locale";
-        static final String RUN_MODE                  = "a.RunMode";
-        static final String IGNORED_SESSION_LENGTH    = "a.ignoredSessionLength";
+        static final String INSTALL_DATE = "a.InstallDate";
+        static final String LAUNCHES = "a.Launches";
+        static final String PREVIOUS_SESSION_LENGTH = "a.PrevSessionLength";
+        static final String DAYS_SINCE_FIRST_LAUNCH = "a.DaysSinceFirstUse";
+        static final String DAYS_SINCE_LAST_LAUNCH = "a.DaysSinceLastUse";
+        static final String HOUR_OF_DAY = "a.HourOfDay";
+        static final String DAY_OF_WEEK = "a.DayOfWeek";
+        static final String OPERATING_SYSTEM = "a.OSVersion";
+        static final String APPLICATION_IDENTIFIER = "a.AppID";
+        static final String DAYS_SINCE_LAST_UPGRADE = "a.DaysSinceLastUpgrade";
+        static final String LAUNCHES_SINCE_UPGRADE = "a.LaunchesSinceUpgrade";
+        static final String ADVERTISING_IDENTIFIER = "a.adid";
+        static final String DEVICE_NAME = "a.DeviceName";
+        static final String DEVICE_RESOLUTION = "a.Resolution";
+        static final String CARRIER_NAME = "a.CarrierName";
+        static final String LOCALE = "a.locale";
+        static final String RUN_MODE = "a.RunMode";
+        static final String IGNORED_SESSION_LENGTH = "a.ignoredSessionLength";
 
         private ContextDataKeys() {}
     }
@@ -108,12 +109,11 @@ final class TargetConstants {
         private TargetResponse() {}
     }
 
-
     static final String DATA_STORE_KEY = "ADOBEMOBILE_TARGET";
 
     static class DataStoreKeys {
-        static final String TNT_ID                        = "TNT_ID";
-        static final String THIRD_PARTY_ID                = "THIRD_PARTY_ID";
+        static final String TNT_ID = "TNT_ID";
+        static final String THIRD_PARTY_ID = "THIRD_PARTY_ID";
         static final String SESSION_ID = "SESSION_ID";
         static final String SESSION_TIMESTAMP = "SESSION_TIMESTAMP";
         static final String EDGE_HOST = "EDGE_HOST";
@@ -150,7 +150,7 @@ final class TargetConstants {
         static final String IS_LOCATION_DISPLAYED = "islocationdisplayed";
         static final String IS_LOCATION_CLICKED = "islocationclicked";
         static final String THIRD_PARTY_ID = "thirdpartyid";
-        static final String TNT_ID         = "tntid";
+        static final String TNT_ID = "tntid";
         static final String SESSION_ID = "sessionid";
         static final String RESET_EXPERIENCE = "resetexperience";
         static final String CLEAR_PREFETCH_CACHE = "clearcache";
@@ -169,9 +169,9 @@ final class TargetConstants {
         static final String EXPERIENCE_CLOUD = "experienceCloud";
         static final String PROPERTY = "property";
         static final String ENVIRONMENT_ID = "environmentId";
-        static final String TRACK_INTERNAL   = "trackinternal";
-        static final String TRACK_ACTION     = "action";
-        static final String CONTEXT_DATA     = "contextdata";
+        static final String TRACK_INTERNAL = "trackinternal";
+        static final String TRACK_ACTION = "action";
+        static final String CONTEXT_DATA = "contextdata";
 
         static final class Order {
             static final String ID = "id";
@@ -192,8 +192,8 @@ final class TargetConstants {
     }
 
     static final class Configuration {
-        static final String EXTENSION_NAME       = "com.adobe.module.configuration";
-        static final String GLOBAL_CONFIG_PRIVACY            = "global.privacy";
+        static final String EXTENSION_NAME = "com.adobe.module.configuration";
+        static final String GLOBAL_CONFIG_PRIVACY = "global.privacy";
         static final String TARGET_CLIENT_CODE = "target.clientCode";
         static final String TARGET_PREVIEW_ENABLED = "target.previewEnabled";
         static final String TARGET_NETWORK_TIMEOUT = "target.timeout";
@@ -222,30 +222,30 @@ final class TargetConstants {
     static final class Lifecycle {
         static final String EXTENSION_NAME = "com.adobe.module.lifecycle";
 
-        static final String APP_ID                  = "appid";
-        static final String CARRIER_NAME            = "carriername";
-        static final String CRASH_EVENT             = "crashevent";
-        static final String DAILY_ENGAGED_EVENT     = "dailyenguserevent";
-        static final String DAY_OF_WEEK             = "dayofweek";
+        static final String APP_ID = "appid";
+        static final String CARRIER_NAME = "carriername";
+        static final String CRASH_EVENT = "crashevent";
+        static final String DAILY_ENGAGED_EVENT = "dailyenguserevent";
+        static final String DAY_OF_WEEK = "dayofweek";
         static final String DAYS_SINCE_FIRST_LAUNCH = "dayssincefirstuse";
-        static final String DAYS_SINCE_LAST_LAUNCH  = "dayssincelastuse";
+        static final String DAYS_SINCE_LAST_LAUNCH = "dayssincelastuse";
         static final String DAYS_SINCE_LAST_UPGRADE = "dayssincelastupgrade";
-        static final String DEVICE_NAME             = "devicename";
-        static final String DEVICE_RESOLUTION       = "resolution";
-        static final String HOUR_OF_DAY             = "hourofday";
-        static final String IGNORED_SESSION_LENGTH  = "ignoredsessionlength";
-        static final String INSTALL_DATE            = "installdate";
-        static final String INSTALL_EVENT           = "installevent";
-        static final String LAUNCH_EVENT            = "launchevent";
-        static final String LAUNCHES                = "launches";
-        static final String LAUNCHES_SINCE_UPGRADE  = "launchessinceupgrade";
-        static final String LIFECYCLE_CONTEXT_DATA  = "lifecyclecontextdata";
-        static final String LOCALE                  = "locale";
-        static final String MONTHLY_ENGAGED_EVENT   = "monthlyenguserevent";
-        static final String OPERATING_SYSTEM        = "osversion";
+        static final String DEVICE_NAME = "devicename";
+        static final String DEVICE_RESOLUTION = "resolution";
+        static final String HOUR_OF_DAY = "hourofday";
+        static final String IGNORED_SESSION_LENGTH = "ignoredsessionlength";
+        static final String INSTALL_DATE = "installdate";
+        static final String INSTALL_EVENT = "installevent";
+        static final String LAUNCH_EVENT = "launchevent";
+        static final String LAUNCHES = "launches";
+        static final String LAUNCHES_SINCE_UPGRADE = "launchessinceupgrade";
+        static final String LIFECYCLE_CONTEXT_DATA = "lifecyclecontextdata";
+        static final String LOCALE = "locale";
+        static final String MONTHLY_ENGAGED_EVENT = "monthlyenguserevent";
+        static final String OPERATING_SYSTEM = "osversion";
         static final String PREVIOUS_SESSION_LENGTH = "prevsessionlength";
-        static final String RUN_MODE                = "runmode";
-        static final String UPGRADE_EVENT           = "upgradeevent";
+        static final String RUN_MODE = "runmode";
+        static final String UPGRADE_EVENT = "upgradeevent";
 
         private Lifecycle() {}
     }
@@ -262,11 +262,11 @@ final class TargetConstants {
 
     static class PreviewKeys {
         // Target preview Constants
-        static final String PREVIEW_PARAMETERS                     = "at_preview_params";
-        static final String PREVIEW_TOKEN                        = "at_preview_token";
-        static final String PREVIEW_ENDPOINT                     = "at_preview_endpoint";
-        static final String DEFAULT_TARGET_PREVIEW_ENDPOINT        = "hal.testandtarget.omniture.com";
-        static final String DEEPLINK        = "deeplink";
+        static final String PREVIEW_PARAMETERS = "at_preview_params";
+        static final String PREVIEW_TOKEN = "at_preview_token";
+        static final String PREVIEW_ENDPOINT = "at_preview_endpoint";
+        static final String DEFAULT_TARGET_PREVIEW_ENDPOINT = "hal.testandtarget.omniture.com";
+        static final String DEEPLINK = "deeplink";
         static final String DEEPLINK_SCHEME = "adbinapp";
         static final String DEEPLINK_SCHEME_PATH_CANCEL = "cancel";
         static final String DEEPLINK_SCHEME_PATH_CONFIRM = "confirm";

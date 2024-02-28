@@ -1,14 +1,13 @@
 /*
- Copyright 2022 Adobe. All rights reserved.
- This file is licensed to you under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License. You may obtain a copy
- of the License at http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software distributed under
- the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
- OF ANY KIND, either express or implied. See the License for the specific language
- governing permissions and limitations under the License.
- */
+  Copyright 2022 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile.target;
 
@@ -16,22 +15,20 @@ import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
 import com.adobe.marketing.mobile.util.StringUtils;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * Class for specifying Target product parameters
- */
+/** Class for specifying Target product parameters */
 public class TargetProduct {
     private static final String CLASS_NAME = "TargetProduct";
 
-    final private String id;
-    final private String categoryId;
+    private final String id;
+    private final String categoryId;
 
     /**
-     * Initialize a {@link TargetProduct} with a product {@link #id} and a productCategoryId {@link #categoryId}
+     * Initialize a {@link TargetProduct} with a product {@link #id} and a productCategoryId {@link
+     * #categoryId}
      *
      * @param id {@link String} product id
      * @param categoryId {@link String} product category id
@@ -73,8 +70,8 @@ public class TargetProduct {
 
     /**
      * Creates a {@code TargetProduct} object using information provided in {@code data} map.
-     * <p>
-     * This method returns null if the provided {@code data} is null or empty, or if it does not
+     *
+     * <p>This method returns null if the provided {@code data} is null or empty, or if it does not
      * contain required info for creating a {@link TargetProduct} object.
      *
      * @param data {@code Map<String, Object>} containing Target Product data.
@@ -82,21 +79,32 @@ public class TargetProduct {
      */
     static TargetProduct fromEventData(final Map<String, String> data) {
         if (TargetUtils.isNullOrEmpty(data)) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetProduct object, provided data Map is empty or null.");
+            Log.debug(
+                    TargetConstants.LOG_TAG,
+                    CLASS_NAME,
+                    "Cannot create TargetProduct object, provided data Map is empty or null.");
             return null;
         }
 
         try {
             final String id = DataReader.getString(data, TargetConstants.EventDataKeys.Product.ID);
             if (StringUtils.isNullOrEmpty(id)) {
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Cannot create TargetProduct object, provided data Map doesn't contain valid product ID.");
+                Log.debug(
+                        TargetConstants.LOG_TAG,
+                        CLASS_NAME,
+                        "Cannot create TargetProduct object, provided data Map doesn't contain"
+                                + " valid product ID.");
                 return null;
             }
-            final String categoryId = DataReader.getString(data, TargetConstants.EventDataKeys.Product.CATEGORY_ID);
+            final String categoryId =
+                    DataReader.getString(data, TargetConstants.EventDataKeys.Product.CATEGORY_ID);
 
             return new TargetProduct(id, categoryId);
         } catch (final DataReaderException e) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetProduct object, provided data contains invalid fields.");
+            Log.warning(
+                    TargetConstants.LOG_TAG,
+                    CLASS_NAME,
+                    "Cannot create TargetProduct object, provided data contains invalid fields.");
             return null;
         }
     }
