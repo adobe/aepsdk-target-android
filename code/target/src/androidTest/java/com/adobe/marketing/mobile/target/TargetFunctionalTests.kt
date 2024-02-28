@@ -14,13 +14,30 @@ package com.adobe.marketing.mobile.target
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.adobe.marketing.mobile.*
+import com.adobe.marketing.mobile.AdobeCallback
+import com.adobe.marketing.mobile.Identity
+import com.adobe.marketing.mobile.LoggingMode
+import com.adobe.marketing.mobile.MobileCore
+import com.adobe.marketing.mobile.SDKHelper
 import com.adobe.marketing.mobile.Target
-import com.adobe.marketing.mobile.services.*
+import com.adobe.marketing.mobile.VisitorID
+import com.adobe.marketing.mobile.services.HttpConnecting
+import com.adobe.marketing.mobile.services.NamedCollection
+import com.adobe.marketing.mobile.services.NetworkRequest
+import com.adobe.marketing.mobile.services.Networking
+import com.adobe.marketing.mobile.services.ServiceProvider
 import org.json.JSONArray
 import org.json.JSONObject
-import org.junit.*
-import org.junit.Assert.*
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runner.RunWith
@@ -71,7 +88,8 @@ private var dataStore: NamedCollection? = null
 @RunWith(AndroidJUnit4::class)
 class TargetFunctionalTests {
 
-    @get:Rule val totalTestCount = Retry(2)
+    @get:Rule
+    val totalTestCount = Retry(2)
 
     companion object {
         // Tests will be run at most 2 times
@@ -567,7 +585,6 @@ class TargetFunctionalTests {
 
         // test
         Target.getThirdPartyId { data ->
-            Log.error("Peaks Debug", data, data)
             retrievedThirdPartyID = data
             localLatch.countDown()
         }
