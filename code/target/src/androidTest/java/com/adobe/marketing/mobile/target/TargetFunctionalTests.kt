@@ -7,7 +7,7 @@
   the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
   OF ANY KIND, either express or implied. See the License for the specific language
   governing permissions and limitations under the License.
- */
+*/
 
 package com.adobe.marketing.mobile.target
 
@@ -66,7 +66,7 @@ class Retry(private val numberOfTestAttempts: Int) : TestRule {
                         caughtThrowable = t
                         System.err.println(
                             description.displayName + ": run " + currentTestRun + " failed, " +
-                                    (numberOfTestAttempts - currentTestRun) + " retries remain."
+                                (numberOfTestAttempts - currentTestRun) + " retries remain."
                         )
                         System.err.println("test failure caused by: " + caughtThrowable.getLocalizedMessage())
                     }
@@ -77,7 +77,6 @@ class Retry(private val numberOfTestAttempts: Int) : TestRule {
         }
     }
 }
-
 
 private typealias NetworkMonitor = (request: NetworkRequest) -> Unit
 
@@ -260,7 +259,7 @@ class TargetFunctionalTests {
         SDKHelper.resetTargetListener()
     }
 
-    //1
+    // 1
     @Test
     fun testExtensionVersion() {
         assertEquals(TargetTestConstants.EXTENSION_VERSION, Target.extensionVersion())
@@ -278,7 +277,7 @@ class TargetFunctionalTests {
             .parameters(mboxParameters)
             .profileParameters(profileParameters)
             .build()
-        val targetRequest = TargetRequest(mboxName, targetParameters , defaultContent) { data ->
+        val targetRequest = TargetRequest(mboxName, targetParameters, defaultContent) { data ->
             retrievedLocationResponse = data
             waitForCallback?.countDown()
         }
@@ -317,7 +316,7 @@ class TargetFunctionalTests {
         val targetParameters = TargetParameters.Builder()
             .order(TargetOrder.fromEventData(orderParameters))
             .build()
-        val targetRequest = TargetRequest(mboxName, targetParameters , defaultContent) { data ->
+        val targetRequest = TargetRequest(mboxName, targetParameters, defaultContent) { data ->
             retrievedLocationResponse = data
             waitForCallback?.countDown()
         }
@@ -352,7 +351,7 @@ class TargetFunctionalTests {
         val targetParameters = TargetParameters.Builder()
             .product(TargetProduct.fromEventData(productParameters))
             .build()
-        val targetRequest = TargetRequest(mboxName, targetParameters , defaultContent) { data ->
+        val targetRequest = TargetRequest(mboxName, targetParameters, defaultContent) { data ->
             retrievedLocationResponse = data
             waitForCallback?.countDown()
         }
@@ -391,7 +390,7 @@ class TargetFunctionalTests {
             .order(TargetOrder.fromEventData(orderParameters))
             .product(TargetProduct.fromEventData(productParameters))
             .build()
-        val targetRequest = TargetRequest(mboxName, targetParameters , defaultContent) { data ->
+        val targetRequest = TargetRequest(mboxName, targetParameters, defaultContent) { data ->
             retrievedLocationResponse = data
             waitForCallback?.countDown()
         }
@@ -434,7 +433,7 @@ class TargetFunctionalTests {
         }
         val thirdPartyID = "testID"
         Target.setThirdPartyId(thirdPartyID)
-        val targetRequest = TargetRequest(mboxName, targetParameters , defaultContent) { data ->
+        val targetRequest = TargetRequest(mboxName, targetParameters, defaultContent) { data ->
             retrievedLocationResponse = data
             waitForCallback?.countDown()
         }
@@ -473,7 +472,7 @@ class TargetFunctionalTests {
         val thirdPartyID = "testID"
         Target.setThirdPartyId(thirdPartyID)
         Target.resetExperience()
-        val targetRequest = TargetRequest(mboxName, targetParameters , defaultContent) { data ->
+        val targetRequest = TargetRequest(mboxName, targetParameters, defaultContent) { data ->
             retrievedLocationResponse = data
             waitForCallback?.countDown()
         }
@@ -510,10 +509,11 @@ class TargetFunctionalTests {
             networkRequestHeaders = request.headers
             waitForNetworkCall?.countDown()
         }
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, mboxNames,
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null, mboxNames,
             targetClientCode, "prefetchedContent", null, null, null,
-            null, true, true)
-
+            null, true, true
+        )
 
         val prefetchRequest1 = TargetPrefetch(mboxNames[0], targetParameters)
         val prefetchRequest2 = TargetPrefetch(mboxNames[1], targetParameters)
@@ -625,10 +625,12 @@ class TargetFunctionalTests {
             waitForNetworkCall?.countDown()
         }
 
-        updateConfiguration(mapOf(
-            "experienceCloud.org" to  "972C898555E9F7BC7F000101@AdobeOrg",
-            "experienceCloud.server" to "identity.com"
-        ))
+        updateConfiguration(
+            mapOf(
+                "experienceCloud.org" to "972C898555E9F7BC7F000101@AdobeOrg",
+                "experienceCloud.server" to "identity.com"
+            )
+        )
         Identity.syncIdentifier(
             "type",
             "value",
@@ -646,7 +648,6 @@ class TargetFunctionalTests {
         )
         waitForNetworkCall?.await(5, TimeUnit.SECONDS)
 
-
         // reset network capturer
         waitForNetworkCall = CountDownLatch(1)
         networkMonitor = { request ->
@@ -656,9 +657,12 @@ class TargetFunctionalTests {
         }
 
         // test
-        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { data ->
-            retrievedLocationResponse = data
-            waitForCallback?.countDown() })
+        val targetRequestList = listOf(
+            TargetRequest(mboxName, null, defaultContent) { data ->
+                retrievedLocationResponse = data
+                waitForCallback?.countDown()
+            }
+        )
         Target.retrieveLocationContent(targetRequestList, null)
         waitForCallback?.await(5, TimeUnit.SECONDS)
         waitForNetworkCall?.await(5, TimeUnit.SECONDS)
@@ -737,12 +741,11 @@ class TargetFunctionalTests {
         assertEquals("mbox1", mbox.getString("name"))
         assertEquals("mbox_parameter_value", mbox.getJSONObject("parameters").getString("mbox_parameter_key"))
 
-
         // test
         retrieveLocationContent("mbox1")
 
         // verify
-        assertNull(networkRequestBody);
+        assertNull(networkRequestBody)
         assertNull(networkRequestHeaders)
         assertEquals("prefetchedContent", retrievedLocationResponse)
 
@@ -777,9 +780,11 @@ class TargetFunctionalTests {
             .profileParameters(profileParameters)
             .build()
         val targetPrefetchList = listOf(TargetPrefetch(mboxName, targetParameters))
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, mboxNames,
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null, mboxNames,
             targetClientCode, "prefetchedContent", null, null, null,
-            null, true, true)
+            null, true, true
+        )
 
         val networkCountDownLatch = CountDownLatch(1)
         networkMonitor = { request ->
@@ -839,9 +844,11 @@ class TargetFunctionalTests {
             .profileParameters(profileParameters)
             .build()
         val targetPrefetchList = listOf(TargetPrefetch("mbox1", targetParameters))
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, mboxNames,
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null, mboxNames,
             targetClientCode, "prefetchedContent", null, null, null,
-            null, true, true)
+            null, true, true
+        )
 
         var callbackErrorStatus: String? = null
         val networkCountDownLatch = CountDownLatch(1)
@@ -886,9 +893,11 @@ class TargetFunctionalTests {
 
         // setup
         val retrieveLocationCountdownLatch = CountDownLatch(1)
-        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { _ ->
-            retrieveLocationCountdownLatch.countDown()
-        })
+        val targetRequestList = listOf(
+            TargetRequest(mboxName, null, defaultContent) { _ ->
+                retrieveLocationCountdownLatch.countDown()
+            }
+        )
         val locationContentTargetParameters: TargetParameters = TargetParameters.Builder()
             .product(TargetProduct.fromEventData(productParameters2))
             .order(TargetOrder.fromEventData(orderParameters2))
@@ -994,9 +1003,11 @@ class TargetFunctionalTests {
     fun test_Functional_Happy_Target_targetRetrieveLocationContent_VerifyWithoutTargetParameters() {
         // setup
         val retrieveLocationCountdownLatch = CountDownLatch(1)
-        val targetRequestList = listOf(TargetRequest(mboxName, null, defaultContent) { _ ->
-            retrieveLocationCountdownLatch.countDown()
-        })
+        val targetRequestList = listOf(
+            TargetRequest(mboxName, null, defaultContent) { _ ->
+                retrieveLocationCountdownLatch.countDown()
+            }
+        )
         val networkCountDownLatch = CountDownLatch(1)
         networkMonitor = { request ->
             networkRequestBody = String(request.body, Charsets.UTF_8)
@@ -1025,9 +1036,9 @@ class TargetFunctionalTests {
         assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
-    //**********************************************************************************************
+    // **********************************************************************************************
     // Location Clicked Tests
-    //**********************************************************************************************
+    // **********************************************************************************************
     // Test Case No : 26
     @Test
     @Throws(Exception::class)
@@ -1120,17 +1131,16 @@ class TargetFunctionalTests {
         assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
-
-    //**********************************************************************************************
+    // **********************************************************************************************
     // Location Displayed Tests
-    //**********************************************************************************************
+    // **********************************************************************************************
     // Test Case No : 32
     @Test
     @Throws(Exception::class)
     fun test_Functional_Happy_Target_targetDisplayedLocations() {
         prefetchContent("mbox1")
 
-        val prefetchJson= JSONObject(networkRequestBody)
+        val prefetchJson = JSONObject(networkRequestBody)
         assertNotNull(prefetchJson)
         val prefetch = prefetchJson.getJSONObject("prefetch").getJSONArray("mboxes")
         assertEquals(1, prefetch.length().toLong())
@@ -1200,7 +1210,7 @@ class TargetFunctionalTests {
     fun test_Functional_Target_targetPrefetchContentWith_targetDisplayedLocations_For_Different_MBox() {
         // setup
         prefetchContent("mbox1")
-        val prefetchJson= JSONObject(networkRequestBody)
+        val prefetchJson = JSONObject(networkRequestBody)
         assertNotNull(prefetchJson)
 
         // reset
@@ -1235,10 +1245,9 @@ class TargetFunctionalTests {
         assertNull(networkRequestHeaders)
     }
 
-
-    //**********************************************************************************************
+    // **********************************************************************************************
     // Setters And Getters test
-    //**********************************************************************************************
+    // **********************************************************************************************
     @Test
     @Throws(Exception::class)
     fun test_Functional_Happy_Target_targetSetAndGetSessionId() {
@@ -1257,7 +1266,6 @@ class TargetFunctionalTests {
         assertNotNull(retrievedSessionId)
         assertNotEquals("", retrievedSessionId)
 
-
         // Set a new session Id
         Target.setSessionId(sessionId)
 
@@ -1275,13 +1283,12 @@ class TargetFunctionalTests {
         assertNotEquals(oldSessionId, retrievedSessionId)
     }
 
-
     @Test
     @Throws(Exception::class)
     fun test_Functional_Happy_Target_targetSetAndGetTntId() {
         // setup
-        var retrievedTntId : String? = null
-        val newTntId= "66E5C681-4F70-41A2-86AE-F1E151443B10.35_0"
+        var retrievedTntId: String? = null
+        val newTntId = "66E5C681-4F70-41A2-86AE-F1E151443B10.35_0"
 
         // test
         Target.getTntId() { tntId ->
@@ -1315,8 +1322,8 @@ class TargetFunctionalTests {
     @Throws(Exception::class)
     fun test_Functional_Happy_Target_targetSetAndGetThirdPartyId() {
         // setup
-        var retrievedThirdPartyId : String? = null
-        val newThirdPartyId= "shiningNewId"
+        var retrievedThirdPartyId: String? = null
+        val newThirdPartyId = "shiningNewId"
 
         // test
         Target.getThirdPartyId() { thirdPartyId ->
@@ -1350,13 +1357,15 @@ class TargetFunctionalTests {
     @Throws(Exception::class)
     fun test_Functional_Session_Target_VerifySetSessionIdAndTntIdAndEdgeHostUsedWhenSendingTargetRequest() {
         // setup
-        var retrievedTntId : String? = null
-        var retrievedSessionId : String? = null
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, arrayOf(mboxName),
+        var retrievedTntId: String? = null
+        var retrievedSessionId: String? = null
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null, arrayOf(mboxName),
             targetClientCode, "prefetchedContent",
             "f741a5d5-09c0-4931-bf53-b9e568c5f782.35_0",
             "mboxedge35.tt.omtrdc.net", null,
-            null, false, true)
+            null, false, true
+        )
         retrieveLocationContent(mboxName)
 
         // verify
@@ -1364,7 +1373,6 @@ class TargetFunctionalTests {
         val uri = Uri.parse(networkRequestUrl)
         val sessionId1 = uri.getQueryParameter("sessionId")
         assertNotNull(sessionId1)
-
 
         // Get and verify tntId
         waitForCallback = CountDownLatch(1)
@@ -1374,7 +1382,6 @@ class TargetFunctionalTests {
         }
         waitForCallback?.await(5, TimeUnit.SECONDS)
         assertEquals("f741a5d5-09c0-4931-bf53-b9e568c5f782.35_0", retrievedTntId)
-
 
         // Get and verify sessionId
         waitForCallback = CountDownLatch(1)
@@ -1393,7 +1400,7 @@ class TargetFunctionalTests {
         resetNetworkMonitor()
         retrieveLocationContent("mbox2")
 
-        //verify if the network request contains the latest ids
+        // verify if the network request contains the latest ids
         assertNotNull(networkRequestUrl)
         val uri2 = Uri.parse(networkRequestUrl)
         val sessionId2 = uri2.getQueryParameter("sessionId")
@@ -1408,9 +1415,9 @@ class TargetFunctionalTests {
         assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
-    //**********************************************************************************************
+    // **********************************************************************************************
     // Target Raw Request Tests
-    //**********************************************************************************************
+    // **********************************************************************************************
     @Test
     @Throws(Exception::class)
     fun test_Functional_Happy_Target_targetExecuteRawRequest_batch() {
@@ -1421,16 +1428,18 @@ class TargetFunctionalTests {
         val executeMbox1 = mapOf(
             "index" to 0,
             "name" to "mbox1",
-            "parameters" to  mboxParameters,
+            "parameters" to mboxParameters,
             "profileParameters" to profileParameters,
             "order" to orderParameters,
-            "product" to productParameters)
+            "product" to productParameters
+        )
         val executeMboxes: MutableList<Map<String, Any>> = ArrayList()
         executeMboxes.add(executeMbox1)
         val request = mapOf(
             "execute" to mapOf(
                 "mboxes" to executeMboxes
-            ))
+            )
+        )
 
         val a4tPayload = "{\"payload\":{\"pe\":\"tnt\",\"tnta\":\"333911:0:0:0|2|4445.12\"}}"
         val a4tPayloadObject = JSONObject(a4tPayload)
@@ -1445,8 +1454,8 @@ class TargetFunctionalTests {
             waitForNetworkCall?.countDown()
         }
 
-
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, mboxNames,
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null, mboxNames,
             targetClientCode,
             "targetContent",
             "f741a5d5-09c0-4931-bf53-b9e568c5f782.35_0",
@@ -1454,7 +1463,8 @@ class TargetFunctionalTests {
             arrayOf(a4tPayloadObject),
             arrayOf(mboxClickMetricPayload),
             false,
-            true)
+            true
+        )
 
         // test
         Target.executeRawRequest(
@@ -1567,7 +1577,8 @@ class TargetFunctionalTests {
             waitForNetworkCall?.countDown()
         }
 
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, mboxNames,
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null, mboxNames,
             targetClientCode,
             "targetContent",
             "f741a5d5-09c0-4931-bf53-b9e568c5f782.35_0",
@@ -1575,7 +1586,8 @@ class TargetFunctionalTests {
             null,
             null,
             false,
-            true)
+            true
+        )
 
         // test
         Target.executeRawRequest(
@@ -1607,19 +1619,22 @@ class TargetFunctionalTests {
         val executeMbox1 = mapOf(
             "index" to 0,
             "name" to "mbox1",
-            "parameters" to  mboxParameters,
+            "parameters" to mboxParameters,
             "profileParameters" to profileParameters,
             "order" to orderParameters,
-            "product" to productParameters)
+            "product" to productParameters
+        )
         val executeMboxes: MutableList<Map<String, Any>> = ArrayList()
         executeMboxes.add(executeMbox1)
         val request = mapOf(
             "execute" to mapOf(
                 "mboxes" to executeMboxes
-            ))
+            )
+        )
 
         // setup network response
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null,
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null,
             mboxNames,
             targetClientCode,
             "targetContent",
@@ -1628,7 +1643,8 @@ class TargetFunctionalTests {
             null,
             null,
             false,
-            true)
+            true
+        )
         networkMonitor = { request ->
             networkRequestUrl = request.url
             networkRequestBody = String(request.body, Charsets.UTF_8)
@@ -1661,18 +1677,21 @@ class TargetFunctionalTests {
         val prefetchMbox1 = mapOf(
             "index" to 0,
             "name" to "mbox1",
-            "parameters" to  mboxParameters,
-            "profileParameters" to profileParameters)
+            "parameters" to mboxParameters,
+            "profileParameters" to profileParameters
+        )
         val prefetchMboxes: MutableList<Map<String, Any>> = ArrayList()
         prefetchMboxes.add(prefetchMbox1)
         val request = mapOf(
             "prefetch" to mapOf(
                 "mboxes" to prefetchMboxes
-            ))
+            )
+        )
 
         // setup network response
         resetNetworkMonitor()
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null,
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null,
             mboxNames,
             targetClientCode,
             "targetContent",
@@ -1681,7 +1700,8 @@ class TargetFunctionalTests {
             null,
             null,
             true,
-            true)
+            true
+        )
 
         // test
         Target.executeRawRequest(
@@ -1751,7 +1771,7 @@ class TargetFunctionalTests {
                 "name" to "mbox1"
             ),
             "tokens" to listOf(displayToken),
-            "parameters" to  mboxParameters2,
+            "parameters" to mboxParameters2,
             "profileParameters" to profileParameters2,
             "order" to orderParameters2,
             "product" to productParameters2
@@ -1813,19 +1833,22 @@ class TargetFunctionalTests {
         val executeMbox1 = mapOf(
             "index" to 0,
             "name" to "mbox1",
-            "parameters" to  mboxParameters,
+            "parameters" to mboxParameters,
             "profileParameters" to profileParameters,
             "order" to orderParameters,
-            "product" to productParameters)
+            "product" to productParameters
+        )
         val executeMboxes: MutableList<Map<String, Any>> = ArrayList()
         executeMboxes.add(executeMbox1)
         val requestMap = mapOf(
             "execute" to mapOf(
                 "mboxes" to executeMboxes
-            ))
+            )
+        )
 
         // setup network response
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null,
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null,
             mboxNames,
             targetClientCode,
             "targetContent",
@@ -1834,7 +1857,8 @@ class TargetFunctionalTests {
             null,
             null,
             false,
-            true)
+            true
+        )
         networkMonitor = { request ->
             networkRequestUrl = request.url
             networkRequestBody = String(request.body, Charsets.UTF_8)
@@ -1844,7 +1868,7 @@ class TargetFunctionalTests {
 
         // test
         Target.executeRawRequest(
-                requestMap
+            requestMap
         ) { responseData ->
             responseDataList.add(responseData)
             localLatch.countDown()
@@ -1909,7 +1933,7 @@ class TargetFunctionalTests {
                 "name" to "mbox1"
             ),
             "tokens" to listOf(clickToken),
-            "parameters" to  mboxParameters2,
+            "parameters" to mboxParameters2,
             "profileParameters" to profileParameters2,
             "order" to orderParameters2,
             "product" to productParameters2
@@ -1965,9 +1989,11 @@ class TargetFunctionalTests {
     @Throws(Exception::class)
     fun test_Functional_Target_targetSendRawNotifications_noClientCodeConfigured() {
         // setup
-        updateConfiguration(mapOf(
-            "target.clientCode" to ""
-        ))
+        updateConfiguration(
+            mapOf(
+                "target.clientCode" to ""
+            )
+        )
 
         val notification = mapOf(
             "id" to "0",
@@ -1977,7 +2003,7 @@ class TargetFunctionalTests {
                 "name" to "mbox1"
             ),
             "tokens" to listOf("RandomClickTrackEventToken"),
-            "parameters" to  mboxParameters2,
+            "parameters" to mboxParameters2,
             "profileParameters" to profileParameters2,
             "order" to orderParameters2,
             "product" to productParameters2
@@ -2018,7 +2044,7 @@ class TargetFunctionalTests {
                 "name" to "mbox1"
             ),
             "tokens" to listOf("RandomClickTrackEventToken"),
-            "parameters" to  mboxParameters2,
+            "parameters" to mboxParameters2,
             "profileParameters" to profileParameters2,
             "order" to orderParameters2,
             "product" to productParameters2
@@ -2028,7 +2054,8 @@ class TargetFunctionalTests {
             "notifications" to listOf(notification),
             "property" to mapOf(
                 "token" to "requestPropertyToken"
-            ))
+            )
+        )
 
         // test
         Target.sendRawNotifications(notificationRequest)
@@ -2063,9 +2090,11 @@ class TargetFunctionalTests {
     fun test_Functional_Target_targetSendRawNotifications_withPropertyTokenInRequestAndInConfiguration() {
         // setup
         resetNetworkMonitor()
-        updateConfiguration(mapOf(
-            "target.propertyToken" to "configPropertyToken"
-        ))
+        updateConfiguration(
+            mapOf(
+                "target.propertyToken" to "configPropertyToken"
+            )
+        )
         val notification = mapOf(
             "id" to "0",
             "timestamp" to System.currentTimeMillis(),
@@ -2074,7 +2103,7 @@ class TargetFunctionalTests {
                 "name" to "mbox1"
             ),
             "tokens" to listOf("RandomClickTrackEventToken"),
-            "parameters" to  mboxParameters2,
+            "parameters" to mboxParameters2,
             "profileParameters" to profileParameters2,
             "order" to orderParameters2,
             "product" to productParameters2
@@ -2084,7 +2113,8 @@ class TargetFunctionalTests {
             "notifications" to listOf(notification),
             "property" to mapOf(
                 "token" to "requestPropertyToken"
-            ))
+            )
+        )
         Thread.sleep(1000)
 
         // test
@@ -2104,26 +2134,31 @@ class TargetFunctionalTests {
 
         // reset the updated configuration
         // so that it doesn't get carry forwarded to other tests
-        updateConfiguration(mapOf(
-            "target.propertyToken" to null
-        ))
+        updateConfiguration(
+            mapOf(
+                "target.propertyToken" to null
+            )
+        )
     }
 
-    //**********************************************************************************************
+    // **********************************************************************************************
     // Attach Data Tests
-    //**********************************************************************************************
+    // **********************************************************************************************
     @Test
     @Throws(Exception::class)
     fun test_Functional_Happy_Target_VerifyDataAttachedToRetrieveLocationContentRequest() {
         // setup
-        updateConfiguration(mapOf(
-            "rules.url" to "https://assets.adobedtm.com/94f571f308d5/36109c91f05a/launch-025ab77d2925-development-rules.zip"
-        ))
+        updateConfiguration(
+            mapOf(
+                "rules.url" to "https://assets.adobedtm.com/94f571f308d5/36109c91f05a/launch-025ab77d2925-development-rules.zip"
+            )
+        )
         Thread.sleep(1000)
 
         // test
         resetNetworkMonitor()
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, arrayOf(mboxName),
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null, arrayOf(mboxName),
             targetClientCode,
             "targetContent",
             null,
@@ -2131,11 +2166,12 @@ class TargetFunctionalTests {
             null,
             null,
             false,
-            true)
+            true
+        )
         retrieveLocationContent(mboxName)
 
         // verify
-        val json= JSONObject(networkRequestBody)
+        val json = JSONObject(networkRequestBody)
         val mboxes = json.getJSONObject("execute").getJSONArray("mboxes")
         val mbox = mboxes.getJSONObject(0)
         val profileParams = mbox.getJSONObject("profileParameters")
@@ -2154,14 +2190,17 @@ class TargetFunctionalTests {
     @Throws(Exception::class)
     fun test_Functional_Target_VerifyDataNotAttachedIfKeyAlreadyExists() {
         // setup
-        updateConfiguration(mapOf(
-            "rules.url" to "https://assets.adobedtm.com/94f571f308d5/36109c91f05a/launch-025ab77d2925-development-rules.zip"
-        ))
+        updateConfiguration(
+            mapOf(
+                "rules.url" to "https://assets.adobedtm.com/94f571f308d5/36109c91f05a/launch-025ab77d2925-development-rules.zip"
+            )
+        )
         Thread.sleep(1000)
 
         // test
         resetNetworkMonitor()
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, arrayOf(mboxName),
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null, arrayOf(mboxName),
             targetClientCode,
             "targetContent",
             null,
@@ -2169,14 +2208,15 @@ class TargetFunctionalTests {
             null,
             null,
             false,
-            true)
+            true
+        )
         val targetParameters = TargetParameters.Builder()
             .profileParameters(mapOf("gender" to "female"))
             .build()
         retrieveLocationContent(mboxName, targetParameters)
 
         // verify
-        val json= JSONObject(networkRequestBody)
+        val json = JSONObject(networkRequestBody)
         val mboxes = json.getJSONObject("execute").getJSONArray("mboxes")
         val mbox = mboxes.getJSONObject(0)
         val profileParams = mbox.getJSONObject("profileParameters")
@@ -2195,14 +2235,17 @@ class TargetFunctionalTests {
     @Throws(Exception::class)
     fun test_Functional_Happy_Target_VerifyDataAttachedToPrefetchRequest() {
         // setup
-        updateConfiguration(mapOf(
-            "rules.url" to "https://assets.adobedtm.com/94f571f308d5/36109c91f05a/launch-025ab77d2925-development-rules.zip"
-        ))
+        updateConfiguration(
+            mapOf(
+                "rules.url" to "https://assets.adobedtm.com/94f571f308d5/36109c91f05a/launch-025ab77d2925-development-rules.zip"
+            )
+        )
         Thread.sleep(1000)
 
         // test
         resetNetworkMonitor()
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, arrayOf(mboxName),
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null, arrayOf(mboxName),
             targetClientCode,
             "targetContent",
             null,
@@ -2210,11 +2253,12 @@ class TargetFunctionalTests {
             null,
             null,
             true,
-            true)
+            true
+        )
         prefetchContent(mboxName)
 
         // verify
-        val json= JSONObject(networkRequestBody)
+        val json = JSONObject(networkRequestBody)
         val mboxes = json.getJSONObject("prefetch").getJSONArray("mboxes")
         val mbox = mboxes.getJSONObject(0)
         val profileParams = mbox.getJSONObject("profileParameters")
@@ -2229,10 +2273,10 @@ class TargetFunctionalTests {
         resetRules()
     }
 
-    //**********************************************************************************************
+    // **********************************************************************************************
     // Private methods
-    //**********************************************************************************************
-    private fun updateConfiguration(config:  Map<String,Any?>) {
+    // **********************************************************************************************
+    private fun updateConfiguration(config: Map<String, Any?>) {
         val configurationLatch = CountDownLatch(1)
         configurationAwareness { configurationLatch.countDown() }
         MobileCore.updateConfiguration(config)
@@ -2240,9 +2284,11 @@ class TargetFunctionalTests {
     }
 
     private fun resetRules() {
-        updateConfiguration(mapOf(
-            "rules.url" to ""
-        ))
+        updateConfiguration(
+            mapOf(
+                "rules.url" to ""
+            )
+        )
     }
 
     private fun retrieveLocationContent(mboxName: String, targetParams: TargetParameters = targetParameters) {
@@ -2251,7 +2297,7 @@ class TargetFunctionalTests {
 
         resetNetworkMonitor()
 
-        val targetRequest = TargetRequest(mboxName, targetParams , defaultContent) { data ->
+        val targetRequest = TargetRequest(mboxName, targetParams, defaultContent) { data ->
             retrievedLocationResponse = data
             waitForCallback?.countDown()
         }
@@ -2266,9 +2312,11 @@ class TargetFunctionalTests {
         waitForCallback = CountDownLatch(1)
         prefetchErrorStatus = null
         resetNetworkMonitor()
-        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(null, arrayOf(mboxName),
+        mockedNetworkResponse = TargetTestHelper.getResponseForTarget(
+            null, arrayOf(mboxName),
             targetClientCode, "prefetchedContent", null, null, null,
-            null, true, true)
+            null, true, true
+        )
 
         val targetPrefetchList = listOf(TargetPrefetch(mboxName, targetParameters))
         Target.prefetchContent(targetPrefetchList, targetParameters) { status ->
