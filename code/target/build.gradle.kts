@@ -14,7 +14,7 @@ plugins {
 }
 
 val mavenCoreVersion: String by project
-val mavenIdentityVersion: String by project
+val functionalTestIdentityVersion: String by project
 
 aepLibrary {
     namespace = "com.adobe.marketing.mobile"
@@ -28,8 +28,8 @@ aepLibrary {
 }
 
 dependencies {
-    implementation("com.adobe.marketing.mobile:core:$mavenCoreVersion-SNAPSHOT")
-    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.9.9")
-    androidTestImplementation("com.adobe.marketing.mobile:identity:$mavenIdentityVersion-SNAPSHOT")
-    androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.9.9")
+    implementation("com.adobe.marketing.mobile:core:3.0.0-SNAPSHOT")
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.12.7")
+    androidTestImplementation("com.adobe.marketing.mobile:identity:$functionalTestIdentityVersion-SNAPSHOT")
+    androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.12.7")
 }
