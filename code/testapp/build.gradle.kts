@@ -38,9 +38,13 @@ android {
 
 dependencies {
     implementation(project(":target"))
-    implementation("com.adobe.marketing.mobile:core:$mavenCoreVersion-SNAPSHOT")
-    implementation("com.adobe.marketing.mobile:lifecycle:3.0.0-beta.1-SNAPSHOT")
-    implementation("com.adobe.marketing.mobile:identity:3.0.0-beta.1-SNAPSHOT")
+    implementation("com.adobe.marketing.mobile:core:3.0.0-beta.1-SNAPSHOT")
+    implementation("com.adobe.marketing.mobile:lifecycle:3.0.0-beta.1-SNAPSHOT") {
+        exclude(group = "com.adobe.marketing.mobile", module = "core")
+    }
+    implementation("com.adobe.marketing.mobile:identity:3.0.0-beta.1-SNAPSHOT") {
+        exclude(group = "com.adobe.marketing.mobile", module = "core")
+    }
     implementation("com.adobe.marketing.mobile:assurance:3.0.0-SNAPSHOT") {
         exclude(group = "com.adobe.marketing.mobile", module = "core")
     }
