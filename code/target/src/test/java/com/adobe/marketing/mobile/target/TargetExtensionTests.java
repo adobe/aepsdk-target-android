@@ -38,6 +38,7 @@ import com.adobe.marketing.mobile.ExtensionApi;
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.SharedStateResult;
 import com.adobe.marketing.mobile.SharedStateStatus;
+import com.adobe.marketing.mobile.Target;
 import com.adobe.marketing.mobile.services.AppContextService;
 import com.adobe.marketing.mobile.services.DataStoring;
 import com.adobe.marketing.mobile.services.DeviceInforming;
@@ -322,7 +323,7 @@ public class TargetExtensionTests {
                     final String extensionVersion = extension.getVersion();
                     assertEquals(
                             "getVersion should return the correct extension version.",
-                            "3.0.0",
+                            Target.EXTENSION_VERSION,
                             extensionVersion);
                 });
     }

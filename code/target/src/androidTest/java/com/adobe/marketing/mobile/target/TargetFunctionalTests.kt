@@ -262,7 +262,7 @@ class TargetFunctionalTests {
     // 1
     @Test
     fun testExtensionVersion() {
-        assertEquals(TargetTestConstants.EXTENSION_VERSION, Target.extensionVersion())
+        assertEquals(Target.EXTENSION_VERSION, Target.extensionVersion())
     }
 
     // ---------------------------------------------------//
@@ -298,7 +298,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 2
@@ -340,7 +340,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 3
@@ -372,7 +372,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 4
@@ -418,7 +418,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 5
@@ -455,7 +455,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 6
@@ -494,7 +494,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 7
@@ -546,7 +546,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 8
@@ -568,7 +568,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 9
@@ -696,7 +696,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 13
@@ -717,7 +717,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 14
@@ -764,7 +764,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 18
@@ -828,7 +828,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 19
@@ -889,7 +889,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // setup
         val retrieveLocationCountdownLatch = CountDownLatch(1)
@@ -942,7 +942,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 24
@@ -994,7 +994,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 25
@@ -1033,7 +1033,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // **********************************************************************************************
@@ -1056,7 +1056,7 @@ class TargetFunctionalTests {
         assertNull(prefetchErrorStatus)
 
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // test
         resetNetworkMonitor()
@@ -1092,7 +1092,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 29
@@ -1128,7 +1128,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // **********************************************************************************************
@@ -1163,7 +1163,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // reset
         resetNetworkMonitor()
@@ -1201,7 +1201,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // Test Case No : 38
@@ -1412,7 +1412,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     // **********************************************************************************************
@@ -1513,7 +1513,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // Verify server response
         assertEquals(1, responseDataList.size.toLong())
@@ -1738,7 +1738,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // Verify server response
         assertEquals(1, responseDataList.size.toLong())
@@ -1820,7 +1820,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     @Test
@@ -1901,7 +1901,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // Verify server response
         assertEquals(1, responseDataList.size.toLong())
@@ -1982,7 +1982,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     @Test
@@ -2082,7 +2082,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
     }
 
     @Test
@@ -2130,7 +2130,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // reset the updated configuration
         // so that it doesn't get carry forwarded to other tests
@@ -2180,7 +2180,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // clear the rules
         resetRules()
@@ -2225,7 +2225,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // clear the rules
         resetRules()
@@ -2267,7 +2267,7 @@ class TargetFunctionalTests {
 
         // verify request headers
         assertEquals("AdobeTargetMobile-Android", networkRequestHeaders?.get("X-EXC-SDK"))
-        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), TargetTestConstants.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
+        assertEquals(String.format("%s+%s", MobileCore.extensionVersion(), Target.EXTENSION_VERSION), networkRequestHeaders?.get("X-EXC-SDK-Version"))
 
         // clear the rules
         resetRules()
