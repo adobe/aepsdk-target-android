@@ -15,6 +15,8 @@ plugins {
     id("com.android.application")
 }
 
+val mavenCoreVersion: String by project
+
 android {
       namespace = "com.adobe.targettestapp"
 
@@ -36,11 +38,10 @@ android {
 
 dependencies {
     implementation(project(":target"))
-    implementation("com.adobe.marketing.mobile:core:2.+")
-    implementation("com.adobe.marketing.mobile:assurance:2.+")
-    implementation("com.adobe.marketing.mobile:edge:2.+")
-    implementation("com.adobe.marketing.mobile:lifecycle:2.+")
-    implementation("com.adobe.marketing.mobile:identity:2.+")
+    implementation("com.adobe.marketing.mobile:core:$mavenCoreVersion")
+    implementation("com.adobe.marketing.mobile:lifecycle:3.0.0-beta.1-SNAPSHOT")
+    implementation("com.adobe.marketing.mobile:identity:3.0.0-beta.1-SNAPSHOT")
+    implementation("com.adobe.marketing.mobile:assurance:3.0.0-beta.1-SNAPSHOT")
 
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
