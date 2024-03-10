@@ -301,10 +301,10 @@ class TargetResponseParser {
      * from the first option in the options list.
      *
      * @param mboxJson Mbox {@link JSONObject}
-     * @return Response Tokens from options payload as {@code Map<String, String>} OR null if
-     *     Response Tokens are not activated on Target.
+     * @return Response tokens from options payload as {@code Map<String, Object>}, or null if
+     *     response tokens are not activated on Target.
      */
-    Map<String, String> getResponseTokens(final JSONObject mboxJson) {
+    Map<String, Object> getResponseTokens(final JSONObject mboxJson) {
         if (mboxJson == null) {
             return null;
         }
@@ -330,7 +330,18 @@ class TargetResponseParser {
             return null;
         }
 
-        return TargetUtils.toStringMap(responseTokens);
+        Map<String, Object> responseTokensMap = null;
+        try {
+            responseTokensMap = JSONUtils.toMap(responseTokens);
+        } catch (final JSONException e) {
+            Log.debug(
+                    TargetConstants.LOG_TAG,
+                    CLASS_NAME,
+                    "Exception (%s) is thrown when parsing response tokens to create an object"
+                            + " Map.",
+                    e);
+        }
+        return responseTokensMap;
     }
 
     /**

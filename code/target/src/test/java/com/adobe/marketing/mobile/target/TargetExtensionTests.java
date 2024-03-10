@@ -55,6 +55,7 @@ import com.adobe.marketing.mobile.util.DataReader;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -133,11 +134,26 @@ public class TargetExtensionTests {
                             });
                 }
             };
-
-    private static final Map<String, String> responseTokens =
+    private static final Map<String, Object> responseTokens =
             new HashMap() {
                 {
                     put("responseTokens.Key", "responseTokens.Value");
+                    put(
+                            "profile.categoryAffinities",
+                            new ArrayList<String>() {
+                                {
+                                    add("books");
+                                }
+                            });
+                    put(
+                            "someKey",
+                            new ArrayList<Object>() {
+                                {
+                                    add("someValue");
+                                    add(true);
+                                    add(42);
+                                }
+                            });
                 }
             };
 
@@ -868,72 +884,81 @@ public class TargetExtensionTests {
     public void testLoadRequests_whenValidResponse() {
         runWithMockedServiceProvider(
                 () -> {
-                    // setup
-                    final JSONObject validMboxResponse;
                     try {
-                        validMboxResponse =
+                        // setup
+                        final JSONObject validMboxResponse =
                                 new JSONObject(
                                         "{\"options\": [{\"content\": \"mbox0content\", \"type\":"
                                                 + " \"html\"}]}");
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
-                    }
-                    try {
                         when(responseParser.parseResponseToJson(any()))
                                 .thenReturn(validJSONObject());
+                        when(responseParser.getTntId(any())).thenReturn(MOCK_TNT_ID_1);
+                        when(responseParser.getEdgeHost(any())).thenReturn(MOCK_EDGE_HOST);
+                        when(responseParser.extractBatchedMBoxes(any()))
+                                .thenReturn(
+                                        new HashMap<String, JSONObject>() {
+                                            {
+                                                put("mbox0", validMboxResponse);
+                                            }
+                                        });
+                        when(responseParser.extractMboxContent(eq(validMboxResponse)))
+                                .thenReturn("mbox0content");
+                        when(responseParser.extractMboxContent(eq(validMboxResponse)))
+                                .thenReturn("mbox0content");
+                        when(responseParser.getResponseTokens(eq(validMboxResponse)))
+                                .thenReturn(responseTokens);
+                        when(responseParser.extractClickMetricAnalyticsPayload(
+                                        eq(validMboxResponse)))
+                                .thenReturn(clickMetricA4TParams);
+                        when(responseParser.getAnalyticsForTargetPayload(eq(validMboxResponse)))
+                                .thenReturn(a4tParams);
+                        when(responseParser.getAnalyticsForTargetPayload(any(), any()))
+                                .thenReturn(a4tParams);
+
+                        // test
+                        Event event = loadRequestEvent(getTargetRequestList(1), null);
+                        extension.handleTargetRequestContentEvent(event);
+                        verify(networkService).connectAsync(any(), networkCallbackCaptor.capture());
+                        networkCallbackCaptor.getValue().call(connecting);
+
+                        // verify the target state are correctly set from response
+                        verify(targetState).clearNotifications();
+                        verify(targetState).updateSessionTimestamp(eq(false));
+                        verify(targetState).updateEdgeHost(MOCK_EDGE_HOST);
+                        verify(targetState).updateTntId(MOCK_TNT_ID_1);
+                        verify(mockExtensionApi)
+                                .createSharedState(eq(targetSharedState), eq(event));
+                        verify(mockExtensionApi, times(2)).dispatch(eventArgumentCaptor.capture());
+                        Event a4tEvent = eventArgumentCaptor.getAllValues().get(0);
+                        Event mboxContentEvent = eventArgumentCaptor.getAllValues().get(1);
+
+                        // verify the a4t event
+                        assertEquals(EventType.ANALYTICS, a4tEvent.getType());
+                        assertEquals(EventSource.REQUEST_CONTENT, a4tEvent.getSource());
+                        assertEquals(true, a4tEvent.getEventData().get("trackinternal"));
+                        assertEquals("AnalyticsForTarget", a4tEvent.getEventData().get("action"));
+                        assertEquals(a4tParams, a4tEvent.getEventData().get("contextdata"));
+
+                        // verify the dispatched mbox content event
+                        assertEquals("mbox0content", extractMboxContentFromEvent(mboxContentEvent));
+                        final Map<String, Object> responseTokens =
+                                extractResponseToken(mboxContentEvent);
+                        assertEquals(3, responseTokens.size());
+                        assertEquals(
+                                "responseTokens.Value", responseTokens.get("responseTokens.Key"));
+                        assertEquals(
+                                new ArrayList<String>(Collections.singletonList("books")),
+                                responseTokens.get("profile.categoryAffinities"));
+                        final List<Object> someList = (List<Object>) responseTokens.get("someKey");
+                        assertEquals(3, someList.size());
+                        assertEquals("someValue", someList.get(0));
+                        assertTrue((Boolean) someList.get(1));
+                        assertEquals(42, (int) someList.get(2));
+                        assertEquals(a4tParams, extractAnalyticsPayload(mboxContentEvent));
+                        assertEquals(clickMetricA4TParams, extractClickMetric(mboxContentEvent));
                     } catch (JSONException e) {
                         throw new RuntimeException(e);
                     }
-                    when(responseParser.getTntId(any())).thenReturn(MOCK_TNT_ID_1);
-                    when(responseParser.getEdgeHost(any())).thenReturn(MOCK_EDGE_HOST);
-                    when(responseParser.extractBatchedMBoxes(any()))
-                            .thenReturn(
-                                    new HashMap<String, JSONObject>() {
-                                        {
-                                            put("mbox0", validMboxResponse);
-                                        }
-                                    });
-                    when(responseParser.extractMboxContent(eq(validMboxResponse)))
-                            .thenReturn("mbox0content");
-                    when(responseParser.extractMboxContent(eq(validMboxResponse)))
-                            .thenReturn("mbox0content");
-                    when(responseParser.getResponseTokens(eq(validMboxResponse)))
-                            .thenReturn(responseTokens);
-                    when(responseParser.extractClickMetricAnalyticsPayload(eq(validMboxResponse)))
-                            .thenReturn(clickMetricA4TParams);
-                    when(responseParser.getAnalyticsForTargetPayload(eq(validMboxResponse)))
-                            .thenReturn(a4tParams);
-                    when(responseParser.getAnalyticsForTargetPayload(any(), any()))
-                            .thenReturn(a4tParams);
-
-                    // test
-                    Event event = loadRequestEvent(getTargetRequestList(1), null);
-                    extension.handleTargetRequestContentEvent(event);
-                    verify(networkService).connectAsync(any(), networkCallbackCaptor.capture());
-                    networkCallbackCaptor.getValue().call(connecting);
-
-                    // verify the target state are correctly set from response
-                    verify(targetState).clearNotifications();
-                    verify(targetState).updateSessionTimestamp(eq(false));
-                    verify(targetState).updateEdgeHost(MOCK_EDGE_HOST);
-                    verify(targetState).updateTntId(MOCK_TNT_ID_1);
-                    verify(mockExtensionApi).createSharedState(eq(targetSharedState), eq(event));
-                    verify(mockExtensionApi, times(2)).dispatch(eventArgumentCaptor.capture());
-                    Event a4tEvent = eventArgumentCaptor.getAllValues().get(0);
-                    Event mboxContentEvent = eventArgumentCaptor.getAllValues().get(1);
-
-                    // verify the a4t event
-                    assertEquals(EventType.ANALYTICS, a4tEvent.getType());
-                    assertEquals(EventSource.REQUEST_CONTENT, a4tEvent.getSource());
-                    assertEquals(true, a4tEvent.getEventData().get("trackinternal"));
-                    assertEquals("AnalyticsForTarget", a4tEvent.getEventData().get("action"));
-                    assertEquals(a4tParams, a4tEvent.getEventData().get("contextdata"));
-
-                    // verify the dispatched mbox content event
-                    assertEquals("mbox0content", extractMboxContentFromEvent(mboxContentEvent));
-                    assertEquals(responseTokens, extractResponseToken(mboxContentEvent));
-                    assertEquals(a4tParams, extractAnalyticsPayload(mboxContentEvent));
-                    assertEquals(clickMetricA4TParams, extractClickMetric(mboxContentEvent));
                 });
     }
 
@@ -2963,7 +2988,6 @@ public class TargetExtensionTests {
     // **********************************************************************************************
     // handleConfigurationResponseContentEvent
     // **********************************************************************************************
-
     @Test
     public void testHandleConfigurationResponseContentEvent_whenPrivacyOptedOut() {
         runWithMockedServiceProvider(
@@ -2979,7 +3003,6 @@ public class TargetExtensionTests {
                     // verify
                     verify(targetState, times(2)).updateEdgeHost(null);
                     verify(targetState).resetSession();
-                    ;
                     verify(targetState).updateTntId(null);
                     verify(targetState).updateThirdPartyId(null);
                     verify(mockExtensionApi).createSharedState(eq(targetSharedState), eq(event));
@@ -3183,7 +3206,6 @@ public class TargetExtensionTests {
 
         for (int i = 0; i < count; i++) {
             final String notificationId = String.valueOf(i);
-            ;
             final String mboxName = "mbox" + i;
             final Map<String, Object> notification =
                     new HashMap<String, Object>() {
@@ -3495,7 +3517,7 @@ public class TargetExtensionTests {
         return DataReader.optString(event.getEventData(), EventDataKeys.TARGET_CONTENT, "");
     }
 
-    private Map<String, String> extractResponseToken(final Event event) {
+    private Map<String, Object> extractResponseToken(final Event event) {
         Map<String, Map> data =
                 DataReader.optTypedMap(
                         Map.class, event.getEventData(), EventDataKeys.TARGET_DATA_PAYLOAD, null);
