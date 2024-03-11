@@ -1353,7 +1353,7 @@ public class TargetExtension extends Extension {
             final String content = targetResponseParser.extractMboxContent(cachedMboxJson);
             final Map<String, String> a4tParams =
                     targetResponseParser.getAnalyticsForTargetPayload(cachedMboxJson);
-            final Map<String, String> responseTokens =
+            final Map<String, Object> responseTokens =
                     targetResponseParser.getResponseTokens(cachedMboxJson);
             final Map<String, String> clickMetricA4TParams =
                     targetResponseParser.extractClickMetricAnalyticsPayload(cachedMboxJson);
@@ -1464,7 +1464,7 @@ public class TargetExtension extends Extension {
 
             final JSONObject mboxJson = batchedMboxes.get(targetRequest.getMboxName());
             final String content = targetResponseParser.extractMboxContent(mboxJson);
-            final Map<String, String> responseTokens =
+            final Map<String, Object> responseTokens =
                     targetResponseParser.getResponseTokens(mboxJson);
             final Map<String, String> clickMetricA4TParams =
                     targetResponseParser.extractClickMetricAnalyticsPayload(mboxJson);
@@ -1756,7 +1756,7 @@ public class TargetExtension extends Extension {
             final String content,
             final Map<String, String> a4tParams,
             final Map<String, String> clickMetricA4TParams,
-            final Map<String, String> responseTokens,
+            final Map<String, Object> responseTokens,
             final String pairId,
             final Event event) {
         final Map<String, Object> data = new HashMap<>();
