@@ -17,7 +17,7 @@ val mavenCoreVersion: String by project
 val functionalTestIdentityVersion: String by project
 
 aepLibrary {
-    namespace = "com.adobe.marketing.mobile"
+    namespace = "com.adobe.marketing.mobile.target"
     enableSpotless = true
     enableCheckStyle = true
 
