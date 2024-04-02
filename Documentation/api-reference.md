@@ -282,7 +282,7 @@ Target.prefetchContent(prefetchMboxesList, targetParameters, prefetchStatusCallb
 ### registerExtension
 
 > **Warning**
-> This API is deprecated from version 2.0.0. Please use Mobile Core's [registerExtensions](https://github.com/adobe/aepsdk-core-android/blob/main/Documentation/MobileCore/api-reference.md) API instead.
+> This API is removed from version 3.0.0. Please use Mobile Core's [registerExtensions](https://github.com/adobe/aepsdk-core-android/blob/main/Documentation/MobileCore/api-reference.md) API instead.
 
 Registers the Target extension with the Mobile Core.
 
