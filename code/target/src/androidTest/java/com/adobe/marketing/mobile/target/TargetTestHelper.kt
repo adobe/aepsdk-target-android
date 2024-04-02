@@ -1,5 +1,5 @@
 /*
-  Copyright 2022 Adobe. All rights reserved.
+  Copyright 2023 Adobe. All rights reserved.
   This file is licensed to you under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License. You may obtain a copy
   of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -7,11 +7,11 @@
   the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
   OF ANY KIND, either express or implied. See the License for the specific language
   governing permissions and limitations under the License.
- */
+*/
+
 package com.adobe.marketing.mobile.target
 
 import com.adobe.marketing.mobile.services.DeviceInforming
-import com.adobe.marketing.mobile.services.Log
 import com.adobe.marketing.mobile.services.ServiceProvider
 import com.adobe.marketing.mobile.util.StringUtils
 import org.json.JSONArray
@@ -67,9 +67,9 @@ internal object TargetTestHelper {
     private const val TARGET_ERROR_MESSAGE = "message"
     private const val TARGET_REQUEST_ID_VALUE = "95ba3643-ea07-4ed8-a422-c5d1a0c4b145"
 
-    //======================================================================================================================================
+    // ======================================================================================================================================
     // target helper methods
-    //======================================================================================================================================
+    // ======================================================================================================================================
     @JvmStatic
     fun getResponseForTarget(
         errorMessage: String?,
@@ -82,14 +82,14 @@ internal object TargetTestHelper {
         clickMetricAnalyticPayloads: Array<JSONObject?>?,
         isPrefetch: Boolean,
         isClickMetricAdded: Boolean
-    ) : InputStream? {
+    ): InputStream? {
         // val targetRequestMatcher = E2ERequestMatcher(".tt.omtrdc.net/rest/v1/delivery/")
         val responseString: String?
         var prefetchResponses: JSONArray? = JSONArray()
         var mboxResponses: JSONArray? = JSONArray()
         val mBoxResponseMap = getMBoxesResponseMap(content)
 
-        //create mbox responses for each mbox loaded/prefetched. two paths are needed due to a4t payload.
+        // create mbox responses for each mbox loaded/prefetched. two paths are needed due to a4t payload.
         if (a4tPayloads != null) {
             for (i in mboxNames.indices) {
                 val a4tToInsert = a4tPayloads[i]
@@ -172,7 +172,7 @@ internal object TargetTestHelper {
             }
         }
 
-        //prevent creation of an empty prefetch or mbox node in the response string.
+        // prevent creation of an empty prefetch or mbox node in the response string.
         if (prefetchResponses!!.length() == 0) {
             prefetchResponses = null
         }
@@ -180,7 +180,7 @@ internal object TargetTestHelper {
             mboxResponses = null
         }
 
-        //create the response string and set the response in the testable network service
+        // create the response string and set the response in the testable network service
         responseString = createTargetResponseString(
             errorMessage, clientCode, prefetchResponses, mboxResponses, edgeHost, tntId,
             null, null
@@ -266,10 +266,14 @@ internal object TargetTestHelper {
     }
 
     private fun createTargetResponseString(
-        errorMessage: String?, clientCode: String?,
+        errorMessage: String?,
+        clientCode: String?,
         prefetchArray: JSONArray?,
         mboxArray: JSONArray?,
-        edgeHost: String?, tntId: String?, thirdPartyId: String?, marketingCloudID: String?
+        edgeHost: String?,
+        tntId: String?,
+        thirdPartyId: String?,
+        marketingCloudID: String?
     ): String? {
         return try {
             val response = JSONObject()
@@ -337,8 +341,8 @@ internal object TargetTestHelper {
             val mboxNode = mboxJSONArray.optJSONObject(i)
             if (mboxNode == null || StringUtils.isNullOrEmpty(
                     mboxNode.optString(
-                        TARGET_API_JSON_MBOX, ""
-                    )
+                            TARGET_API_JSON_MBOX, ""
+                        )
                 )
             ) {
                 continue
@@ -383,8 +387,8 @@ internal object TargetTestHelper {
     @JvmStatic
     fun readInputStreamFromFile(
         fileName: String,
-    ) : InputStream? {
-        return this::class.java.classLoader?.getResource("${fileName}.zip")
-                ?.openStream()!!
+    ): InputStream? {
+        return this::class.java.classLoader?.getResource("$fileName.zip")
+            ?.openStream()!!
     }
 }
