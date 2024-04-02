@@ -1,14 +1,13 @@
 /*
- Copyright 2022 Adobe. All rights reserved.
- This file is licensed to you under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License. You may obtain a copy
- of the License at http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software distributed under
- the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
- OF ANY KIND, either express or implied. See the License for the specific language
- governing permissions and limitations under the License.
- */
+  Copyright 2022 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile.target;
 
@@ -16,21 +15,18 @@ import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
 import com.adobe.marketing.mobile.util.StringUtils;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * Class for specifying Target order parameters
- */
+/** Class for specifying Target order parameters */
 public class TargetOrder {
     private static final String CLASS_NAME = "TargetOrder";
 
-    final private String id;
-    final private double total;
-    final private List<String> purchasedProductIds;
+    private final String id;
+    private final double total;
+    private final List<String> purchasedProductIds;
 
     /**
      * Initialize a {@link TargetOrder} with an order {@link #id}, order {@link #total} and a list
@@ -40,7 +36,8 @@ public class TargetOrder {
      * @param total {@code double} order total amount
      * @param purchasedProductIds a list of purchased product ids
      */
-    public TargetOrder(final String id, final double total, final List<String> purchasedProductIds) {
+    public TargetOrder(
+            final String id, final double total, final List<String> purchasedProductIds) {
         this.id = id;
         this.total = total;
         this.purchasedProductIds = purchasedProductIds;
@@ -82,14 +79,16 @@ public class TargetOrder {
         final Map<String, Object> orderMap = new HashMap<>();
         orderMap.put(TargetConstants.EventDataKeys.Order.ID, this.id);
         orderMap.put(TargetConstants.EventDataKeys.Order.TOTAL, this.total);
-        orderMap.put(TargetConstants.EventDataKeys.Order.PURCHASED_PRODUCT_IDS, this.purchasedProductIds);
+        orderMap.put(
+                TargetConstants.EventDataKeys.Order.PURCHASED_PRODUCT_IDS,
+                this.purchasedProductIds);
         return orderMap;
     }
 
     /**
      * Creates a {@code TargetOrder} object using information provided in {@code data} map.
-     * <p>
-     * This method returns null if the provided {@code data} is null or empty, or if it does not
+     *
+     * <p>This method returns null if the provided {@code data} is null or empty, or if it does not
      * contain required info for creating a {@link TargetOrder} object.
      *
      * @param data {@code Map<String, Object>} containing Target Order data.
@@ -97,22 +96,36 @@ public class TargetOrder {
      */
     static TargetOrder fromEventData(final Map<String, Object> data) {
         if (TargetUtils.isNullOrEmpty(data)) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetOrder object, provided data Map is empty or null.");
+            Log.debug(
+                    TargetConstants.LOG_TAG,
+                    CLASS_NAME,
+                    "Cannot create TargetOrder object, provided data Map is empty or null.");
             return null;
         }
 
         try {
             final String id = DataReader.getString(data, TargetConstants.EventDataKeys.Order.ID);
             if (StringUtils.isNullOrEmpty(id)) {
-                Log.debug(TargetConstants.LOG_TAG, CLASS_NAME, "Cannot create TargetOrder object, provided data Map doesn't contain valid order ID.");
+                Log.debug(
+                        TargetConstants.LOG_TAG,
+                        CLASS_NAME,
+                        "Cannot create TargetOrder object, provided data Map doesn't contain valid"
+                                + " order ID.");
                 return null;
             }
-            final double total = DataReader.getDouble(data, TargetConstants.EventDataKeys.Order.TOTAL);
-            final List<String> purchasedProductIds = DataReader.getStringList(data, TargetConstants.EventDataKeys.Order.PURCHASED_PRODUCT_IDS);
+            final double total =
+                    DataReader.getDouble(data, TargetConstants.EventDataKeys.Order.TOTAL);
+            final List<String> purchasedProductIds =
+                    DataReader.getStringList(
+                            data, TargetConstants.EventDataKeys.Order.PURCHASED_PRODUCT_IDS);
 
             return new TargetOrder(id, total, purchasedProductIds);
         } catch (final DataReaderException e) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetOrder object, provided data contains invalid fields (%s).", e.getLocalizedMessage());
+            Log.warning(
+                    TargetConstants.LOG_TAG,
+                    CLASS_NAME,
+                    "Cannot create TargetOrder object, provided data contains invalid fields (%s).",
+                    e.getLocalizedMessage());
             return null;
         }
     }
@@ -125,7 +138,9 @@ public class TargetOrder {
         TargetOrder that = (TargetOrder) o;
         if (id != null ? !id.equals(that.id) : that.id != null) return false;
         if (total != that.total) return false;
-        return purchasedProductIds != null ? purchasedProductIds.equals(that.purchasedProductIds) : that.purchasedProductIds == null;
+        return purchasedProductIds != null
+                ? purchasedProductIds.equals(that.purchasedProductIds)
+                : that.purchasedProductIds == null;
     }
 
     @Override

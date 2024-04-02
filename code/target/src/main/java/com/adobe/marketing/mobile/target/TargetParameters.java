@@ -1,44 +1,44 @@
 /*
- Copyright 2022 Adobe. All rights reserved.
- This file is licensed to you under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License. You may obtain a copy
- of the License at http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software distributed under
- the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
- OF ANY KIND, either express or implied. See the License for the specific language
- governing permissions and limitations under the License.
- */
+  Copyright 2022 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile.target;
 
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * Target parameter class, used for specifying custom parameters to be sent in Target requests,
- * such as location (former mbox) parameters, profile parameters, order/product parameters.<br>
- *
+ * Target parameter class, used for specifying custom parameters to be sent in Target requests, such
+ * as location (former mbox) parameters, profile parameters, order/product parameters.<br>
  * Use {@link TargetParameters.Builder} to build the desired parameters
  */
-
 public class TargetParameters {
     private static final String CLASS_NAME = "TargetParameters";
 
-    final private Map<String, String> parameters;
-    final private Map<String, String> profileParameters;
-    final private TargetProduct product;
-    final private TargetOrder order;
+    private final Map<String, String> parameters;
+    private final Map<String, String> profileParameters;
+    private final TargetProduct product;
+    private final TargetOrder order;
 
     private TargetParameters(final Builder builder) {
-        this.parameters = builder.parameters == null ? new HashMap<String, String>() : builder.parameters;
-        this.profileParameters = builder.profileParameters == null ? new HashMap<String, String>() : builder.profileParameters;
+        this.parameters =
+                builder.parameters == null ? new HashMap<String, String>() : builder.parameters;
+        this.profileParameters =
+                builder.profileParameters == null
+                        ? new HashMap<String, String>()
+                        : builder.profileParameters;
         this.product = builder.product;
         this.order = builder.order;
     }
@@ -108,16 +108,22 @@ public class TargetParameters {
                     mergedParams.remove("");
                 }
             } catch (final Exception e) {
-                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to merge parameters, (%s)", e);
+                Log.warning(
+                        TargetConstants.LOG_TAG, CLASS_NAME, "Failed to merge parameters, (%s)", e);
             }
 
             try {
-                if (targetParams.profileParameters != null && targetParams.profileParameters.size() > 0) {
+                if (targetParams.profileParameters != null
+                        && targetParams.profileParameters.size() > 0) {
                     mergedProfileParams.putAll(targetParams.profileParameters);
                     mergedProfileParams.remove("");
                 }
             } catch (final Exception e) {
-                Log.warning(TargetConstants.LOG_TAG, CLASS_NAME, "Failed to merge profile parameters, (%s)", e);
+                Log.warning(
+                        TargetConstants.LOG_TAG,
+                        CLASS_NAME,
+                        "Failed to merge profile parameters, (%s)",
+                        e);
             }
 
             if (targetParams.product != null) {
@@ -136,15 +142,14 @@ public class TargetParameters {
                 .build();
     }
 
+    /** Builder class for {@link TargetParameters} */
     public static class Builder {
         private Map<String, String> parameters;
         private Map<String, String> profileParameters;
         private TargetProduct product;
         private TargetOrder order;
 
-        /**
-         * Create a {@link TargetParameters} object Builder
-         */
+        /** Create a {@link TargetParameters} object Builder */
         public Builder() {}
 
         /**
@@ -220,18 +225,20 @@ public class TargetParameters {
         parametersMap.put(TargetConstants.EventDataKeys.MBOX_PARAMETERS, this.parameters);
         parametersMap.put(TargetConstants.EventDataKeys.PROFILE_PARAMETERS, this.profileParameters);
         if (this.order != null) {
-            parametersMap.put(TargetConstants.EventDataKeys.ORDER_PARAMETERS, this.order.toEventData());
+            parametersMap.put(
+                    TargetConstants.EventDataKeys.ORDER_PARAMETERS, this.order.toEventData());
         }
         if (this.product != null) {
-            parametersMap.put(TargetConstants.EventDataKeys.PRODUCT_PARAMETERS, this.product.toEventData());
+            parametersMap.put(
+                    TargetConstants.EventDataKeys.PRODUCT_PARAMETERS, this.product.toEventData());
         }
         return parametersMap;
     }
 
     /**
      * Creates a {@code TargetParameters} object using information provided in {@code data} map.
-     * <p>
-     * This method returns null if the provided {@code data} is null or empty, or if it does not
+     *
+     * <p>This method returns null if the provided {@code data} is null or empty, or if it does not
      * contain required info for creating a {@link TargetParameters} object.
      *
      * @param data {@code Map<String, Object>} containing Target parameters data.
@@ -239,15 +246,23 @@ public class TargetParameters {
      */
     static TargetParameters fromEventData(final Map<String, Object> data) {
         if (TargetUtils.isNullOrEmpty(data)) {
-            Log.debug(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetParameters object, provided data Map is empty or null.");
+            Log.debug(
+                    TargetConstants.LOG_TAG,
+                    CLASS_NAME,
+                    "Cannot create TargetParameters object, provided data Map is empty or null.");
             return null;
         }
 
         try {
-            final Map<String, String> parameters = DataReader.getStringMap(data, TargetConstants.EventDataKeys.MBOX_PARAMETERS);
-            final Map<String, String> profileParameters = DataReader.getStringMap(data, TargetConstants.EventDataKeys.PROFILE_PARAMETERS);
-            final Map<String, String> productParameters = DataReader.getStringMap(data, TargetConstants.EventDataKeys.PRODUCT_PARAMETERS);
-            final Map<String, Object> orderParameters = DataReader.getTypedMap(Object.class, data, TargetConstants.EventDataKeys.ORDER_PARAMETERS);
+            final Map<String, String> parameters =
+                    DataReader.getStringMap(data, TargetConstants.EventDataKeys.MBOX_PARAMETERS);
+            final Map<String, String> profileParameters =
+                    DataReader.getStringMap(data, TargetConstants.EventDataKeys.PROFILE_PARAMETERS);
+            final Map<String, String> productParameters =
+                    DataReader.getStringMap(data, TargetConstants.EventDataKeys.PRODUCT_PARAMETERS);
+            final Map<String, Object> orderParameters =
+                    DataReader.getTypedMap(
+                            Object.class, data, TargetConstants.EventDataKeys.ORDER_PARAMETERS);
 
             return new TargetParameters.Builder()
                     .parameters(parameters)
@@ -256,7 +271,10 @@ public class TargetParameters {
                     .product(TargetProduct.fromEventData(productParameters))
                     .build();
         } catch (final DataReaderException e) {
-            Log.warning(TargetConstants.LOG_TAG, CLASS_NAME,"Cannot create TargetProduct object, provided data contains invalid fields.");
+            Log.warning(
+                    TargetConstants.LOG_TAG,
+                    CLASS_NAME,
+                    "Cannot create TargetProduct object, provided data contains invalid fields.");
             return null;
         }
     }
@@ -267,8 +285,11 @@ public class TargetParameters {
         if (o == null || getClass() != o.getClass()) return false;
 
         TargetParameters that = (TargetParameters) o;
-        if (parameters != null ? !parameters.equals(that.parameters) : that.parameters != null) return false;
-        if (profileParameters != null ? !profileParameters.equals(that.profileParameters) : that.profileParameters != null) return false;
+        if (parameters != null ? !parameters.equals(that.parameters) : that.parameters != null)
+            return false;
+        if (profileParameters != null
+                ? !profileParameters.equals(that.profileParameters)
+                : that.profileParameters != null) return false;
         if (order != null ? !order.equals(that.order) : that.order != null) return false;
         return product != null ? product.equals(that.product) : that.product == null;
     }
