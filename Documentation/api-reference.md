@@ -13,7 +13,6 @@ Refer to the [Getting Started Guide](getting-started.md).
 - [getSessionId](#getSessionId)
 - [getThirdPartyId](#getThirdPartyId)
 - [prefetchContent](#prefetchContent)
-- [registerExtension](#registerExtension)
 - [resetExperience](#resetExperience)
 - [retrieveLocationContent](#retrieveLocationContent)
 - [setPreviewRestartDeepLink](#setPreviewRestartDeepLink)
@@ -277,25 +276,6 @@ prefetchMboxesList.add(prefetchRequest2);
 // Call the prefetchContent API.
 TargetParamters targetParameters = null;
 Target.prefetchContent(prefetchMboxesList, targetParameters, prefetchStatusCallback);
-```
-
-### registerExtension
-
-> **Warning**
-> This API is removed from version 3.0.0. Please use Mobile Core's [registerExtensions](https://github.com/adobe/aepsdk-core-android/blob/main/Documentation/MobileCore/api-reference.md) API instead.
-
-Registers the Target extension with the Mobile Core.
-
-**Syntax**
-
-```java
-public static void registerExtension()
-```
-
-**Example**
-
-```java
-Target.registerExtension();
 ```
 
 ### resetExperience
