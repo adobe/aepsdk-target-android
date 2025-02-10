@@ -39,7 +39,7 @@ public class Target {
 
     static final String LOG_TAG = "Target";
     private static final String CLASS_NAME = "Target";
-    public static final String EXTENSION_VERSION = "3.0.0";
+    public static final String EXTENSION_VERSION = "3.0.1";
 
     static final class EventName {
         static final String PREFETCH_REQUEST = "TargetPrefetchRequest";
