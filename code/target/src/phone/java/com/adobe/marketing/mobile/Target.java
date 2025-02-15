@@ -1005,13 +1005,12 @@ public class Target {
                                                 EventDataKeys.TARGET_CONTENT,
                                                 request.getDefaultContent()));
                             }
-                        } catch (NullPointerException e) {
+                        } catch (Exception e) {
                             Log.warning(
                                     LOG_TAG,
                                     CLASS_NAME,
-                                    "Cannot return mbox content and payload, provided AdobeCallback"
-                                            + " (callback) is null.",
-                                    requestSearchId);
+                                    "Exception (%s) when calling provided AdobeCallback.",
+                                    e.getLocalizedMessage());
                         }
                     });
             isResponseListenerRegistered = true;
