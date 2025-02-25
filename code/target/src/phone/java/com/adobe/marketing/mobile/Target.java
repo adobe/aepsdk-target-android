@@ -39,7 +39,7 @@ public class Target {
 
     static final String LOG_TAG = "Target";
     private static final String CLASS_NAME = "Target";
-    public static final String EXTENSION_VERSION = "3.0.1";
+    public static final String EXTENSION_VERSION = "3.0.2";
 
     static final class EventName {
         static final String PREFETCH_REQUEST = "TargetPrefetchRequest";
@@ -982,27 +982,35 @@ public class Target {
                         final AdobeTargetDetailedCallback contentWithDataCallback =
                                 request.getContentWithDataCallback();
 
-                        if (contentWithDataCallback != null) {
-                            final Map<String, Object> mboxPayloadMap =
-                                    createMboxPayloadMap(
-                                            DataReader.optTypedMap(
-                                                    Object.class,
-                                                    eventData,
-                                                    EventDataKeys.TARGET_DATA_PAYLOAD,
-                                                    null),
-                                            request);
-                            final String content =
-                                    DataReader.optString(
-                                            eventData,
-                                            EventDataKeys.TARGET_CONTENT,
-                                            request.getDefaultContent());
-                            contentWithDataCallback.call(content, mboxPayloadMap);
-                        } else if (callback != null) {
-                            callback.call(
-                                    DataReader.optString(
-                                            eventData,
-                                            EventDataKeys.TARGET_CONTENT,
-                                            request.getDefaultContent()));
+                        try {
+                            if (contentWithDataCallback != null) {
+                                final Map<String, Object> mboxPayloadMap =
+                                        createMboxPayloadMap(
+                                                DataReader.optTypedMap(
+                                                        Object.class,
+                                                        eventData,
+                                                        EventDataKeys.TARGET_DATA_PAYLOAD,
+                                                        null),
+                                                request);
+                                final String content =
+                                        DataReader.optString(
+                                                eventData,
+                                                EventDataKeys.TARGET_CONTENT,
+                                                request.getDefaultContent());
+                                contentWithDataCallback.call(content, mboxPayloadMap);
+                            } else if (callback != null) {
+                                callback.call(
+                                        DataReader.optString(
+                                                eventData,
+                                                EventDataKeys.TARGET_CONTENT,
+                                                request.getDefaultContent()));
+                            }
+                        } catch (Exception e) {
+                            Log.warning(
+                                    LOG_TAG,
+                                    CLASS_NAME,
+                                    "Exception (%s) when calling provided AdobeCallback.",
+                                    e.getLocalizedMessage());
                         }
                     });
             isResponseListenerRegistered = true;
