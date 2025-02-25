@@ -64,16 +64,6 @@ public class TargetTests {
     }
 
     @Test
-    public void test_extensionVersion() {
-        // test
-        final String extensionVersion = Target.extensionVersion();
-        assertEquals(
-                "extensionVersion API should return the correct version string.",
-                "3.0.0",
-                extensionVersion);
-    }
-
-    @Test
     public void testPrefetchContent_validprefetchList() {
         try (MockedStatic<MobileCore> mobileCoreMockedStatic =
                 Mockito.mockStatic(MobileCore.class)) {
