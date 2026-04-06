@@ -119,6 +119,7 @@ public class Target {
             "The provided request map is empty or null";
 
     private static final long DEFAULT_TIMEOUT_MS = 5000L;
+    private static final long MS_PER_SECOND = 1000L;
     private static boolean isResponseListenerRegistered = false;
     private static final ConcurrentHashMap<String, TargetRequest> pendingTargetRequestsMap =
             new ConcurrentHashMap<>();
@@ -243,7 +244,7 @@ public class Target {
 
         MobileCore.dispatchEventWithResponseCallback(
                 event,
-                timeout == Integer.MAX_VALUE ? Long.MAX_VALUE : (long) timeout * 1000L,
+                timeout == Integer.MAX_VALUE ? Long.MAX_VALUE : (long) timeout * MS_PER_SECOND,
                 new AdobeCallbackWithError<Event>() {
                     @Override
                     public void fail(final AdobeError adobeError) {
