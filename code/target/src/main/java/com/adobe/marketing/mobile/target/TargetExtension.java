@@ -1216,7 +1216,8 @@ public class TargetExtension extends Extension {
         headers.put(TargetConstants.HEADER_X_EXC_SDK, getSdkInfo(eventHubData));
         headers.put(TargetConstants.HEADER_X_EXC_SDK_VERSION, getSdkVersion(eventHubData));
 
-        final int timeout = targetState.getNetworkTimeout();
+        final int apiTimeout = DataReader.optInteger(event.getEventData(), TargetConstants.EventDataKeys.API_TIMEOUT, Integer.MAX_VALUE);
+        final int timeout = (apiTimeout == Integer.MAX_VALUE) ? targetState.getNetworkTimeout() : apiTimeout;
         final String url = getTargetRequestUrl();
         final String payloadJsonString = payloadJson.toString();
         final byte[] payload = payloadJsonString.getBytes(StandardCharsets.UTF_8);

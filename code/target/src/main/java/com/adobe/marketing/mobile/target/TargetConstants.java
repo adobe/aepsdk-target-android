@@ -161,6 +161,7 @@ final class TargetConstants {
         static final String TARGET_RESPONSE_EVENT_ID = "responseEventId";
         static final String TARGET_RESPONSE_PAIR_ID = "responsePairId";
         static final String TARGET_DATA_PAYLOAD = "data";
+        static final String API_TIMEOUT = "api.timeout";
         static final String A4T_SESSION_ID = "a.target.sessionId"; // For A4T requests event data.
         static final String TARGET_CONTENT = "content";
         static final String ID = "id";
