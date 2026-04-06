@@ -2372,6 +2372,90 @@ public class TargetExtensionTests {
     }
 
     @Test
+    public void testHandlePrefetchContent_usesApiTimeoutFromEvent() {
+        runWithMockedServiceProvider(
+                () -> {
+                    // setup
+                    setEventHubSharedState();
+                    final int customTimeout = 10;
+
+                    // test
+                    extension.handleTargetRequestContentEvent(
+                            prefetchContentEvent(
+                                    getTargetPrefetchList(1), null, customTimeout));
+
+                    // verify network request uses the timeout value from event data
+                    verify(networkService)
+                            .connectAsync(
+                                    networkRequestCaptor.capture(),
+                                    networkCallbackCaptor.capture());
+                    assertEquals(
+                            customTimeout,
+                            networkRequestCaptor.getValue().getReadTimeout(),
+                            0);
+                    assertEquals(
+                            customTimeout,
+                            networkRequestCaptor.getValue().getConnectTimeout(),
+                            0);
+                });
+    }
+
+    @Test
+    public void testHandlePrefetchContent_fallsBackToNetworkTimeout_whenApiTimeoutIsIntMaxValue() {
+        runWithMockedServiceProvider(
+                () -> {
+                    // setup
+                    setEventHubSharedState();
+
+                    // test - Integer.MAX_VALUE signals no caller-specified timeout, use config
+                    extension.handleTargetRequestContentEvent(
+                            prefetchContentEvent(
+                                    getTargetPrefetchList(1), null, Integer.MAX_VALUE));
+
+                    // verify network request falls back to targetState.getNetworkTimeout()
+                    verify(networkService)
+                            .connectAsync(
+                                    networkRequestCaptor.capture(),
+                                    networkCallbackCaptor.capture());
+                    assertEquals(
+                            MOCK_NETWORK_TIMEOUT,
+                            networkRequestCaptor.getValue().getReadTimeout(),
+                            0);
+                    assertEquals(
+                            MOCK_NETWORK_TIMEOUT,
+                            networkRequestCaptor.getValue().getConnectTimeout(),
+                            0);
+                });
+    }
+
+    @Test
+    public void testHandlePrefetchContent_fallsBackToNetworkTimeout_whenApiTimeoutAbsent() {
+        runWithMockedServiceProvider(
+                () -> {
+                    // setup
+                    setEventHubSharedState();
+
+                    // test - no API_TIMEOUT key in event data, falls back to config timeout
+                    extension.handleTargetRequestContentEvent(
+                            prefetchContentEvent(getTargetPrefetchList(1), null));
+
+                    // verify network request falls back to targetState.getNetworkTimeout()
+                    verify(networkService)
+                            .connectAsync(
+                                    networkRequestCaptor.capture(),
+                                    networkCallbackCaptor.capture());
+                    assertEquals(
+                            MOCK_NETWORK_TIMEOUT,
+                            networkRequestCaptor.getValue().getReadTimeout(),
+                            0);
+                    assertEquals(
+                            MOCK_NETWORK_TIMEOUT,
+                            networkRequestCaptor.getValue().getConnectTimeout(),
+                            0);
+                });
+    }
+
+    @Test
     public void testHandlePrefetchContent_ReturnDefaultContent_When_ResponseNot200OK() {
         runWithMockedServiceProvider(
                 () -> {
@@ -3330,6 +3414,37 @@ public class TargetExtensionTests {
         final Event event =
                 new Event.Builder(
                                 EventName.LOAD_REQUEST,
+                                EventType.TARGET,
+                                EventSource.REQUEST_CONTENT)
+                        .setEventData(eventData)
+                        .build();
+
+        return event;
+    }
+
+    private Event prefetchContentEvent(
+            final List<TargetPrefetch> targetPrefetchList,
+            final TargetParameters parameters,
+            final int timeout) {
+        final List<TargetPrefetch> prefetchRequestListCopy = new ArrayList<>(targetPrefetchList);
+        final List<Map<String, Object>> flattenedPrefetchRequests = new ArrayList<>();
+        for (final TargetPrefetch request : prefetchRequestListCopy) {
+            if (request == null) {
+                continue;
+            }
+            flattenedPrefetchRequests.add(request.toEventData());
+        }
+
+        final Map<String, Object> eventData = new HashMap<>();
+        eventData.put(EventDataKeys.PREFETCH, flattenedPrefetchRequests);
+        eventData.put(TargetConstants.EventDataKeys.API_TIMEOUT, timeout);
+        if (parameters != null) {
+            eventData.put(EventDataKeys.TARGET_PARAMETERS, parameters.toEventData());
+        }
+
+        final Event event =
+                new Event.Builder(
+                                EventName.PREFETCH_REQUEST,
                                 EventType.TARGET,
                                 EventSource.REQUEST_CONTENT)
                         .setEventData(eventData)
