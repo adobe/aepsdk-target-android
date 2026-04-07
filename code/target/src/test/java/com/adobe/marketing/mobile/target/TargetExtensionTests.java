@@ -2381,8 +2381,7 @@ public class TargetExtensionTests {
 
                     // test
                     extension.handleTargetRequestContentEvent(
-                            prefetchContentEvent(
-                                    getTargetPrefetchList(1), null, customTimeout));
+                            prefetchContentEvent(getTargetPrefetchList(1), null, customTimeout));
 
                     // verify network request uses the timeout value from event data
                     verify(networkService)
@@ -2390,13 +2389,9 @@ public class TargetExtensionTests {
                                     networkRequestCaptor.capture(),
                                     networkCallbackCaptor.capture());
                     assertEquals(
-                            customTimeout,
-                            networkRequestCaptor.getValue().getReadTimeout(),
-                            0);
+                            customTimeout, networkRequestCaptor.getValue().getReadTimeout(), 0);
                     assertEquals(
-                            customTimeout,
-                            networkRequestCaptor.getValue().getConnectTimeout(),
-                            0);
+                            customTimeout, networkRequestCaptor.getValue().getConnectTimeout(), 0);
                 });
     }
 

@@ -189,7 +189,8 @@ public class TargetTests {
                         }
                     });
 
-            // verify dispatchEventWithResponseCallback is called with timeout converted to ms (30s * 1000)
+            // verify dispatchEventWithResponseCallback is called with timeout converted to ms (30s
+            // * 1000)
             final ArgumentCaptor<Long> timeoutCaptor = ArgumentCaptor.forClass(Long.class);
             mobileCoreMockedStatic.verify(
                     () ->
