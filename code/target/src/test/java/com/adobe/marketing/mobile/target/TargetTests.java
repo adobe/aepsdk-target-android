@@ -142,6 +142,93 @@ public class TargetTests {
     }
 
     @Test
+    public void testPrefetchContent_withTimeout_setsApiTimeoutInEventData() {
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic =
+                Mockito.mockStatic(MobileCore.class)) {
+            // test
+            final List<TargetPrefetch> prefetchList = new ArrayList<>();
+            prefetchList.add(new TargetPrefetch("mbox1", null));
+
+            Target.prefetchContent(
+                    prefetchList,
+                    null,
+                    30,
+                    new AdobeCallback<String>() {
+                        @Override
+                        public void call(String value) {
+                            response = value;
+                        }
+                    });
+
+            // verify API_TIMEOUT is stored in event data with the passed value
+            final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+            mobileCoreMockedStatic.verify(
+                    () ->
+                            MobileCore.dispatchEventWithResponseCallback(
+                                    eventCaptor.capture(), anyLong(), any()));
+            assertEquals(30, eventCaptor.getValue().getEventData().get("api.timeout"));
+        }
+    }
+
+    @Test
+    public void testPrefetchContent_withTimeout_dispatchUsesConvertedMs() {
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic =
+                Mockito.mockStatic(MobileCore.class)) {
+            // test
+            final List<TargetPrefetch> prefetchList = new ArrayList<>();
+            prefetchList.add(new TargetPrefetch("mbox1", null));
+
+            Target.prefetchContent(
+                    prefetchList,
+                    null,
+                    30,
+                    new AdobeCallback<String>() {
+                        @Override
+                        public void call(String value) {
+                            response = value;
+                        }
+                    });
+
+            // verify dispatchEventWithResponseCallback is called with timeout converted to ms (30s
+            // * 1000)
+            final ArgumentCaptor<Long> timeoutCaptor = ArgumentCaptor.forClass(Long.class);
+            mobileCoreMockedStatic.verify(
+                    () ->
+                            MobileCore.dispatchEventWithResponseCallback(
+                                    any(), timeoutCaptor.capture(), any()));
+            assertEquals(30000L, (long) timeoutCaptor.getValue());
+        }
+    }
+
+    @Test
+    public void testPrefetchContent_noTimeout_dispatchUsesLongMaxValue() {
+        try (MockedStatic<MobileCore> mobileCoreMockedStatic =
+                Mockito.mockStatic(MobileCore.class)) {
+            // test - 3-param overload defaults to Integer.MAX_VALUE which maps to Long.MAX_VALUE
+            final List<TargetPrefetch> prefetchList = new ArrayList<>();
+            prefetchList.add(new TargetPrefetch("mbox1", null));
+
+            Target.prefetchContent(
+                    prefetchList,
+                    null,
+                    new AdobeCallback<String>() {
+                        @Override
+                        public void call(String value) {
+                            response = value;
+                        }
+                    });
+
+            // verify dispatch is called with Long.MAX_VALUE (no caller-specified timeout)
+            final ArgumentCaptor<Long> timeoutCaptor = ArgumentCaptor.forClass(Long.class);
+            mobileCoreMockedStatic.verify(
+                    () ->
+                            MobileCore.dispatchEventWithResponseCallback(
+                                    any(), timeoutCaptor.capture(), any()));
+            assertEquals(Long.MAX_VALUE, (long) timeoutCaptor.getValue());
+        }
+    }
+
+    @Test
     public void testPrefetchContent_invalidPrefetchList() {
         try (MockedStatic<Log> logMockedStatic = Mockito.mockStatic(Log.class)) {
             // test

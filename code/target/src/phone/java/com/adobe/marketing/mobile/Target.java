@@ -103,6 +103,7 @@ public class Target {
         static final String CLICK_METRIC_ANALYTICS_PAYLOAD = "clickmetric.analytics.payload";
         static final String TARGET_CONTENT = "content";
         static final String TARGET_DATA_PAYLOAD = "data";
+        static final String API_TIMEOUT = "api.timeout";
 
         private EventDataKeys() {}
     }
@@ -118,6 +119,7 @@ public class Target {
             "The provided request map is empty or null";
 
     private static final long DEFAULT_TIMEOUT_MS = 5000L;
+    private static final long MS_PER_SECOND = 1000L;
     private static boolean isResponseListenerRegistered = false;
     private static final ConcurrentHashMap<String, TargetRequest> pendingTargetRequestsMap =
             new ConcurrentHashMap<>();
@@ -160,6 +162,33 @@ public class Target {
             @NonNull final List<TargetPrefetch> mboxPrefetchList,
             @Nullable final TargetParameters parameters,
             @Nullable final AdobeCallback<String> callback) {
+        prefetchContent(mboxPrefetchList, parameters, Integer.MAX_VALUE, callback);
+    }
+
+    /**
+     * Executes a prefetch request to the configured Target server with the TargetPrefetch list
+     * provided in the {@code mboxPrefetchList} parameter. This prefetch request will use the
+     * provided {@code parameters} for all of the prefetch made in this request. The {@code
+     * callback} will be executed when the prefetch has been completed, returning {@code null} if
+     * the prefetch was successful or will contain a {@code String} error message otherwise.
+     *
+     * @param mboxPrefetchList a {@code List<TargetPrefetch>} representing the desired mboxes to
+     *     prefetch
+     * @param parameters a {@code TargetParameters} object containing Target parameters for all
+     *     mboxes in the request list
+     * @param timeout the timeout in seconds to wait for the prefetch response
+     * @param callback an {@code AdobeCallback<String>} which will be called after the prefetch is
+     *     complete. The success parameter in the callback will be {@code null} if the prefetch
+     *     completed successfully, or will contain a {@code String} error message otherwise. If an
+     *     {@link AdobeCallbackWithError} is provided, an {@link AdobeError} can be returned in the
+     *     eventuality of an unexpected error or if the timeout is met before the content is
+     *     prefetched.
+     */
+    public static void prefetchContent(
+            @NonNull final List<TargetPrefetch> mboxPrefetchList,
+            @Nullable final TargetParameters parameters,
+            final int timeout,
+            @Nullable final AdobeCallback<String> callback) {
         final AdobeCallbackWithError<String> callbackWithError =
                 callback instanceof AdobeCallbackWithError
                         ? (AdobeCallbackWithError<String>) callback
@@ -200,6 +229,7 @@ public class Target {
 
         final Map<String, Object> eventData = new HashMap<>();
         eventData.put(EventDataKeys.PREFETCH, flattenedPrefetchRequests);
+        eventData.put(EventDataKeys.API_TIMEOUT, timeout);
         if (parameters != null) {
             eventData.put(EventDataKeys.TARGET_PARAMETERS, parameters.toEventData());
         }
@@ -214,7 +244,7 @@ public class Target {
 
         MobileCore.dispatchEventWithResponseCallback(
                 event,
-                DEFAULT_TIMEOUT_MS,
+                timeout == Integer.MAX_VALUE ? Long.MAX_VALUE : (long) timeout * MS_PER_SECOND,
                 new AdobeCallbackWithError<Event>() {
                     @Override
                     public void fail(final AdobeError adobeError) {
